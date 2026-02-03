@@ -8,9 +8,11 @@ hooks:
     - matcher: "Write|Edit"
       hooks:
         - type: command
-          command: uv run ~/.claude/hooks/validators/oxlint_validator.py
+          command: >-
+            uv run $CLAUDE_PROJECT_DIR/.claude/hooks/validators/ruff_validator.py
         - type: command
-          command: uv run ~/.claude/hooks/validators/tsc_validator.py
+          command: >-
+            uv run $CLAUDE_PROJECT_DIR/.claude/hooks/validators/ty_validator.py
 ---
 
 # Builder

@@ -15,7 +15,6 @@ PATH_TO_PLAN: $ARGUMENTS
 
 - If no `PATH_TO_PLAN` is provided, STOP immediately and ask the user to provide it (AskUserQuestion).
 - Read and execute the plan at `PATH_TO_PLAN`. Think hard about the plan and implement it into the codebase.
-- Follow the Team Orchestration section in the plan to deploy agents and manage tasks.
 
 ## Report
 
