@@ -37,7 +37,7 @@ This directory contains configuration and customization files for [Claude Code](
 Clone this repo to `~/.claude` on a new machine to restore your Claude Code configuration:
 
 ```bash
-git clone <repo-url> ~/.claude
+git clone git@github.com:akornmeier/clawd-config.git ~/.claude
 ```
 
 ## Notes
