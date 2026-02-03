@@ -1,0 +1,22 @@
+# Sensitive data - conversation history and project-specific data
+history.jsonl
+projects/
+security_warnings_state_*.json
+session-env/
+
+# Cache and temporary files
+cache/
+paste-cache/
+shell-snapshots/
+stats-cache.json
+debug/
+file-history/
+telemetry/
+
+# Transient state
+todos/
+tasks/
+data/
+
+# OS files
+.DS_Store

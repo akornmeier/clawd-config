@@ -1,0 +1,34 @@
+{
+  "claude-code-plugins": {
+    "source": {
+      "source": "github",
+      "repo": "anthropics/claude-code"
+    },
+    "installLocation": "/Users/tk/.claude/plugins/marketplaces/claude-code-plugins",
+    "lastUpdated": "2026-02-03T18:07:55.045Z"
+  },
+  "superpowers-marketplace": {
+    "source": {
+      "source": "github",
+      "repo": "obra/superpowers-marketplace"
+    },
+    "installLocation": "/Users/tk/.claude/plugins/marketplaces/superpowers-marketplace",
+    "lastUpdated": "2026-01-14T13:03:24.971Z"
+  },
+  "claude-plugins-official": {
+    "source": {
+      "source": "github",
+      "repo": "anthropics/claude-plugins-official"
+    },
+    "installLocation": "/Users/tk/.claude/plugins/marketplaces/claude-plugins-official",
+    "lastUpdated": "2026-02-03T16:39:43.300Z"
+  },
+  "claude-skills": {
+    "source": {
+      "source": "git",
+      "url": "https://github.com/jezweb/claude-skills.git"
+    },
+    "installLocation": "/Users/tk/.claude/plugins/marketplaces/claude-skills",
+    "lastUpdated": "2026-01-26T23:30:51.115Z"
+  }
+}

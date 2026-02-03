@@ -1,0 +1,85 @@
+[
+  {
+    "session_id": "eaa52d87-e744-4761-aebe-d9ff661c05f9",
+    "transcript_path": "/Users/tk/.claude/projects/-Users-tk-Code-claude-code-hooks/eaa52d87-e744-4761-aebe-d9ff661c05f9.jsonl",
+    "cwd": "/Users/tk/.claude/hooks/validators",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/tk/.claude/hooks/validators && python3 -m py_compile *.py && echo \"All Python files compile successfully\"",
+      "description": "Verify Python syntax for all validators"
+    },
+    "tool_use_id": "toolu_01X6scbwt4qGUSUqLco1Kt6A"
+  },
+  {
+    "session_id": "eaa52d87-e744-4761-aebe-d9ff661c05f9",
+    "transcript_path": "/Users/tk/.claude/projects/-Users-tk-Code-claude-code-hooks/eaa52d87-e744-4761-aebe-d9ff661c05f9.jsonl",
+    "cwd": "/Users/tk/.claude/hooks/validators",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/tk/Code/claude-code-hooks/AGENTS.md"
+    },
+    "tool_use_id": "toolu_016pk4yuj8AzJ47PQzzriGC1"
+  },
+  {
+    "session_id": "eaa52d87-e744-4761-aebe-d9ff661c05f9",
+    "transcript_path": "/Users/tk/.claude/projects/-Users-tk-Code-claude-code-hooks/eaa52d87-e744-4761-aebe-d9ff661c05f9.jsonl",
+    "cwd": "/Users/tk/.claude/hooks/validators",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/tk/Code/claude-code-hooks/AGENTS.md",
+      "old_string": "\u2502  hooks/validators/        # Reusable validation scripts     \u2502\n\u2502  \u251c\u2500\u2500 tdd_enforcer.py      # PreToolUse: test-first          \u2502\n\u2502  \u251c\u2500\u2500 oxlint_validator.py  # PostToolUse: lint               \u2502\n\u2502  \u251c\u2500\u2500 tsc_validator.py     # PostToolUse: types              \u2502\n\u2502  \u251c\u2500\u2500 coverage_validator.py # Stop: coverage threshold       \u2502\n\u2502  \u251c\u2500\u2500 validate_new_file.py  # Stop: plan file created        \u2502\n\u2502  \u2514\u2500\u2500 validate_file_contains.py # Stop: plan sections        \u2502",
+      "new_string": "\u2502  hooks/validators/        # Reusable validation scripts     \u2502\n\u2502  \u251c\u2500\u2500 tdd_enforcer.py      # PreToolUse: test-first          \u2502\n\u2502  \u251c\u2500\u2500 oxlint_validator.py  # PostToolUse: lint               \u2502\n\u2502  \u251c\u2500\u2500 tsc_validator.py     # PostToolUse: types              \u2502\n\u2502  \u251c\u2500\u2500 coverage_validator.py # Stop: coverage threshold       \u2502\n\u2502  \u251c\u2500\u2500 storybook_validator.py # PostToolUse: stories exist    \u2502\n\u2502  \u251c\u2500\u2500 test_methodology_validator.py # PostToolUse: test separation \u2502\n\u2502  \u251c\u2500\u2500 validate_new_file.py  # Stop: plan file created        \u2502\n\u2502  \u2514\u2500\u2500 validate_file_contains.py # Stop: plan sections        \u2502",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01LGT7UpbxAJt9r9VP1nVPWX"
+  },
+  {
+    "session_id": "eaa52d87-e744-4761-aebe-d9ff661c05f9",
+    "transcript_path": "/Users/tk/.claude/projects/-Users-tk-Code-claude-code-hooks/eaa52d87-e744-4761-aebe-d9ff661c05f9.jsonl",
+    "cwd": "/Users/tk/.claude/hooks/validators",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/tk/Code/claude-code-hooks/AGENTS.md",
+      "old_string": "### Storybook Validator (`storybook_validator.py`)\n**Event**: PostToolUse (Write|Edit)\n\nChecks if new React components have corresponding Storybook stories. Provides warning (or blocks in strict mode) if stories are missing.\n\n---\n\n## UI Agents",
+      "new_string": "### Storybook Validator (`storybook_validator.py`)\n**Event**: PostToolUse (Write|Edit)\n\nChecks if new React components have corresponding Storybook stories. Provides warning (or blocks in strict mode) if stories are missing.\n\n### Test Methodology Validator (`test_methodology_validator.py`)\n**Event**: PostToolUse (Write|Edit)\n\nValidates proper test separation between unit tests and interaction tests:\n- Unit tests (`.test.tsx`) for structure/rendering\n- Storybook play functions for user interactions\n\nWarns if story files lack play functions or if unit test files are missing.\n\n---\n\n## Testing Methodology\n\nA critical distinction for UI agents: **unit tests** and **interaction tests** serve different purposes and use different tools.\n\n```\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502  UNIT TESTS (.test.tsx / .test.ts)                          \u2502\n\u2502  \u251c\u2500\u2500 Purpose: Test component STRUCTURE and RENDERING        \u2502\n\u2502  \u251c\u2500\u2500 Tool: Vitest + Testing Library                         \u2502\n\u2502  \u251c\u2500\u2500 Environment: jsdom (fast, limited)                     \u2502\n\u2502  \u2514\u2500\u2500 Tests:                                                 \u2502\n\u2502      \u251c\u2500\u2500 Renders without errors                             \u2502\n\u2502      \u251c\u2500\u2500 Props applied correctly                            \u2502\n\u2502      \u251c\u2500\u2500 Variant classes present                            \u2502\n\u2502      \u2514\u2500\u2500 Accessibility attributes (roles, aria-*)           \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502  STORYBOOK INTERACTION TESTS (play functions)               \u2502\n\u2502  \u251c\u2500\u2500 Purpose: Test USER INTERACTIONS in real browser        \u2502\n\u2502  \u251c\u2500\u2500 Tool: storybook/test (userEvent, within, expect)       \u2502\n\u2502  \u251c\u2500\u2500 Environment: Real browser via Playwright               \u2502\n\u2502  \u2514\u2500\u2500 Tests:                                                 \u2502\n\u2502      \u251c\u2500\u2500 Click interactions                                 \u2502\n\u2502      \u251c\u2500\u2500 Keyboard navigation                                \u2502\n\u2502      \u251c\u2500\u2500 Focus management                                   \u2502\n\u2502      \u2514\u2500\u2500 State changes (expanded, selected, etc.)           \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n```\n\n**Why This Matters**: Unit tests run in jsdom which has limitations with real browser behavior. Storybook play functions run in a REAL BROWSER via Playwright, catching issues unit tests miss.\n\n### Test File Mapping\n\n| Test Type | File Pattern | What to Test |\n|-----------|--------------|--------------|\n| Unit | `Component.test.tsx` | Rendering, classes, props, DOM structure |\n| Interaction | `Component.stories.tsx` (play) | Clicks, keyboard, focus, state changes |\n\n---\n\n## UI Agents",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01PM76ZqevtJY2TYwTxQsL72"
+  },
+  {
+    "session_id": "eaa52d87-e744-4761-aebe-d9ff661c05f9",
+    "transcript_path": "/Users/tk/.claude/projects/-Users-tk-Code-claude-code-hooks/eaa52d87-e744-4761-aebe-d9ff661c05f9.jsonl",
+    "cwd": "/Users/tk/.claude/hooks/validators",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/tk/Code/claude-code-hooks/AGENTS.md",
+      "old_string": "### Stached\n\n| Agent | Purpose |\n|-------|---------|\n| `convex-builder` | Convex backend with type-check gate |\n| `article-parser` | Mozilla Readability, HTML sanitization |\n| `extension-builder` | WXT framework, Manifest V3 |\n\n### Oculis\n\n| Agent | Purpose |\n|-------|---------|\n| `axe-specialist` | WCAG compliance, axe-core |\n| `adapter-guide` | DI/Adapter architecture (read-only) |\n| `tdd-builder` | TDD with Turborepo validation |",
+      "new_string": "### Stached\n\n| Agent | Purpose |\n|-------|---------|\n| `convex-builder` | Convex backend with type-check gate |\n| `article-parser` | Mozilla Readability, HTML sanitization |\n| `extension-builder` | WXT framework, Manifest V3 |\n| `shadcn-builder` | ShadCN/UI + Tailwind v4 + Framer Motion |\n\n### Oculis\n\n| Agent | Purpose |\n|-------|---------|\n| `axe-specialist` | WCAG compliance, axe-core |\n| `adapter-guide` | DI/Adapter architecture (read-only) |\n| `tdd-builder` | TDD with Turborepo validation |\n| `nuxt-ui-builder` | NuxtUI + Tailwind + Motion-vue |",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01JKyxV3XQXqtKpXrUvwpQFe"
+  },
+  {
+    "session_id": "eaa52d87-e744-4761-aebe-d9ff661c05f9",
+    "transcript_path": "/Users/tk/.claude/projects/-Users-tk-Code-claude-code-hooks/eaa52d87-e744-4761-aebe-d9ff661c05f9.jsonl",
+    "cwd": "/Users/tk/.claude/hooks/validators",
+    "permission_mode": "acceptEdits",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/tk/Code/claude-code-hooks && git status",
+      "description": "Check git status for changes"
+    },
+    "tool_use_id": "toolu_014iPstPoLtdmfMiZqofui5p"
+  }
+]
