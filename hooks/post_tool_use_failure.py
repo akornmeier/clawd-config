@@ -1,21 +1,12 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# requires-python = ">=3.11"
-# dependencies = [
-#     "python-dotenv",
-# ]
+# requires-python = ">=3.8"
 # ///
 
 import json
 import sys
-from datetime import datetime
 from pathlib import Path
-
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass  # dotenv is optional
+from utils.constants import ensure_session_log_dir
 
 
 def main():
@@ -23,32 +14,11 @@ def main():
         # Read JSON input from stdin
         input_data = json.load(sys.stdin)
 
-        # Add timestamp to the log entry
-        input_data['logged_at'] = datetime.now().isoformat()
+        # Extract session_id
+        session_id = input_data.get('session_id', 'unknown')
 
-        # Extract key fields for enhanced logging
-        tool_name = input_data.get('tool_name', 'unknown')
-        tool_use_id = input_data.get('tool_use_id', 'unknown')
-        error = input_data.get('error', {})
-
-        # Create a structured log entry with error details
-        log_entry = {
-            'timestamp': input_data['logged_at'],
-            'session_id': input_data.get('session_id', ''),
-            'hook_event_name': input_data.get('hook_event_name', 'PostToolUseFailure'),
-            'tool_name': tool_name,
-            'tool_use_id': tool_use_id,
-            'tool_input': input_data.get('tool_input', {}),
-            'error': error,
-            'cwd': input_data.get('cwd', ''),
-            'permission_mode': input_data.get('permission_mode', ''),
-            'transcript_path': input_data.get('transcript_path', ''),
-            'raw_input': input_data
-        }
-
-        # Ensure log directory exists
-        log_dir = Path.cwd() / 'logs'
-        log_dir.mkdir(parents=True, exist_ok=True)
+        # Ensure session log directory exists
+        log_dir = ensure_session_log_dir(session_id)
         log_path = log_dir / 'post_tool_use_failure.json'
 
         # Read existing log data or initialize empty list
@@ -61,8 +31,8 @@ def main():
         else:
             log_data = []
 
-        # Append new log entry
-        log_data.append(log_entry)
+        # Append new data
+        log_data.append(input_data)
 
         # Write back to file with formatting
         with open(log_path, 'w') as f:

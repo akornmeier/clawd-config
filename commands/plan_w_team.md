@@ -62,33 +62,38 @@ As the team lead, you have access to powerful tools for coordinating work across
 #### Task Management Tools
 
 **TaskCreate** - Create tasks in the shared task list:
+
 ```typescript
 TaskCreate({
   subject: "Implement user authentication",
-  description: "Create login/logout endpoints with JWT tokens. See specs/auth-plan.md for details.",
-  activeForm: "Implementing authentication"  // Shows in UI spinner when in_progress
-})
+  description:
+    "Create login/logout endpoints with JWT tokens. See specs/auth-plan.md for details.",
+  activeForm: "Implementing authentication", // Shows in UI spinner when in_progress
+});
 // Returns: taskId (e.g., "1")
 ```
 
 **TaskUpdate** - Update task status, assignment, or dependencies:
+
 ```typescript
 TaskUpdate({
   taskId: "1",
-  status: "in_progress",  // pending → in_progress → completed
-  owner: "builder-auth"   // Assign to specific team member
-})
+  status: "in_progress", // pending → in_progress → completed
+  owner: "builder-auth", // Assign to specific team member
+});
 ```
 
 **TaskList** - View all tasks and their status:
+
 ```typescript
-TaskList({})
+TaskList({});
 // Returns: Array of tasks with id, subject, status, owner, blockedBy
 ```
 
 **TaskGet** - Get full details of a specific task:
+
 ```typescript
-TaskGet({ taskId: "1" })
+TaskGet({ taskId: "1" });
 // Returns: Full task including description
 ```
 
@@ -100,17 +105,18 @@ Use `addBlockedBy` to create sequential dependencies - blocked tasks cannot star
 // Task 2 depends on Task 1
 TaskUpdate({
   taskId: "2",
-  addBlockedBy: ["1"]  // Task 2 blocked until Task 1 completes
-})
+  addBlockedBy: ["1"], // Task 2 blocked until Task 1 completes
+});
 
 // Task 3 depends on both Task 1 and Task 2
 TaskUpdate({
   taskId: "3",
-  addBlockedBy: ["1", "2"]
-})
+  addBlockedBy: ["1", "2"],
+});
 ```
 
 Dependency chain example:
+
 ```
 Task 1: Setup foundation     → no dependencies
 Task 2: Implement feature    → blockedBy: ["1"]
@@ -126,24 +132,25 @@ Assign tasks to specific team members for clear accountability:
 // Assign task to a specific builder
 TaskUpdate({
   taskId: "1",
-  owner: "builder-api"
-})
+  owner: "builder-api",
+});
 
 // Team members check for their assignments
-TaskList({})  // Filter by owner to find assigned work
+TaskList({}); // Filter by owner to find assigned work
 ```
 
 #### Agent Deployment with Task Tool
 
 **Task** - Deploy an agent to do work:
+
 ```typescript
 Task({
   description: "Implement auth endpoints",
   prompt: "Implement the authentication endpoints as specified in Task 1...",
   subagent_type: "general-purpose",
-  model: "opus",  // or "opus" for complex work, "haiku" for VERY simple
-  run_in_background: false  // true for parallel execution
-})
+  model: "opus", // or "opus" for complex work, "haiku" for VERY simple
+  run_in_background: false, // true for parallel execution
+});
 // Returns: agentId (e.g., "a1b2c3")
 ```
 
@@ -156,8 +163,8 @@ Store the agentId to continue an agent's work with preserved context:
 Task({
   description: "Build user service",
   prompt: "Create the user service with CRUD operations...",
-  subagent_type: "general-purpose"
-})
+  subagent_type: "general-purpose",
+});
 // Returns: agentId: "abc123"
 
 // Later - resume SAME agent with full context preserved
@@ -165,11 +172,12 @@ Task({
   description: "Continue user service",
   prompt: "Now add input validation to the endpoints you created...",
   subagent_type: "general-purpose",
-  resume: "abc123"  // Continues with previous context
-})
+  resume: "abc123", // Continues with previous context
+});
 ```
 
 When to resume vs start fresh:
+
 - **Resume**: Continuing related work, agent needs prior context
 - **Fresh**: Unrelated task, clean slate preferred
 
@@ -183,31 +191,31 @@ Task({
   description: "Build API endpoints",
   prompt: "...",
   subagent_type: "general-purpose",
-  run_in_background: true
-})
+  run_in_background: true,
+});
 // Returns immediately with agentId and output_file path
 
 Task({
   description: "Build frontend components",
   prompt: "...",
   subagent_type: "general-purpose",
-  run_in_background: true
-})
+  run_in_background: true,
+});
 // Both agents now working simultaneously
 
 // Check on progress
 TaskOutput({
   task_id: "agentId",
-  block: false,  // non-blocking check
-  timeout: 5000
-})
+  block: false, // non-blocking check
+  timeout: 5000,
+});
 
 // Wait for completion
 TaskOutput({
   task_id: "agentId",
-  block: true,  // blocks until done
-  timeout: 300000
-})
+  block: true, // blocks until done
+  timeout: 300000,
+});
 ```
 
 #### Orchestration Workflow
@@ -243,33 +251,44 @@ IMPORTANT: **PLANNING ONLY** - Do not execute, build, or deploy. Output is a pla
 # Plan: <task name>
 
 ## Task Description
+
 <describe the task in detail based on the prompt>
 
 ## Objective
+
 <clearly state what will be accomplished when this plan is complete>
 
 <if task_type is feature or complexity is medium/complex, include these sections:>
+
 ## Problem Statement
+
 <clearly define the specific problem or opportunity this task addresses>
 
 ## Solution Approach
+
 <describe the proposed solution approach and how it addresses the objective>
 </if>
 
 ## Relevant Files
+
 Use these files to complete the task:
 
 <list files relevant to the task with bullet points explaining why. Include new files to be created under an h3 'New Files' section if needed>
 
 <if complexity is medium/complex, include this section:>
+
 ## Implementation Phases
+
 ### Phase 1: Foundation
+
 <describe any foundational work needed>
 
 ### Phase 2: Core Implementation
+
 <describe the main implementation work>
 
 ### Phase 3: Integration & Polish
+
 <describe integration, testing, and final touches>
 </if>
 
@@ -280,11 +299,12 @@ Use these files to complete the task:
 - IMPORTANT: You NEVER operate directly on the codebase. You use `Task` and `Task*` tools to deploy team members to to the building, validating, testing, deploying, and other tasks.
   - This is critical. You're job is to act as a high level director of the team, not a builder.
   - You're role is to validate all work is going well and make sure the team is on track to complete the plan.
-  - You'll orchestrate this by using the Task* Tools to manage coordination between the team members.
-  - Communication is paramount. You'll use the Task* Tools to communicate with the team members and ensure they're on track to complete the plan.
+  - You'll orchestrate this by using the Task\* Tools to manage coordination between the team members.
+  - Communication is paramount. You'll use the Task\* Tools to communicate with the team members and ensure they're on track to complete the plan.
 - Take note of the session id of each team member. This is how you'll reference them.
 
 ### Team Members
+
 <list the team members you'll use to execute the plan>
 
 - Builder
@@ -302,6 +322,7 @@ Use these files to complete the task:
 <list step by step tasks as h3 headers. Start with foundational work, then core implementation, then validation.>
 
 ### 1. <First Task Name>
+
 - **Task ID**: <unique kebab-case identifier, e.g., "setup-database">
 - **Depends On**: <Task ID(s) this depends on, or "none" if no dependencies>
 - **Assigned To**: <team member name from Team Members section>
@@ -311,6 +332,7 @@ Use these files to complete the task:
 - <specific action to complete>
 
 ### 2. <Second Task Name>
+
 - **Task ID**: <unique-id>
 - **Depends On**: <previous Task ID, e.g., "setup-database">
 - **Assigned To**: <team member name>
@@ -322,6 +344,7 @@ Use these files to complete the task:
 ### 3. <Continue Pattern>
 
 ### N. <Final Validation Task>
+
 - **Task ID**: validate-all
 - **Depends On**: <all previous Task IDs>
 - **Assigned To**: <validator team member>
@@ -330,18 +353,21 @@ Use these files to complete the task:
 - Run all validation commands
 - Verify acceptance criteria met
 
-<continue with additional tasks as needed. Agent types must exist in .claude/agents/team/*.md>
+<continue with additional tasks as needed. Agent types must exist in .claude/agents/team/\*.md>
 
 ## Acceptance Criteria
+
 <list specific, measurable criteria that must be met for the task to be considered complete>
 
 ## Validation Commands
+
 Execute these commands to validate the task is complete:
 
 <list specific commands to validate the work. Be precise about what to run>
 - Example: `uv run python -m py_compile apps/*.py` - Test to ensure the code compiles
 
 ## Notes
+
 <optional additional context, considerations, or dependencies. If new libraries are needed, specify using `uv add`>
 ```
 

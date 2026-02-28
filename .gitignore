@@ -17,6 +17,7 @@ telemetry/
 todos/
 tasks/
 data/
+usage-data/
 
 # TypeScript
 node_modules/

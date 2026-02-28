@@ -104,40 +104,40 @@
     "frontend-design@claude-plugins-official": [
       {
         "scope": "user",
-        "installPath": "/Users/tk/.claude/plugins/cache/claude-plugins-official/frontend-design/27d2b86d72da",
-        "version": "27d2b86d72da",
+        "installPath": "/Users/tk/.claude/plugins/cache/claude-plugins-official/frontend-design/55b58ec6e564",
+        "version": "55b58ec6e564",
         "installedAt": "2026-01-14T13:05:51.161Z",
-        "lastUpdated": "2026-01-30T13:47:22.822Z",
+        "lastUpdated": "2026-02-25T13:57:53.199Z",
         "gitCommitSha": "f70b65538da094ff474a855e7a679fb2c2c8064f"
       }
     ],
     "pr-review-toolkit@claude-plugins-official": [
       {
         "scope": "user",
-        "installPath": "/Users/tk/.claude/plugins/cache/claude-plugins-official/pr-review-toolkit/27d2b86d72da",
-        "version": "27d2b86d72da",
+        "installPath": "/Users/tk/.claude/plugins/cache/claude-plugins-official/pr-review-toolkit/55b58ec6e564",
+        "version": "55b58ec6e564",
         "installedAt": "2026-01-14T13:17:17.808Z",
-        "lastUpdated": "2026-01-30T13:47:22.827Z",
+        "lastUpdated": "2026-02-25T13:57:53.205Z",
         "gitCommitSha": "f70b65538da094ff474a855e7a679fb2c2c8064f"
       }
     ],
     "explanatory-output-style@claude-plugins-official": [
       {
         "scope": "user",
-        "installPath": "/Users/tk/.claude/plugins/cache/claude-plugins-official/explanatory-output-style/27d2b86d72da",
-        "version": "27d2b86d72da",
+        "installPath": "/Users/tk/.claude/plugins/cache/claude-plugins-official/explanatory-output-style/55b58ec6e564",
+        "version": "55b58ec6e564",
         "installedAt": "2026-01-14T13:17:17.832Z",
-        "lastUpdated": "2026-01-30T13:47:22.824Z",
+        "lastUpdated": "2026-02-25T13:57:53.204Z",
         "gitCommitSha": "f70b65538da094ff474a855e7a679fb2c2c8064f"
       }
     ],
     "greptile@claude-plugins-official": [
       {
         "scope": "user",
-        "installPath": "/Users/tk/.claude/plugins/cache/claude-plugins-official/greptile/27d2b86d72da",
-        "version": "27d2b86d72da",
+        "installPath": "/Users/tk/.claude/plugins/cache/claude-plugins-official/greptile/55b58ec6e564",
+        "version": "55b58ec6e564",
         "installedAt": "2026-01-14T13:17:17.844Z",
-        "lastUpdated": "2026-01-30T13:47:22.827Z",
+        "lastUpdated": "2026-02-25T13:57:53.198Z",
         "gitCommitSha": "f70b65538da094ff474a855e7a679fb2c2c8064f"
       }
     ],
@@ -164,20 +164,20 @@
     "context7@claude-plugins-official": [
       {
         "scope": "user",
-        "installPath": "/Users/tk/.claude/plugins/cache/claude-plugins-official/context7/27d2b86d72da",
-        "version": "27d2b86d72da",
+        "installPath": "/Users/tk/.claude/plugins/cache/claude-plugins-official/context7/55b58ec6e564",
+        "version": "55b58ec6e564",
         "installedAt": "2026-01-19T17:13:08.686Z",
-        "lastUpdated": "2026-01-30T13:47:22.828Z",
+        "lastUpdated": "2026-02-25T13:57:53.198Z",
         "gitCommitSha": "96276205880a60fd66bbae981f5ab568e70c4cbf"
       }
     ],
     "feature-dev@claude-plugins-official": [
       {
         "scope": "user",
-        "installPath": "/Users/tk/.claude/plugins/cache/claude-plugins-official/feature-dev/27d2b86d72da",
-        "version": "27d2b86d72da",
+        "installPath": "/Users/tk/.claude/plugins/cache/claude-plugins-official/feature-dev/55b58ec6e564",
+        "version": "55b58ec6e564",
         "installedAt": "2026-01-19T17:13:08.708Z",
-        "lastUpdated": "2026-01-30T13:47:22.829Z",
+        "lastUpdated": "2026-02-25T13:57:53.203Z",
         "gitCommitSha": "96276205880a60fd66bbae981f5ab568e70c4cbf"
       }
     ],
