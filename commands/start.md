@@ -1,3 +1,3 @@
 Run this command in the background
 
-`sh scripts/start-system.sh`
+`sh ~/.claude/scripts/start-system.sh`

@@ -91,6 +91,7 @@ coverage/
 .cache/
 tmp/
 temp/
+backups/
 
 # Python
 __pycache__/
@@ -137,6 +138,7 @@ extras/
 
 # Database files
 *.db
+*.db-*
 *.sqlite
 
 # Task manager data
