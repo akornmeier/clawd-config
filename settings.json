@@ -3,12 +3,6 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "ENABLE_TOOL_SEARCH": "true"
   },
-  "teammateMode": "in-process",
-  "statusLine": {
-    "type": "command",
-    "command": "uv run ~/.claude/status_lines/status_line_v6.py",
-    "padding": 0
-  },
   "permissions": {
     "allow": [
       "Bash(mkdir:*)",
@@ -217,6 +211,11 @@
       }
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "uv run ~/.claude/status_lines/status_line_v6.py",
+    "padding": 0
+  },
   "enabledPlugins": {
     "code-review@claude-code-plugins": true,
     "elements-of-style@superpowers-marketplace": true,
@@ -234,5 +233,7 @@
     "pyright-lsp@claude-plugins-official": false
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "medium"
+  "teammateMode": "in-process",
+  "effortLevel": "medium",
+  "skipDangerousModePermissionPrompt": true
 }
