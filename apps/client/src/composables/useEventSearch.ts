@@ -1,13 +1,15 @@
-import { ref, computed } from 'vue';
-import type { HookEvent } from '../types';
+import { ref, computed } from "vue";
+import type { HookEvent } from "../types";
 
 export function useEventSearch() {
-  const searchPattern = ref<string>('');
-  const searchError = ref<string>('');
+  const searchPattern = ref<string>("");
+  const searchError = ref<string>("");
 
   // Validate regex pattern
-  const validateRegex = (pattern: string): { valid: boolean; error?: string } => {
-    if (!pattern || pattern.trim() === '') {
+  const validateRegex = (
+    pattern: string,
+  ): { valid: boolean; error?: string } => {
+    if (!pattern || pattern.trim() === "") {
       return { valid: true };
     }
 
@@ -15,7 +17,8 @@ export function useEventSearch() {
       new RegExp(pattern);
       return { valid: true };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Invalid regex pattern';
+      const errorMessage =
+        error instanceof Error ? error.message : "Invalid regex pattern";
       return { valid: false, error: errorMessage };
     }
   };
@@ -38,19 +41,19 @@ export function useEventSearch() {
     }
 
     // Model name
-    if (event.model) {
-      parts.push(event.model);
+    if (event.model_name) {
+      parts.push(event.model_name);
     }
 
-    // Tool information
-    if (event.tool_name) {
-      parts.push(event.tool_name);
+    // Tool information (from payload)
+    if (event.payload && event.payload.tool_name) {
+      parts.push(event.payload.tool_name);
     }
-    if (event.tool_command) {
-      parts.push(event.tool_command);
+    if (event.payload && event.payload.command) {
+      parts.push(event.payload.command);
     }
-    if (event.tool_file && event.tool_file.path) {
-      parts.push(event.tool_file.path);
+    if (event.payload && event.payload.file_path) {
+      parts.push(event.payload.file_path);
     }
 
     // Summary text
@@ -59,19 +62,19 @@ export function useEventSearch() {
     }
 
     // HITL information
-    if (event.hitl_question) {
-      parts.push(event.hitl_question);
+    if (event.humanInTheLoop?.question) {
+      parts.push(event.humanInTheLoop.question);
     }
-    if (event.hitl_permission) {
-      parts.push(event.hitl_permission);
+    if (event.humanInTheLoopStatus?.response?.permission) {
+      parts.push(event.humanInTheLoopStatus?.response?.permission.toString());
     }
 
-    return parts.join(' ').toLowerCase();
+    return parts.join(" ").toLowerCase();
   };
 
   // Check if event matches pattern
   const matchesPattern = (event: HookEvent, pattern: string): boolean => {
-    if (!pattern || pattern.trim() === '') {
+    if (!pattern || pattern.trim() === "") {
       return true;
     }
 
@@ -81,7 +84,7 @@ export function useEventSearch() {
     }
 
     try {
-      const regex = new RegExp(pattern, 'i'); // Case-insensitive
+      const regex = new RegExp(pattern, "i"); // Case-insensitive
       const searchableText = getSearchableText(event);
       return regex.test(searchableText);
     } catch {
@@ -91,11 +94,11 @@ export function useEventSearch() {
 
   // Filter events by pattern
   const searchEvents = (events: HookEvent[], pattern: string): HookEvent[] => {
-    if (!pattern || pattern.trim() === '') {
+    if (!pattern || pattern.trim() === "") {
       return events;
     }
 
-    return events.filter(event => matchesPattern(event, pattern));
+    return events.filter((event) => matchesPattern(event, pattern));
   };
 
   // Computed property for current error
@@ -105,23 +108,23 @@ export function useEventSearch() {
   const updateSearchPattern = (pattern: string) => {
     searchPattern.value = pattern;
 
-    if (!pattern || pattern.trim() === '') {
-      searchError.value = '';
+    if (!pattern || pattern.trim() === "") {
+      searchError.value = "";
       return;
     }
 
     const validation = validateRegex(pattern);
     if (!validation.valid) {
-      searchError.value = validation.error || 'Invalid regex pattern';
+      searchError.value = validation.error || "Invalid regex pattern";
     } else {
-      searchError.value = '';
+      searchError.value = "";
     }
   };
 
   // Clear search
   const clearSearch = () => {
-    searchPattern.value = '';
-    searchError.value = '';
+    searchPattern.value = "";
+    searchError.value = "";
   };
 
   return {
@@ -133,6 +136,6 @@ export function useEventSearch() {
     searchEvents,
     updateSearchPattern,
     clearSearch,
-    getSearchableText
+    getSearchableText,
   };
 }
