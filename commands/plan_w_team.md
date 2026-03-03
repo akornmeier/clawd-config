@@ -358,7 +358,7 @@ Use these files to complete the task:
 ### N. <Final Validation Task>
 
 - **Task ID**: validate-all
-- **Depends On**: review-simplify
+- **Depends On**: <all previous Task IDs, including review-simplify>
 - **Assigned To**: <validator team member>
 - **Agent Type**: <validator agent>
 - **Parallel**: false

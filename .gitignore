@@ -4,6 +4,12 @@ projects/
 security_warnings_state_*.json
 session-env/
 
+# Cache and generated files
+mcp-needs-auth-cache.json
+plugins/known_marketplaces.json
+plugins/install-counts-cache.json
+plugins/blocklist.json
+
 # Cache and temporary files
 cache/
 paste-cache/
