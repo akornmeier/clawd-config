@@ -228,9 +228,11 @@
     "superpowers-developing-for-claude-code@superpowers-marketplace": true,
     "superpowers@superpowers-marketplace": true,
     "auth@claude-skills": false,
-    "context7@claude-plugins-official": false,
+    "context7@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": false,
-    "pyright-lsp@claude-plugins-official": false
+    "pyright-lsp@claude-plugins-official": false,
+    "frontend-design@claude-code-plugins": true,
+    "feature-dev@claude-code-plugins": true
   },
   "alwaysThinkingEnabled": true,
   "teammateMode": "in-process",
