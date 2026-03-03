@@ -100,7 +100,16 @@ Deploy builder agents to address the comments:
 5. **Launch next wave**: Check `TaskList` for newly unblocked tasks, repeat from step 1
 6. Continue until all tasks are completed
 
-### Step 5: Reply on PR (Haiku agents in parallel)
+### Step 5: Review & Simplify
+
+After ALL builders complete, dispatch the `code-review-simplify` agent to review and simplify the changed code:
+
+1. Get the list of changed files with `git diff --name-only`
+2. Launch the `code-review-simplify` agent with the changed file list and context that these are PR comment fixes
+3. If the agent reports **NEEDS_FIXES**: apply the fixes before proceeding
+4. If the agent reports **PASS**: proceed to replying on the PR
+
+### Step 6: Reply on PR (Haiku agents in parallel)
 
 After ALL builders complete successfully:
 
@@ -116,7 +125,7 @@ For each addressed comment, launch a parallel **Haiku** agent to:
 
 **Important**: Use the LAST comment ID in each thread (the most recent comment) for the reply endpoint.
 
-### Step 6: Summary
+### Step 7: Summary
 
 After all steps complete, present this report:
 

@@ -343,10 +343,22 @@ Use these files to complete the task:
 
 ### 3. <Continue Pattern>
 
+### N-1. Review & Simplify
+
+- **Task ID**: review-simplify
+- **Depends On**: <all builder Task IDs>
+- **Assigned To**: <team lead (you)>
+- **Agent Type**: code-review-simplify
+- **Parallel**: false
+- Get the list of changed files with `git diff --name-only`
+- Dispatch the `code-review-simplify` agent with the changed file list
+- If NEEDS_FIXES: apply fixes before proceeding to validation
+- If PASS: proceed to final validation
+
 ### N. <Final Validation Task>
 
 - **Task ID**: validate-all
-- **Depends On**: <all previous Task IDs>
+- **Depends On**: review-simplify
 - **Assigned To**: <validator team member>
 - **Agent Type**: <validator agent>
 - **Parallel**: false
