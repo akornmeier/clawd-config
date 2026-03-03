@@ -17,7 +17,8 @@
       "Write",
       "Edit",
       "Bash(chmod:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "git remote:*"
     ],
     "deny": []
   },
@@ -48,6 +49,15 @@
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type PostToolUse --summarize"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run ~/.claude/hooks/validators/tsc_validator.py"
           }
         ]
       }
