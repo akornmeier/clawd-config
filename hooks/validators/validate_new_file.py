@@ -56,7 +56,7 @@ def find_written_files_from_transcript(transcript_path, target_dir, ext):
                     fp = Path(file_path).resolve()
                     resolved_target = target_dir.resolve()
 
-                    if fp.suffix == ext and fp.parent == resolved_target:
+                    if fp.suffix == ext and fp.is_relative_to(resolved_target):
                         written.add(fp)
 
     except (FileNotFoundError, PermissionError, OSError):

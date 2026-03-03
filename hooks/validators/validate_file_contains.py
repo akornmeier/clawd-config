@@ -108,7 +108,6 @@ def main():
 
     # Primary: find files written this session via transcript
     target_files = []
-    used_transcript = False
 
     if transcript_path:
         written_files = find_written_files_from_transcript(transcript_path, search_dir, ext)
@@ -116,7 +115,6 @@ def main():
 
         if existing:
             target_files = existing
-            used_transcript = True
 
     # Fallback: no transcript or no files found in transcript — use most recent file
     if not target_files:

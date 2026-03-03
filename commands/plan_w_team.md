@@ -70,7 +70,7 @@ Select the **most specialized agent** for each task. Never use `general-purpose`
 |---|---|---|
 | `scout-report-suggest` | sonnet | Thorough codebase analysis, root cause investigation |
 | `scout-report-suggest-fast` | haiku | Quick issue identification and resolution suggestions |
-| `Explore` | — | Broad codebase exploration and deep research |
+| `Explore` (read-only) | — | Broad codebase exploration and deep research. Valid `subagent_type` for research tasks. |
 
 ### Agent Selection Rules
 
