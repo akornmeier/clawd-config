@@ -1,0 +1,8 @@
+[
+  {
+    "from": "team-lead",
+    "text": "{\"type\":\"task_assignment\",\"taskId\":\"5\",\"subject\":\"Improve priority skills\",\"description\":\"For each prioritized skill (3-5 skills), improve the SKILL.md following best practices:\\n1. Ensure description includes both WHAT and WHEN with specific trigger phrases\\n2. Add numbered step-by-step instructions with actionable language\\n3. Add 2+ concrete examples showing realistic usage\\n4. Organize with progressive disclosure (essential info first, details later)\\n5. Fix any broken references or missing sections\\n6. For local skills, apply improvements directly\\n7. For marketplace skills, document recommendations only\\n\\nEach skill gets its own assessment of before/after quality.\",\"assignedBy\":\"team-lead\",\"timestamp\":\"2026-03-05T15:55:55.991Z\"}",
+    "timestamp": "2026-03-05T15:55:55.991Z",
+    "read": false
+  }
+]

@@ -1,0 +1,8 @@
+[
+  {
+    "from": "team-lead",
+    "text": "{\"type\":\"task_assignment\",\"taskId\":\"2\",\"subject\":\"Assess local skills quality\",\"description\":\"Deep read all 3 local skills: create-worktree-skill, meta-skill, worktree-manager-skill in ~/.claude/skills/.\\n\\nAssess each against these criteria:\\n- Description: Does it include both WHAT and WHEN? Is it specific enough for triggering?\\n- Instructions: Clear numbered steps? Actionable language?\\n- Examples: Are there 2+ concrete examples?\\n- Progressive disclosure: Is content split appropriately?\\n- Overlap: Does it conflict with other skills?\\n\\nScore each skill 1-5 on: Description Quality, Instruction Clarity, Example Coverage, Organization.\\nProduce ranked list of improvement priorities.\\nSave to specs/skill-assessment-local.md\",\"assignedBy\":\"team-lead\",\"timestamp\":\"2026-03-05T15:45:58.326Z\"}",
+    "timestamp": "2026-03-05T15:45:58.326Z",
+    "read": false
+  }
+]

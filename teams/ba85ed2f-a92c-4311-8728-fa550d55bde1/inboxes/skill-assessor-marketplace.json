@@ -1,0 +1,8 @@
+[
+  {
+    "from": "team-lead",
+    "text": "{\"type\":\"task_assignment\",\"taskId\":\"3\",\"subject\":\"Assess marketplace skills quality\",\"description\":\"Sample all marketplace skills (read description + first section of each SKILL.md) across:\\n- claude-skills (~90 skills)\\n- claude-code-plugins (~10 skills)\\n- claude-plugins-official (~15 skills)\\n- mcp-use (~3 skills)\\n\\nIdentify the top 10 highest-quality skills (to use as exemplars).\\nIdentify the top 10 lowest-quality skills (candidates for improvement).\\nFlag any skills that overlap with local skills.\\nSave to specs/skill-assessment-marketplace.md\",\"assignedBy\":\"team-lead\",\"timestamp\":\"2026-03-05T15:45:58.464Z\"}",
+    "timestamp": "2026-03-05T15:45:58.464Z",
+    "read": false
+  }
+]
