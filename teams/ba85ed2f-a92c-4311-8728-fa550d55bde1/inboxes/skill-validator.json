@@ -1,0 +1,8 @@
+[
+  {
+    "from": "team-lead",
+    "text": "{\"type\":\"task_assignment\",\"taskId\":\"7\",\"subject\":\"Final validation and summary report\",\"description\":\"Verify each improved skill:\\n- YAML frontmatter is valid\\n- Description includes WHAT + WHEN\\n- Instructions have numbered steps\\n- Examples section exists with 2+ examples\\n- No broken file references\\n\\nCompile final report with:\\n- Skills improved (before/after descriptions)\\n- Quality scores (before/after)\\n- Remaining improvement backlog\\nSave to specs/skill-improvement-report.md\",\"assignedBy\":\"team-lead\",\"timestamp\":\"2026-03-05T16:00:25.629Z\"}",
+    "timestamp": "2026-03-05T16:00:25.629Z",
+    "read": false
+  }
+]
