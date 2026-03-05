@@ -19,7 +19,8 @@
       "Write",
       "Edit",
       "Bash(chmod:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(osascript *)"
     ],
     "deny": []
   },

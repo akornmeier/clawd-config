@@ -475,20 +475,42 @@ Each prompt MUST NOT:
 
 # Completion
 
-After all 4 stages, report:
+After all 4 stages, present the summary:
 
 ```
-✅ Design Process Complete
+Design Process Complete
 
 Files created:
 - specs/<name>-prd.md
 - specs/<name>-clarification.md
 - specs/<name>-ux-spec.md
 - specs/<name>-build-prompts.md
-
-Next steps:
-1. Review the build prompts in specs/<name>-build-prompts.md
-2. Run: /plan_w_team specs/<name>-build-prompts.md
-   OR
-3. Run: /build specs/<name>-build-prompts.md
 ```
+
+## Approval Gate
+
+Use AskUserQuestion to present the next step:
+
+```json
+{
+  "questions": [{
+    "question": "Design is complete. Ready to create an implementation plan with /plan_w_team?",
+    "header": "Next Step",
+    "multiSelect": false,
+    "options": [
+      {"label": "Create plan now (Recommended)", "description": "Auto-invoke /plan_w_team with the build-prompts spec"},
+      {"label": "Review specs first", "description": "I want to review the spec files before proceeding"},
+      {"label": "Done for now", "description": "Stop here — I'll plan manually later"}
+    ]
+  }]
+}
+```
+
+### If "Create plan now":
+Invoke the Skill tool with: `skill: "plan_w_team", args: "specs/<name>-build-prompts.md"`
+
+### If "Review specs first":
+List the file paths and stop.
+
+### If "Done for now":
+List the file paths and stop.

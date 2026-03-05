@@ -23,6 +23,7 @@ hooks:
             --contains '## Acceptance Criteria'
             --contains '## Team Orchestration'
             --contains '### Team Members'
+            --contains '## Build-and-Ship Configuration'
 ---
 
 # Plan With Team
@@ -448,6 +449,24 @@ Execute these commands to validate the task is complete:
 ## Notes
 
 <optional additional context, considerations, or dependencies. If new libraries are needed, specify using `uv add`>
+
+## Build-and-Ship Configuration
+
+### Git Configuration
+- **Branch Name**: <feature branch name, e.g., feat/feature-name>
+- **Base Branch**: <base branch to PR against, e.g., main>
+- **Commit Prefix**: <conventional commit type: feat, fix, refactor, chore, etc.>
+
+### Review Configuration
+- **Local Pre-flight**: true
+- **GitHub PR Reviews**: true
+- **Max Review Rounds**: 3
+- **Reviewers**: <GitHub usernames to request, or "auto" for CODEOWNERS>
+
+### Notification Configuration
+- **Desktop Notification**: true
+- **SMS Notification**: true
+- **Notification Phone**: $NOTIFICATION_PHONE
 ```
 
 ## Report
@@ -471,5 +490,5 @@ Team members:
 - <list of team members and their roles (concise)>
 
 When you're ready, you can execute the plan in a new agent by running:
-/build <replace with path to plan>
+/build-and-ship <replace with path to plan>
 ```

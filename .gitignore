@@ -137,6 +137,8 @@ build/
 output
 outputs/
 
+statsig/
+
 extras/
 
 # Claude Code data
