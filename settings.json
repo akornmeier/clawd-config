@@ -293,6 +293,5 @@
   },
   "alwaysThinkingEnabled": true,
   "skipDangerousModePermissionPrompt": true,
-  "teammateMode": "in-process",
-  "effortLevel": "high"
+  "teammateMode": "in-process"
 }

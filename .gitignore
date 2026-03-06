@@ -137,7 +137,8 @@ build/
 output
 outputs/
 
-statsig/*
+statsig/
+teams/
 
 extras/
 
