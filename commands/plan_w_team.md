@@ -3,26 +3,6 @@ description: Creates a concise engineering implementation plan based on user req
 argument-hint: [user prompt] [orchestration prompt]
 model: opus
 disallowed-tools: Task, EnterPlanMode
-hooks:
-  Stop:
-    - hooks:
-        - type: command
-          command: >-
-            uv run $CLAUDE_PROJECT_DIR/hooks/validators/validate_new_file.py
-            --directory specs
-            --extension .md
-        - type: command
-          command: >-
-            uv run $CLAUDE_PROJECT_DIR/hooks/validators/validate_file_contains.py
-            --directory specs
-            --extension .md
-            --contains '## Task Description'
-            --contains '## Objective'
-            --contains '## Relevant Files'
-            --contains '## Step by Step Tasks'
-            --contains '## Acceptance Criteria'
-            --contains '## Team Orchestration'
-            --contains '### Team Members'
 ---
 
 # Plan With Team
@@ -42,35 +22,35 @@ Select the **most specialized agent** for each task. Never use `general-purpose`
 
 ### Builders (can write code)
 
-| Agent | Model | Use When | Key Enforcement |
-|---|---|---|---|
-| `tdd-builder` | opus | **Default for all TypeScript implementation.** New features, any task requiring tests. | Test-first required, lint + types on every write, 80% coverage gate |
-| `ts-builder` | opus | Trivial TS fixes (< 5 lines, no new logic), type annotations, refactors without new tests | Lint + types on every write |
-| `ui-builder` | opus | React/Tailwind components, Storybook stories, accessibility work | Lint + types + Storybook validation |
-| `builder` | opus | Non-TypeScript work (scripts, configs, markdown, YAML) or truly generic tasks | Basic validation |
+| Agent         | Model | Use When                                                                                  | Key Enforcement                                                     |
+| ------------- | ----- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `tdd-builder` | opus  | **Default for all TypeScript implementation.** New features, any task requiring tests.    | Test-first required, lint + types on every write, 80% coverage gate |
+| `ts-builder`  | opus  | Trivial TS fixes (< 5 lines, no new logic), type annotations, refactors without new tests | Lint + types on every write                                         |
+| `ui-builder`  | opus  | React/Tailwind components, Storybook stories, accessibility work                          | Lint + types + Storybook validation                                 |
+| `builder`     | opus  | Non-TypeScript work (scripts, configs, markdown, YAML) or truly generic tasks             | Basic validation                                                    |
 
 ### Validators (read-only, cannot write code)
 
-| Agent | Model | Use When |
-|---|---|---|
-| `ts-validator` | sonnet | Verify TS code quality, test coverage, architecture after builders finish |
-| `ui-validator` | sonnet | Verify design tokens, WCAG accessibility, component patterns after UI builders |
-| `coverage-checker` | haiku | Quick coverage threshold check (80% line coverage) |
-| `code-review-simplify` | sonnet | Pre-validation review: bugs, quality, simplification of changed code |
+| Agent                  | Model  | Use When                                                                       |
+| ---------------------- | ------ | ------------------------------------------------------------------------------ |
+| `ts-validator`         | sonnet | Verify TS code quality, test coverage, architecture after builders finish      |
+| `ui-validator`         | sonnet | Verify design tokens, WCAG accessibility, component patterns after UI builders |
+| `coverage-checker`     | haiku  | Quick coverage threshold check (80% line coverage)                             |
+| `code-review-simplify` | sonnet | Pre-validation review: bugs, quality, simplification of changed code           |
 
 ### Infrastructure & Operations
 
-| Agent | Model | Use When |
-|---|---|---|
+| Agent              | Model  | Use When                                      |
+| ------------------ | ------ | --------------------------------------------- |
 | `turborepo-runner` | sonnet | Build, test, or lint across monorepo packages |
 
 ### Research & Scouting (read-only)
 
-| Agent | Model | Use When |
-|---|---|---|
-| `scout-report-suggest` | sonnet | Thorough codebase analysis, root cause investigation |
-| `scout-report-suggest-fast` | haiku | Quick issue identification and resolution suggestions |
-| `Explore` (read-only) | — | Broad codebase exploration and deep research. Valid `subagent_type` for research tasks. |
+| Agent                       | Model  | Use When                                                                                |
+| --------------------------- | ------ | --------------------------------------------------------------------------------------- |
+| `scout-report-suggest`      | sonnet | Thorough codebase analysis, root cause investigation                                    |
+| `scout-report-suggest-fast` | haiku  | Quick issue identification and resolution suggestions                                   |
+| `Explore` (read-only)       | —      | Broad codebase exploration and deep research. Valid `subagent_type` for research tasks. |
 
 ### Agent Selection Rules
 
@@ -448,6 +428,27 @@ Execute these commands to validate the task is complete:
 ## Notes
 
 <optional additional context, considerations, or dependencies. If new libraries are needed, specify using `uv add`>
+
+## Build-and-Ship Configuration
+
+### Git Configuration
+
+- **Branch Name**: <feature branch name, e.g., feat/feature-name>
+- **Base Branch**: <base branch to PR against, e.g., main>
+- **Commit Prefix**: <conventional commit type: feat, fix, refactor, chore, etc.>
+
+### Review Configuration
+
+- **Local Pre-flight**: true
+- **GitHub PR Reviews**: true
+- **Max Review Rounds**: 3
+- **Reviewers**: <GitHub usernames to request, or "auto" for CODEOWNERS>
+
+### Notification Configuration
+
+- **Desktop Notification**: true
+- **SMS Notification**: true
+- **Notification Phone**: $NOTIFICATION_PHONE
 ```
 
 ## Report
@@ -471,5 +472,5 @@ Team members:
 - <list of team members and their roles (concise)>
 
 When you're ready, you can execute the plan in a new agent by running:
-/build <replace with path to plan>
+/build-and-ship <replace with path to plan>
 ```

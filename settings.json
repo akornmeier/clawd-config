@@ -19,7 +19,8 @@
       "Write",
       "Edit",
       "Bash(chmod:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(osascript *)"
     ],
     "deny": []
   },
@@ -292,6 +293,5 @@
   },
   "alwaysThinkingEnabled": true,
   "skipDangerousModePermissionPrompt": true,
-  "teammateMode": "in-process",
-  "effortLevel": "high"
+  "teammateMode": "in-process"
 }
