@@ -7,6 +7,7 @@
     "allow": [
       "Bash(gh pr:*)",
       "Bash(gh api:*)",
+      "Bash(git:*)",
       "Bash(mkdir:*)",
       "Bash(uv:*)",
       "Bash(find:*)",
