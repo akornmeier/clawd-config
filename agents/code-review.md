@@ -37,7 +37,23 @@ improve code quality before the validate stage runs.
 2. If invoked with specific file paths, use those instead
 3. Filter to only code files (skip configs, lockfiles, generated files)
 
-### Phase 2: Code Review
+### Phase 2: Simplification
+
+Run the /simplify skill on changed files:
+
+1. These simplifications should only be scoped to changes that:
+   - Reduce unnecessary complexity and nesting
+   - Eliminate redundant code and abstractions
+   - Improve variable and function naming for clarity
+   - Consolidate related logic
+   - Remove unnecessary comments describing obvious code
+   - Avoid nested ternaries — prefer switch/if-else
+   - Choose clarity over brevity
+
+2. **Preserve all functionality** — never change what code does, only how it does it
+3. **Stay scoped** — only touch files identified in Phase 1
+
+### Phase 3: Code Review
 
 For each changed file:
 
@@ -53,22 +69,6 @@ For each changed file:
 4. Score each finding 0-100 confidence
 5. **Only report findings with confidence ≥ 80**
 
-### Phase 3: Simplification
-
-After review (and only if no Critical issues block it):
-
-1. Apply simplifications to the changed code:
-   - Reduce unnecessary complexity and nesting
-   - Eliminate redundant code and abstractions
-   - Improve variable and function naming for clarity
-   - Consolidate related logic
-   - Remove unnecessary comments describing obvious code
-   - Avoid nested ternaries — prefer switch/if-else
-   - Choose clarity over brevity
-
-2. **Preserve all functionality** — never change what code does, only how it does it
-3. **Stay scoped** — only touch files identified in Phase 1
-
 ### Phase 4: Report
 
 Output a structured report:
@@ -78,12 +78,15 @@ Output a structured report:
 ### Review Findings
 
 **Critical** (must fix before proceeding):
+
 - [ ] `file:line` — [description] (confidence: XX)
 
 **Important** (should fix):
+
 - [ ] `file:line` — [description] (confidence: XX)
 
 **Suggestions** (nice to have):
+
 - [ ] `file:line` — [description] (confidence: XX)
 
 ### Simplifications Applied
@@ -91,6 +94,7 @@ Output a structured report:
 - `file:line-range` — [what was simplified and why]
 
 ### Files Reviewed
+
 - [file1] — N findings, M simplifications
 - [file2] — N findings, M simplifications
 

@@ -3,6 +3,26 @@ description: Creates a concise engineering implementation plan based on user req
 argument-hint: [user prompt] [orchestration prompt]
 model: opus
 disallowed-tools: Task, EnterPlanMode
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: >-
+            uv run $CLAUDE_PROJECT_DIR/.claude/hooks/validators/validate_new_file.py
+            --directory specs
+            --extension .md
+        - type: command
+          command: >-
+            uv run $CLAUDE_PROJECT_DIR/.claude/hooks/validators/validate_file_contains.py
+            --directory specs
+            --extension .md
+            --contains '## Task Description'
+            --contains '## Objective'
+            --contains '## Relevant Files'
+            --contains '## Step by Step Tasks'
+            --contains '## Acceptance Criteria'
+            --contains '## Team Orchestration'
+            --contains '### Team Members'
 ---
 
 # Plan With Team
@@ -15,53 +35,7 @@ USER_PROMPT: $1
 ORCHESTRATION_PROMPT: $2 - (Optional) Guidance for team assembly, task structure, and execution strategy
 PLAN_OUTPUT_DIRECTORY: `specs/`
 TEAM_MEMBERS: `.claude/agents/team/*.md`
-
-## Agent Catalog
-
-Select the **most specialized agent** for each task. Never use `general-purpose` or `builder` when a specialized agent exists for the work.
-
-### Builders (can write code)
-
-| Agent         | Model | Use When                                                                                  | Key Enforcement                                                     |
-| ------------- | ----- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `tdd-builder` | opus  | **Default for all TypeScript implementation.** New features, any task requiring tests.    | Test-first required, lint + types on every write, 80% coverage gate |
-| `ts-builder`  | opus  | Trivial TS fixes (< 5 lines, no new logic), type annotations, refactors without new tests | Lint + types on every write                                         |
-| `ui-builder`  | opus  | React/Tailwind components, Storybook stories, accessibility work                          | Lint + types + Storybook validation                                 |
-| `builder`     | opus  | Non-TypeScript work (scripts, configs, markdown, YAML) or truly generic tasks             | Basic validation                                                    |
-
-### Validators (read-only, cannot write code)
-
-| Agent                  | Model  | Use When                                                                       |
-| ---------------------- | ------ | ------------------------------------------------------------------------------ |
-| `ts-validator`         | sonnet | Verify TS code quality, test coverage, architecture after builders finish      |
-| `ui-validator`         | sonnet | Verify design tokens, WCAG accessibility, component patterns after UI builders |
-| `coverage-checker`     | haiku  | Quick coverage threshold check (80% line coverage)                             |
-| `code-review-simplify` | sonnet | Pre-validation review: bugs, quality, simplification of changed code           |
-
-### Infrastructure & Operations
-
-| Agent              | Model  | Use When                                      |
-| ------------------ | ------ | --------------------------------------------- |
-| `turborepo-runner` | sonnet | Build, test, or lint across monorepo packages |
-
-### Research & Scouting (read-only)
-
-| Agent                       | Model  | Use When                                                                                |
-| --------------------------- | ------ | --------------------------------------------------------------------------------------- |
-| `scout-report-suggest`      | sonnet | Thorough codebase analysis, root cause investigation                                    |
-| `scout-report-suggest-fast` | haiku  | Quick issue identification and resolution suggestions                                   |
-| `Explore` (read-only)       | —      | Broad codebase exploration and deep research. Valid `subagent_type` for research tasks. |
-
-### Agent Selection Rules
-
-1. **TypeScript implementation** → `tdd-builder` (default) or `ts-builder` (trivial fixes only)
-2. **React/UI components** → `ui-builder`
-3. **Non-TS work** (configs, scripts, markdown) → `builder`
-4. **Post-build validation** → `ts-validator`, `ui-validator`, or `coverage-checker`
-5. **Pre-validation review** → `code-review-simplify`
-6. **Monorepo operations** → `turborepo-runner`
-7. **Investigation without changes** → `scout-report-suggest` or `scout-report-suggest-fast`
-8. **Never use `general-purpose`** for implementation — always pick a specialized builder
+GENERAL_PURPOSE_AGENT: `general-purpose`
 
 ## Instructions
 
@@ -167,38 +141,17 @@ TaskList({}); // Filter by owner to find assigned work
 
 #### Agent Deployment with Task Tool
 
-**Task** - Deploy an agent to do work. Always select the agent type from the `Agent Catalog`:
+**Task** - Deploy an agent to do work:
 
 ```typescript
-// TypeScript feature → tdd-builder (enforces tests + types + coverage)
 Task({
   description: "Implement auth endpoints",
   prompt: "Implement the authentication endpoints as specified in Task 1...",
-  subagent_type: "tdd-builder",
+  subagent_type: "general-purpose",
+  model: "opus", // or "opus" for complex work, "haiku" for VERY simple
   run_in_background: false, // true for parallel execution
 });
 // Returns: agentId (e.g., "a1b2c3")
-
-// React UI work → ui-builder (enforces Storybook + accessibility)
-Task({
-  description: "Build login form component",
-  prompt: "Create the LoginForm component with Tailwind styling...",
-  subagent_type: "ui-builder",
-});
-
-// Trivial TS fix → ts-builder (lint + types, no TDD gate)
-Task({
-  description: "Fix type annotation",
-  prompt: "Add missing return type to getUserById...",
-  subagent_type: "ts-builder",
-});
-
-// Non-TS work → builder (scripts, configs, markdown)
-Task({
-  description: "Update CI config",
-  prompt: "Add the new test stage to the GitHub Actions workflow...",
-  subagent_type: "builder",
-});
 ```
 
 #### Resume Pattern
@@ -210,7 +163,7 @@ Store the agentId to continue an agent's work with preserved context:
 Task({
   description: "Build user service",
   prompt: "Create the user service with CRUD operations...",
-  subagent_type: "tdd-builder",
+  subagent_type: "general-purpose",
 });
 // Returns: agentId: "abc123"
 
@@ -218,7 +171,7 @@ Task({
 Task({
   description: "Continue user service",
   prompt: "Now add input validation to the endpoints you created...",
-  subagent_type: "tdd-builder",
+  subagent_type: "general-purpose",
   resume: "abc123", // Continues with previous context
 });
 ```
@@ -233,11 +186,11 @@ When to resume vs start fresh:
 Run multiple agents simultaneously with `run_in_background: true`:
 
 ```typescript
-// Launch multiple agents in parallel — use the right specialist for each
+// Launch multiple agents in parallel
 Task({
   description: "Build API endpoints",
   prompt: "...",
-  subagent_type: "tdd-builder", // TS backend → tdd-builder
+  subagent_type: "general-purpose",
   run_in_background: true,
 });
 // Returns immediately with agentId and output_file path
@@ -245,7 +198,7 @@ Task({
 Task({
   description: "Build frontend components",
   prompt: "...",
-  subagent_type: "ui-builder", // React UI → ui-builder
+  subagent_type: "general-purpose",
   run_in_background: true,
 });
 // Both agents now working simultaneously
@@ -282,7 +235,7 @@ IMPORTANT: **PLANNING ONLY** - Do not execute, build, or deploy. Output is a pla
 1. Analyze Requirements - Parse the USER_PROMPT to understand the core problem and desired outcome
 2. Understand Codebase - Without subagents, directly understand existing patterns, architecture, and relevant files
 3. Design Solution - Develop technical approach including architecture decisions and implementation strategy
-4. Define Team Members - Use `ORCHESTRATION_PROMPT` (if provided) to guide team composition. Select agents from the `Agent Catalog` based on the work type — always prefer specialized agents over generic ones. Document in plan.
+4. Define Team Members - Use `ORCHESTRATION_PROMPT` (if provided) to guide team composition. Identify from `.claude/agents/*.md`, try to map the best agent for the task or use `general-purpose` as a last resort. Document in plan.
 5. Define Step by Step Tasks - Use `ORCHESTRATION_PROMPT` (if provided) to guide task granularity and parallel/sequential structure. Write out tasks with IDs, dependencies, assignments. Document in plan.
 6. Generate Filename - Create a descriptive kebab-case filename based on the plan's main topic
 7. Save Plan - Write the plan to `PLAN_OUTPUT_DIRECTORY/<filename>.md`
@@ -357,7 +310,7 @@ Use these files to complete the task:
 - Builder
   - Name: <unique name for this builder - this allows you and other team members to reference THIS builder by name. Take note there may be multiple builders, the name make them unique.>
   - Role: <the single role and focus of this builder will play>
-  - Agent Type: <select from the Agent Catalog based on the work type — e.g., tdd-builder for TS features, ui-builder for React components, ts-builder for trivial TS fixes, builder for non-TS work>
+  - Agent Type: <the subagent type of this builder, you'll specify based on the name in TEAM_MEMBERS file or GENERAL_PURPOSE_AGENT if you want to use a general-purpose agent>
   - Resume: <default true. This lets the agent continue working with the same context. Pass false if you want to start fresh with a new context.>
 - <continue with additional team members as needed in the same format as above>
 
@@ -373,7 +326,7 @@ Use these files to complete the task:
 - **Task ID**: <unique kebab-case identifier, e.g., "setup-database">
 - **Depends On**: <Task ID(s) this depends on, or "none" if no dependencies>
 - **Assigned To**: <team member name from Team Members section>
-- **Agent Type**: <select from Agent Catalog based on work type — never use general-purpose for implementation>
+- **Agent Type**: <subagent from TEAM_MEMBERS file or GENERAL_PURPOSE_AGENT if you want to use a general-purpose agent>
 - **Parallel**: <true if can run alongside other tasks, false if must be sequential>
 - <specific action to complete>
 - <specific action to complete>
@@ -383,36 +336,24 @@ Use these files to complete the task:
 - **Task ID**: <unique-id>
 - **Depends On**: <previous Task ID, e.g., "setup-database">
 - **Assigned To**: <team member name>
-- **Agent Type**: <select from Agent Catalog based on work type — never use general-purpose for implementation>
+- **Agent Type**: <subagent type from TEAM_MEMBERS file or GENERAL_PURPOSE_AGENT if you want to use a general-purpose agent>
 - **Parallel**: <true/false>
 - <specific action>
 - <specific action>
 
 ### 3. <Continue Pattern>
 
-### N-1. Review & Simplify
-
-- **Task ID**: review-simplify
-- **Depends On**: <all builder Task IDs>
-- **Assigned To**: <team lead (you)>
-- **Agent Type**: code-review-simplify
-- **Parallel**: false
-- Get the list of changed files with `git diff --name-only`
-- Dispatch the `code-review-simplify` agent with the changed file list
-- If NEEDS_FIXES: apply fixes before proceeding to validation
-- If PASS: proceed to final validation
-
 ### N. <Final Validation Task>
 
 - **Task ID**: validate-all
-- **Depends On**: <all previous Task IDs, including review-simplify>
+- **Depends On**: <all previous Task IDs>
 - **Assigned To**: <validator team member>
 - **Agent Type**: <validator agent>
 - **Parallel**: false
 - Run all validation commands
 - Verify acceptance criteria met
 
-<continue with additional tasks as needed. Agent types must exist in the Agent Catalog or .claude/agents/\*.md>
+<continue with additional tasks as needed. Agent types must exist in .claude/agents/team/\*.md>
 
 ## Acceptance Criteria
 
@@ -428,27 +369,6 @@ Execute these commands to validate the task is complete:
 ## Notes
 
 <optional additional context, considerations, or dependencies. If new libraries are needed, specify using `uv add`>
-
-## Build-and-Ship Configuration
-
-### Git Configuration
-
-- **Branch Name**: <feature branch name, e.g., feat/feature-name>
-- **Base Branch**: <base branch to PR against, e.g., main>
-- **Commit Prefix**: <conventional commit type: feat, fix, refactor, chore, etc.>
-
-### Review Configuration
-
-- **Local Pre-flight**: true
-- **GitHub PR Reviews**: true
-- **Max Review Rounds**: 3
-- **Reviewers**: <GitHub usernames to request, or "auto" for CODEOWNERS>
-
-### Notification Configuration
-
-- **Desktop Notification**: true
-- **SMS Notification**: true
-- **Notification Phone**: $NOTIFICATION_PHONE
 ```
 
 ## Report
@@ -472,5 +392,5 @@ Team members:
 - <list of team members and their roles (concise)>
 
 When you're ready, you can execute the plan in a new agent by running:
-/build-and-ship <replace with path to plan>
+/build <replace with path to plan>
 ```
