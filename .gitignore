@@ -8,6 +8,7 @@ session-env/
 mcp-needs-auth-cache.json
 plugins/known_marketplaces.json
 plugins/install-counts-cache.json
+plugins/installed_plugins.json
 plugins/blocklist.json
 
 # Cache and temporary files
