@@ -11,7 +11,7 @@ args:
     required: false
 ---
 
-Conduct a holistic design critique by **actually viewing the interface** using the Playwright browser. This is a visual audit-not a code review.
+Conduct a holistic design critique by **actually viewing the interface** using the Playwright browser. This is a visual audit — not a code review.
 
 **First**: Use the frontend-design skill for design principles and anti-patterns.
 
@@ -36,10 +36,10 @@ Use the Playwright MCP tools to view the actual interface:
 
 2. **Get accessibility snapshot** using `mcp__playwright__browser_snapshot`:
    - This provides structural information about the page
-   - Use this to understand the elemen hierarchy
+   - Use this to understand the element hierarchy
 
 3. **Check console for errors** using `mcp__playwright__browser_console_messages`:
-   - Note any Javascript errors that might indicate broken functionality
+   - Note any JavaScript errors that might indicate broken functionality
 
 ### Step 3: Interactive Exploration
 

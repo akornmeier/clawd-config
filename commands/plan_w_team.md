@@ -148,7 +148,7 @@ Task({
   description: "Implement auth endpoints",
   prompt: "Implement the authentication endpoints as specified in Task 1...",
   subagent_type: "general-purpose",
-  model: "opus", // or "opus" for complex work, "haiku" for VERY simple
+  model: "sonnet", // or "opus" for complex work, "haiku" for VERY simple
   run_in_background: false, // true for parallel execution
 });
 // Returns: agentId (e.g., "a1b2c3")
