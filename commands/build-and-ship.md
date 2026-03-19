@@ -55,6 +55,7 @@ Execute the plan's tasks using subagents.
 7. Continue deploying newly unblocked tasks until all implementation tasks are done
 
 ### Error Handling
+
 - If a subagent fails, retry the task once
 - If still fails, report the failure and continue with remaining tasks
 
@@ -62,22 +63,22 @@ Execute the plan's tasks using subagents.
 
 ## Phase 2: Local Pre-flight Review
 
-Run `code-review-simplify` on all changed files before committing.
+Run `code-review` on all changed files before committing.
 
 ### Steps
 
 1. Get changed files: run `git diff --name-only` via Bash
-2. Dispatch the `code-review-simplify` agent with the changed file list:
+2. Dispatch the `code-review` agent with the changed file list:
    ```
    Agent({
      description: "Pre-flight code review",
      prompt: "Review and simplify the following changed files: <file list>. These changes implement: <plan objective>.",
-     subagent_type: "code-review-simplify"
+     subagent_type: "code-review"
    })
    ```
 3. If result is **NEEDS_FIXES**:
    - Dispatch the appropriate builder agent to apply fixes
-   - Re-run `code-review-simplify`
+   - Re-run `code-review`
    - Maximum 3 rounds
    - If issues remain after 3 rounds, report them but proceed
 4. If result is **PASS**: proceed to Phase 3
@@ -129,6 +130,7 @@ Run `gh pr checks <PR_NUMBER> --watch` with a 10-minute timeout.
 ### Step 4.2: Poll for Review Comments
 
 Dispatch the `pr-review-monitor` agent:
+
 ```
 Agent({
   description: "Monitor PR for reviews",
@@ -143,6 +145,7 @@ Agent({
 ### Step 4.3: Triage Comments
 
 When the monitor returns comments, categorize each thread (reuse `/pr-fix` Step 2 logic):
+
 - **actionable** — Requests a specific code change → fix it
 - **question** — Needs human judgment → SKIP (note for report)
 - **resolved** — Already addressed → SKIP
@@ -152,6 +155,7 @@ When the monitor returns comments, categorize each thread (reuse `/pr-fix` Step 
 ### Step 4.4: Fix Actionable Comments
 
 For each actionable comment:
+
 1. Deploy builder subagent with:
    - The review comment text (verbatim)
    - File path and line range
@@ -162,11 +166,12 @@ For each actionable comment:
 
 ### Step 4.5: Re-run Local Review
 
-Dispatch `code-review-simplify` on the fix changes (same as Phase 2).
+Dispatch `code-review` on the fix changes (same as Phase 2).
 
 ### Step 4.6: Commit and Push Fixes
 
 Dispatch `git-ops` agent for fix commits:
+
 - Stage only the changed fix files
 - Commit message: `fix(<scope>): address PR review comments`
 - Push to the same branch
@@ -174,9 +179,11 @@ Dispatch `git-ops` agent for fix commits:
 ### Step 4.7: Reply on PR
 
 For each addressed comment, dispatch a Haiku agent to reply:
+
 ```bash
 gh api repos/{owner}/{repo}/pulls/{PR_NUMBER}/comments/{comment_id}/replies -f body="Addressed — <1-sentence summary>"
 ```
+
 Use the LAST comment ID in each thread for the reply endpoint.
 
 ### Step 4.8: Re-poll
@@ -190,6 +197,7 @@ Use the LAST comment ID in each thread for the reply endpoint.
   - All CI checks passing → success
 
 ### Error Handling
+
 - GitHub API rate limit → exponential backoff (60s → 120s → 240s)
 - No reviewers respond in 15 min → proceed with notification that review is pending
 - Fix causes new comments → track seen IDs, max 3 rounds total
