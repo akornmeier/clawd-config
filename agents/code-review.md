@@ -68,8 +68,8 @@ changed.
 | Detected Stack | Changed File Types | Skill to Invoke | What It Checks |
 |---|---|---|---|
 | React + TypeScript | `.tsx`, `.jsx` | `/vercel:react-best-practices` | Component structure, hooks, a11y, performance, TS patterns, design system |
-| React (any) | `.tsx`, `.jsx` with component logic | `/vercel-composition-patterns` | Compound components, boolean prop proliferation, state management, context patterns |
-| React + Next.js or Vercel | `.tsx`, `.jsx`, `.ts` | `/vercel-react-best-practices` | 58 rules: waterfall elimination, bundle size, server perf, re-render optimization |
+| React (any) | `.tsx`, `.jsx` with component logic | `/vercel:composition-patterns` | Compound components, boolean prop proliferation, state management, context patterns |
+| React + Next.js or Vercel | `.tsx`, `.jsx`, `.ts` | `/vercel:react-best-practices` | 58 rules: waterfall elimination, bundle size, server perf, re-render optimization |
 | Next.js (App Router) | `page.tsx`, `layout.tsx`, `route.ts`, server actions, proxy/middleware | `/vercel:nextjs` | App Router conventions, async APIs, Server Components, caching, proxy.ts |
 
 **Detection heuristics:**
@@ -169,7 +169,7 @@ Group findings by skill when framework skills were applied:
 **[composition-patterns]**
 - [ ] `file:line` — [finding]
 
-**[vercel-react-best-practices]**
+**[vercel:react-best-practices]**
 - [ ] `file:line` — [finding]
 
 *(Omit sections for skills that produced no findings)*

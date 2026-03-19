@@ -9,6 +9,7 @@ Exit codes:
   2 = blocked — missing phases (stderr explains which)
 """
 import json
+import re
 import sys
 
 
@@ -71,7 +72,7 @@ def check_phase_2(tool_uses, tool_results):
         if name == "Agent":
             subagent = inp.get("subagent_type", "")
             prompt = inp.get("prompt", "")
-            if subagent == "code-review" or "code-review" in prompt:
+            if subagent == "code-review" or re.search(r"\bcode-review(?!-)", prompt):
                 has_review_dispatch = True
 
     # Check tool results for PASS
