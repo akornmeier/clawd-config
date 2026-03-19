@@ -60,7 +60,7 @@ A stop hook (`build_ship_stop_gate.py`) prevents the pipeline from exiting befor
 | Agent               | Model  | Purpose                                                           |
 | ------------------- | ------ | ----------------------------------------------------------------- |
 | `git-ops`           | Sonnet | Git operations only (stage, commit, push, PR). Cannot write code. |
-| `pr-review-monitor` | Haiku  | Polls GitHub for PR review comments. Read-only.                   |
+| `pr-review-monitor` | Haiku  | Performs a single check for new PR review comments. Intended to be called repeatedly via /loop. Read-only. |
 
 ### SMS Notifications
 

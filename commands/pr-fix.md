@@ -80,7 +80,7 @@ Dispatch builder agents for all parallel groups simultaneously:
 Check the scope of changes:
 
 1. Run `git diff --stat` to see what changed
-2. **If 3+ files changed OR 50+ lines changed**: dispatch the `code-review-simplify` agent (`mode: "bypassPermissions"`) to review the changes. If it reports fixes needed, apply them.
+2. **If 3+ files changed OR 50+ lines changed**: dispatch the `code-review` agent (`mode: "bypassPermissions"`) to review the changes. If it reports fixes needed, apply them.
 3. **If fewer changes**: skip the review — the builders' targeted edits are low-risk.
 
 ### Step 4: Commit, Push & Reply

@@ -47,7 +47,7 @@ gh pr checks {pr_number}
 ## Output Format
 
 ```
-CHECK_RESULT: NEW_COMMENTS | NO_NEW_COMMENTS | CI_PASSING
+CHECK_RESULT: NEW_COMMENTS | NO_NEW_COMMENTS
 
 COMMENTS:
 - comment_id: <id>
