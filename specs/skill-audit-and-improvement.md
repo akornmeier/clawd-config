@@ -7,6 +7,7 @@ Conduct a comprehensive audit of all skills available in the `~/.claude/` config
 ## Objective
 
 When complete, we will have:
+
 1. A full inventory of every skill in the configuration, organized by source
 2. Quality assessments and improvement recommendations for each skill
 3. Measurable performance baselines (triggering accuracy, output quality) for priority skills
@@ -15,6 +16,7 @@ When complete, we will have:
 ## Problem Statement
 
 With 100+ skills installed across 4 plugin marketplaces and 3 local skill directories, there is no visibility into:
+
 - Which skills are high-quality vs. poorly written
 - Whether skill descriptions trigger accurately (precision and recall)
 - Which skills overlap or conflict with each other
@@ -29,24 +31,30 @@ Use a phased approach: first catalog all skills (automated scan), then assess qu
 Use these files to complete the task:
 
 **Local Skills (user-authored, highest priority for improvement):**
+
 - `~/.claude/skills/create-worktree-skill/SKILL.md` — Worktree creation skill, delegates to slash command
 - `~/.claude/skills/meta-skill/SKILL.md` — Skill creation helper, includes docs/ references
 - `~/.claude/skills/worktree-manager-skill/SKILL.md` — Comprehensive worktree lifecycle manager with 4 reference files
 
 **Marketplace Skills (claude-skills — ~90 skills):**
+
 - `~/.claude/plugins/marketplaces/claude-skills/skills/*/SKILL.md` — Large collection of domain-specific skills
 
 **Marketplace Skills (claude-code-plugins — 10 skills):**
+
 - `~/.claude/plugins/marketplaces/claude-code-plugins/plugins/*/skills/*/SKILL.md` — Plugin development, frontend-design, migrations
 
 **Marketplace Skills (claude-plugins-official — 15 skills):**
+
 - `~/.claude/plugins/marketplaces/claude-plugins-official/plugins/*/skills/*/SKILL.md` — Official Anthropic plugin skills
 - `~/.claude/plugins/marketplaces/claude-plugins-official/external_plugins/*/skills/*/SKILL.md` — Third-party official skills
 
 **Marketplace Skills (mcp-use — 3 skills):**
+
 - `~/.claude/plugins/marketplaces/mcp-use/skills/*/SKILL.md` — MCP builder and app builder skills
 
 **Skill Creator (evaluation infrastructure):**
+
 - `~/.claude/plugins/marketplaces/claude-plugins-official/plugins/skill-creator/skills/skill-creator/SKILL.md` — Main skill-creator skill
 - Eval viewer, grader agents, benchmark scripts referenced within
 
@@ -69,6 +77,7 @@ Read each skill's SKILL.md body. Assess against best practices: description qual
 ### Phase 3: Performance Measurement & Improvement
 
 For priority skills (local skills first, then underperformers), use the `/skill-creator` workflow to:
+
 - Generate trigger eval queries
 - Run description optimization
 - Create test cases and run eval benchmarks
@@ -238,10 +247,10 @@ For priority skills (local skills first, then underperformers), use the `/skill-
 - **Task ID**: review-simplify
 - **Depends On**: improve-remaining
 - **Assigned To**: Team Lead (you)
-- **Agent Type**: code-review-simplify
+- **Agent Type**: code-review
 - **Parallel**: false
 - Get the list of changed files with `git diff --name-only`
-- Dispatch the `code-review-simplify` agent with the changed file list
+- Dispatch the `code-review` agent with the changed file list
 - If NEEDS_FIXES: apply fixes before proceeding to validation
 - If PASS: proceed to final validation
 

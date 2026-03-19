@@ -15,11 +15,11 @@ This directory contains configuration and customization files for [Claude Code](
 | `settings.json`         | User preferences and configuration                      |
 | `agents/`               | Custom agent definitions for specialized tasks          |
 | `commands/`             | Custom slash commands                                   |
-| `hooks/`                | Event hooks that run on tool calls and lifecycle events  |
+| `hooks/`                | Event hooks that run on tool calls and lifecycle events |
 | `plugins/`              | Installed plugins extending functionality               |
 | `skills/`               | Custom skills providing domain-specific workflows       |
 | `plans/`                | Implementation plans for projects                       |
-| `.env.sample`           | Template for required environment variables              |
+| `.env.sample`           | Template for required environment variables             |
 | `statusline-command.sh` | Custom statusline script                                |
 
 ### Ignored (private/transient)
@@ -40,7 +40,7 @@ This directory contains configuration and customization files for [Claude Code](
 An end-to-end autonomous development pipeline that takes a plan file and executes all stages from implementation to PR creation. The pipeline enforces a 5-phase workflow:
 
 1. **Implementation** — Executes plan tasks via subagents (parallel where possible)
-2. **Local Pre-flight Review** — Runs `code-review-simplify` on all changes before committing
+2. **Local Pre-flight Review** — Runs `code-review` on all changes before committing
 3. **Git Operations** — Stages, commits, pushes, and creates a PR via the `git-ops` agent
 4. **PR Review Loop** — Monitors for reviewer comments, fixes actionable ones, and replies (up to 3 rounds)
 5. **Notification** — Sends macOS desktop notification and SMS (via Twilio) when the PR is ready for human review
@@ -57,10 +57,10 @@ A stop hook (`build_ship_stop_gate.py`) prevents the pipeline from exiting befor
 
 ### Specialized Agents
 
-| Agent               | Model  | Purpose                                                        |
-| ------------------- | ------ | -------------------------------------------------------------- |
+| Agent               | Model  | Purpose                                                           |
+| ------------------- | ------ | ----------------------------------------------------------------- |
 | `git-ops`           | Sonnet | Git operations only (stage, commit, push, PR). Cannot write code. |
-| `pr-review-monitor` | Haiku  | Polls GitHub for PR review comments. Read-only.                |
+| `pr-review-monitor` | Haiku  | Polls GitHub for PR review comments. Read-only.                   |
 
 ### SMS Notifications
 
