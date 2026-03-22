@@ -1,6 +1,7 @@
 {
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_SPAWN_BACKEND": "tmux",
     "ENABLE_TOOL_SEARCH": "true"
   },
   "permissions": {
@@ -291,5 +292,5 @@
   },
   "alwaysThinkingEnabled": true,
   "skipDangerousModePermissionPrompt": true,
-  "teammateMode": "in-process"
+  "teammateMode": "tmux"
 }
