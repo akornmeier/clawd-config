@@ -247,8 +247,8 @@ For priority skills (local skills first, then underperformers), use the `/skill-
 - **Task ID**: review-simplify
 - **Depends On**: improve-remaining
 - **Assigned To**: Team Lead (you)
-  - **Agent Type**: code-review
-  - **Dispatch**: `code-review` agent with the changed file list
+- **Agent Type**: code-review
+- **Dispatch**: `code-review` agent with the changed file list
 - **Parallel**: false
 - Get the list of changed files with `git diff --name-only`
 - If NEEDS_FIXES: apply fixes before proceeding to validation
