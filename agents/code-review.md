@@ -132,7 +132,7 @@ When invoking framework skills:
   "missing memoization") and a framework skill flags the same line with more
   specific guidance, keep the framework-specific version and drop the generic one
 - Tag framework findings with the skill source for traceability, e.g.:
-  `[react-best-practices]` or `[composition-patterns]`
+  `[vercel:react-best-practices]` or `[vercel:composition-patterns]`
 
 ### Phase 5: Report
 
@@ -163,13 +163,10 @@ Output a structured report:
 
 Group findings by skill when framework skills were applied:
 
-**[react-best-practices]**
-- [ ] `file:line` — [finding]
-
-**[composition-patterns]**
-- [ ] `file:line` — [finding]
-
 **[vercel:react-best-practices]**
+- [ ] `file:line` — [finding]
+
+**[vercel:composition-patterns]**
 - [ ] `file:line` — [finding]
 
 *(Omit sections for skills that produced no findings)*

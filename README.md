@@ -86,7 +86,8 @@ See `.env.sample` for all available variables and descriptions. At minimum, you 
 
 ### 3. Dependencies
 
-The SMS notification script uses [uv](https://docs.astral.sh/uv/) for dependency management (auto-installs `twilio` and `python-dotenv` on first run).
+- **[tmux](https://github.com/tmux/tmux)** — Required by the `teammateMode: "tmux"` setting in `settings.json`. Install with `brew install tmux` on macOS.
+- **[uv](https://docs.astral.sh/uv/)** — Used by hooks and the SMS notification script for dependency management (auto-installs `twilio` and `python-dotenv` on first run).
 
 ## Notes
 

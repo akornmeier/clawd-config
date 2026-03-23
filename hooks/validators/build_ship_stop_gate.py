@@ -72,7 +72,7 @@ def check_phase_2(tool_uses, tool_results):
         if name == "Agent":
             subagent = inp.get("subagent_type", "")
             prompt = inp.get("prompt", "")
-            if subagent == "code-review" or re.search(r"\bcode-review(?!-)", prompt):
+            if subagent == "code-review" or re.search(r"\bcode-review\b", prompt):
                 has_review_dispatch = True
 
     # Check tool results for PASS
