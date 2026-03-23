@@ -291,5 +291,5 @@
   },
   "alwaysThinkingEnabled": true,
   "skipDangerousModePermissionPrompt": true,
-  "teammateMode": "in-process"
+  "teammateMode": "tmux"
 }

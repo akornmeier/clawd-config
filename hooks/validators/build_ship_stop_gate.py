@@ -9,6 +9,7 @@ Exit codes:
   2 = blocked — missing phases (stderr explains which)
 """
 import json
+import re
 import sys
 
 
@@ -59,7 +60,7 @@ def check_phase_1(tool_uses, tool_results):
 
 
 def check_phase_2(tool_uses, tool_results):
-    """Phase 2: Local pre-flight — look for code-review-simplify dispatch + PASS."""
+    """Phase 2: Local pre-flight — look for code-review dispatch + PASS."""
     has_review_dispatch = False
     has_pass = False
 
@@ -67,11 +68,11 @@ def check_phase_2(tool_uses, tool_results):
         name = block.get("name", "")
         inp = block.get("input", {})
 
-        # Check Agent dispatch with code-review-simplify
+        # Check Agent dispatch with code-review
         if name == "Agent":
             subagent = inp.get("subagent_type", "")
             prompt = inp.get("prompt", "")
-            if "code-review-simplify" in subagent or "code-review-simplify" in prompt:
+            if subagent == "code-review" or re.search(r"\bcode-review\b", prompt):
                 has_review_dispatch = True
 
     # Check tool results for PASS

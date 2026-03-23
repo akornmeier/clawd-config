@@ -3,6 +3,7 @@ history.jsonl
 projects/
 security_warnings_state_*.json
 session-env/
+vercel-plugin-*
 
 # Cache and generated files
 mcp-needs-auth-cache.json
@@ -25,6 +26,7 @@ todos/
 tasks/
 data/
 usage-data/
+sessions/
 
 # TypeScript
 node_modules/

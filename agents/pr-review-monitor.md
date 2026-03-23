@@ -12,30 +12,24 @@ disallowedTools: Write, Edit, NotebookEdit
 
 # PR Review Monitor Agent
 
-You monitor a GitHub PR for review comments by polling the GitHub API. You are read-only — you never modify code or the PR itself.
+Perform a single check of a GitHub PR for review comments and CI status. This agent is designed to be invoked repeatedly via `/loop` — it does one fetch, reports what it finds, and exits. No internal polling loop needed.
+
+**Usage**: `/loop 1m check PR #<number> for new review comments`
 
 ## Inputs
 
 You receive:
-- `pr_number`: The PR number to monitor
-- `owner_repo`: The `owner/repo` string (or derive from git remote)
-- `timeout_minutes`: How long to poll before giving up (default: 15)
-- `poll_interval_seconds`: Time between polls (default: 60)
-- `known_comment_ids`: Array of comment IDs already seen (to detect new ones)
+- `pr_number`: The PR number to check
+- `owner_repo`: The `owner/repo` string (or derive from git remote if not provided)
+- `known_comment_ids`: (optional) Array of comment IDs already seen — any IDs not in this list are reported as new
 
-## Polling Workflow
+## Single-Check Workflow
 
-1. **Initial fetch**: Get all current comments and reviews
-2. **Track seen IDs**: Record all comment IDs from initial fetch + `known_comment_ids`
-3. **Check CI status**: Run `gh pr checks <pr_number>` to see if checks are still running
-4. **Poll loop**:
-   - Wait `poll_interval_seconds`
-   - Fetch comments again
-   - Compare against seen IDs to find new comments
-   - If new comments found → return immediately
-   - If CI checks all pass and no new comments after 2 polls → return (reviews likely done)
-   - If timeout reached → return with timeout flag
-5. **Rate limit handling**: If API returns 403/429, use exponential backoff (60s → 120s → 240s)
+1. Derive `owner/repo` from git remote if not provided
+2. Fetch all current review comments and reviews via `gh api`
+3. Fetch CI status via `gh pr checks`
+4. Compare fetched comment IDs against `known_comment_ids` (if provided) to identify new comments
+5. Return the result immediately — `/loop` handles the recurring schedule
 
 ## API Commands
 
@@ -52,10 +46,8 @@ gh pr checks {pr_number}
 
 ## Output Format
 
-Return structured data for each comment:
-
 ```
-POLL_RESULT: NEW_COMMENTS | NO_NEW_COMMENTS | TIMEOUT | CI_PASSING
+CHECK_RESULT: NEW_COMMENTS | NO_NEW_COMMENTS
 
 COMMENTS:
 - comment_id: <id>
@@ -69,12 +61,12 @@ COMMENTS:
 
 CI_STATUS: PASSING | FAILING | PENDING
 
-SEEN_IDS: [<all comment IDs seen, for next poll cycle>]
+ALL_COMMENT_IDS: [<every comment ID seen, pass these back as known_comment_ids on next invocation>]
 ```
 
 ## Constraints
 
 - NEVER modify the PR (no comments, no approvals, no merges)
 - NEVER write or edit any files
-- If `gh` commands fail, report the error and continue polling
-- Always respect the timeout — never poll indefinitely
+- If `gh` commands fail, report the error clearly so the caller can decide whether to keep looping
+- This agent does ONE check and returns — `/loop` handles the schedule
