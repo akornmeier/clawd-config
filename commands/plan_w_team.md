@@ -148,7 +148,7 @@ Task({
   description: "Implement auth endpoints",
   prompt: "Implement the authentication endpoints as specified in Task 1...",
   subagent_type: "general-purpose",
-  model: "opus", // or "opus" for complex work, "haiku" for VERY simple
+  model: "sonnet", // or "opus" for complex work, "haiku" for VERY simple
   run_in_background: false, // true for parallel execution
 });
 // Returns: agentId (e.g., "a1b2c3")
@@ -235,7 +235,7 @@ IMPORTANT: **PLANNING ONLY** - Do not execute, build, or deploy. Output is a pla
 1. Analyze Requirements - Parse the USER_PROMPT to understand the core problem and desired outcome
 2. Understand Codebase - Without subagents, directly understand existing patterns, architecture, and relevant files
 3. Design Solution - Develop technical approach including architecture decisions and implementation strategy
-4. Define Team Members - Use `ORCHESTRATION_PROMPT` (if provided) to guide team composition. Identify from `.claude/agents/team/*.md` or use `general-purpose`. Document in plan.
+4. Define Team Members - Use `ORCHESTRATION_PROMPT` (if provided) to guide team composition. Identify from `.claude/agents/*.md`, try to map the best agent for the task or use `general-purpose` as a last resort. Document in plan.
 5. Define Step by Step Tasks - Use `ORCHESTRATION_PROMPT` (if provided) to guide task granularity and parallel/sequential structure. Write out tasks with IDs, dependencies, assignments. Document in plan.
 6. Generate Filename - Create a descriptive kebab-case filename based on the plan's main topic
 7. Save Plan - Write the plan to `PLAN_OUTPUT_DIRECTORY/<filename>.md`

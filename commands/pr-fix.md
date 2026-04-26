@@ -6,7 +6,7 @@ model: opus
 
 # PR Fix
 
-Address review comments on a pull request by orchestrating parallel builder agents. Fetch comments, triage into tasks, dispatch builders, and reply on each addressed comment.
+Address review comments on a pull request. Fetch comments, triage, dispatch parallel builders for independent fixes, commit, push, and reply.
 
 ## Variables
 
@@ -16,17 +16,16 @@ PR_NUMBER: $ARGUMENTS
 
 - If no `PR_NUMBER` is provided, STOP and ask the user to provide it.
 - You are an orchestrator. You NEVER write code directly. You dispatch agents to do the work.
-- Use `TaskCreate`, `TaskUpdate`, `TaskList`, `TaskGet` to manage the work.
-- Use `Task` to deploy agents. Use `run_in_background: true` for parallel execution.
 - Always provide builders with full context: the comment text, file path, line range, and surrounding diff.
+- **Autonomous mode**: All agents MUST be dispatched with `mode: "bypassPermissions"` so they can run gh CLI, git, and file operations without prompting. This flow is designed to run end-to-end without user intervention.
 
 ## Workflow
 
-Execute these steps in order. Do not skip steps.
+### Step 1: Fetch, Triage & Plan (Sonnet agent)
 
-### Step 1: Fetch PR Data (Haiku agent)
+Launch a single **Sonnet** agent (`mode: "bypassPermissions"`) that fetches all PR data AND triages it in one pass. The agent should:
 
-Launch a **Haiku** agent to gather all PR review comment data. The agent should run these `gh` commands and return structured results:
+**1a. Fetch PR data** using `gh` CLI:
 
 ```
 gh pr view PR_NUMBER --json number,title,headRefName,baseRefName,url,headRefOid
@@ -34,91 +33,74 @@ gh api repos/{owner}/{repo}/pulls/PR_NUMBER/comments
 gh api repos/{owner}/{repo}/pulls/PR_NUMBER/reviews
 ```
 
-The agent should return:
-- PR metadata: number, title, head branch, base branch, URL, head SHA
-- All review comments with: id, author, body, path, line/original_line, diff_hunk, in_reply_to_id, created_at
-- Group threaded comments (replies grouped under their parent by in_reply_to_id)
-- Review-level comments (from reviews endpoint, the top-level review body)
+Derive `{owner}/{repo}` from `git remote get-url origin`, not hardcoded.
 
-**Important**: Derive `{owner}/{repo}` from the git remote, not hardcoded.
+**1b. Categorize each comment thread:**
 
-### Step 2: Triage & Plan (Sonnet agent)
+- **actionable** — Requests a specific code change (bug fix, refactor, style, missing handling, etc.)
+- **question** — Asks a question requiring human judgment → SKIP
+- **resolved** — Already addressed or marked resolved → SKIP
+- **praise** — Positive feedback → SKIP
+- **informational** — FYI, context → SKIP
 
-Launch a **Sonnet** agent with ALL the data from Step 1. The agent should:
+**1c. For each actionable comment, produce a task:**
 
-**2a. Categorize each comment thread:**
-- **actionable** - Requests a specific code change (bug fix, refactor, style, missing handling, etc.)
-- **question** - Asks a question requiring human judgment - SKIP
-- **resolved** - Already addressed in a subsequent commit or marked resolved - SKIP
-- **praise** - Positive feedback, acknowledgment - SKIP
-- **informational** - FYI, context, explanation - SKIP
-
-**2b. For each actionable comment, produce a task entry:**
-- `taskId`: Sequential number (1, 2, 3...)
 - `commentIds`: Array of PR comment IDs in this thread (for replying later)
 - `file`: File path
 - `lineRange`: Approximate line range from the diff_hunk
 - `description`: Clear, specific description of what code change is needed
-- `diffContext`: The relevant diff_hunk for context
-- `dependsOn`: Array of taskIds this depends on (empty if independent)
+- `diffContext`: The relevant diff_hunk
 
-**2c. Dependency rules:**
-- Two tasks touching the SAME file: make them sequential (second depends on first)
-- Two tasks touching DIFFERENT files: can run in parallel
-- If a comment references another comment's change, make it dependent
+**1d. Group tasks for parallel execution:**
 
-**2d. Return the complete triage plan as structured data:**
-- List of actionable tasks (with all fields above)
-- List of skipped comments (with id, author, reason for skipping)
+- Tasks touching DIFFERENT files → can run in parallel
+- Tasks touching the SAME file → must be sequential (group them together as one task with multiple changes)
+- If a comment references another comment's change → combine into same group
 
-### Step 3: Create Tasks
+**1e. Return structured data:**
 
-Using the triage plan from Step 2:
+- PR metadata (number, title, head branch, base branch, URL, head SHA)
+- Parallel groups: each group is an array of tasks that a single builder will handle
+- Skipped comments (id, author, reason)
 
-1. Call `TaskCreate` for each actionable task. Include in the description:
-   - The review comment text (verbatim)
-   - The file path and line range
-   - The diff context
-   - Clear instruction of what change to make
-2. Call `TaskUpdate` with `addBlockedBy` to set dependencies between tasks
-3. Identify parallel groups: tasks with no unresolved dependencies can run together
+### Step 2: Execute (Builder agents in parallel)
 
-### Step 4: Execute (Builder agents)
+Dispatch builder agents for all parallel groups simultaneously:
 
-Deploy builder agents to address the comments:
+1. For each parallel group, launch a **builder** agent (`mode: "bypassPermissions"`, `run_in_background: true`)
+   - Each builder gets:
+     - PR context (title, branch)
+     - All tasks in its group (comment text, file path, line range, diff context)
+     - Instruction: "Address these PR review comments. Read each file, understand the context, and make the requested changes. Be precise — only change what the comments ask for."
+   - If a group has multiple tasks (same-file comments), the builder handles them sequentially
+2. Wait for all builders to complete
 
-1. **Identify ready tasks**: Tasks with no pending `blockedBy` dependencies
-2. **Launch builders in parallel**: For all ready tasks, launch **builder** agents simultaneously using `run_in_background: true`
-   - Each builder gets a prompt containing:
-     - The PR context (title, branch)
-     - The specific review comment text
-     - The file path and line range
-     - The diff context
-     - Instruction: "Address this PR review comment. Read the file, understand the context, and make the requested change. Be precise - only change what the comment asks for."
-3. **Wait for completion**: Use `TaskOutput` with `block: true` to wait for background agents
-4. **Mark complete**: `TaskUpdate` each task to `completed`
-5. **Launch next wave**: Check `TaskList` for newly unblocked tasks, repeat from step 1
-6. Continue until all tasks are completed
+### Step 3: Review (conditional)
 
-### Step 5: Reply on PR (Haiku agents in parallel)
+Check the scope of changes:
 
-After ALL builders complete successfully:
+1. Run `git diff --stat` to see what changed
+2. **If 3+ files changed OR 50+ lines changed**: dispatch the `code-review` agent (`mode: "bypassPermissions"`) to review the changes. If it reports fixes needed, apply them.
+3. **If fewer changes**: skip the review — the builders' targeted edits are low-risk.
 
-For each addressed comment, launch a parallel **Haiku** agent to:
-1. Read the git diff for the specific file that was changed (`git diff -- <filepath>`)
-2. Post a reply on the PR comment using:
-   ```
-   gh api repos/{owner}/{repo}/pulls/PR_NUMBER/comments/{comment_id}/replies -f body="<reply>"
-   ```
-3. The reply should be brief and professional:
-   - Format: `Addressed — <1-sentence summary of what was changed>`
-   - Example: `Addressed — Renamed variable to use camelCase and extracted the validation into a helper function.`
+### Step 4: Commit, Push & Reply
 
-**Important**: Use the LAST comment ID in each thread (the most recent comment) for the reply endpoint.
+Do this step yourself (no agent needed):
 
-### Step 6: Summary
+1. Stage changed files: `git add <specific files>` (never `git add -A`)
+2. Commit: `fix: address PR review comments`
+3. Push: `git push origin HEAD`
+4. Get the commit SHA: `git rev-parse --short HEAD`
 
-After all steps complete, present this report:
+Then launch parallel **Haiku** agents (`mode: "bypassPermissions"`, `run_in_background: true`) to reply on each addressed comment:
+
+- Use the LAST comment ID in each thread for the reply endpoint
+- Reply format: `Addressed in <sha> — <1-sentence summary>`
+- Command: `gh api repos/{owner}/{repo}/pulls/PR_NUMBER/comments/{comment_id}/replies -f body="<reply>"`
+
+### Step 5: Summary
+
+Present this report:
 
 ```
 ## PR Fix Complete
@@ -126,21 +108,15 @@ After all steps complete, present this report:
 **PR**: #[number] — [title]
 **Branch**: [branch]
 **URL**: [url]
+**Commit**: [sha]
 
 ### Addressed ([N] comments)
 | # | File | Comment | Change Made |
 |---|------|---------|-------------|
 | 1 | path/to/file.ts:L42 | @author: "use camelCase here" | Renamed variable |
-| 2 | path/to/other.ts:L88 | @author: "missing null check" | Added null guard |
 
 ### Skipped ([N] comments)
 | # | Author | Reason |
 |---|--------|--------|
 | 1 | @author | Question — needs human response |
-| 2 | @author | Already resolved |
-
-### Next Steps
-- Review changes: `git diff`
-- Run tests: `pnpm test`
-- Stage and commit when satisfied
 ```

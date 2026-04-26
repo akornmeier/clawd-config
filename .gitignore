@@ -3,7 +3,14 @@ history.jsonl
 projects/
 security_warnings_state_*.json
 session-env/
-sessions/
+vercel-plugin-*
+
+# Cache and generated files
+mcp-needs-auth-cache.json
+plugins/known_marketplaces.json
+plugins/install-counts-cache.json
+plugins/installed_plugins.json
+plugins/blocklist.json
 
 # Cache and temporary files
 cache/
@@ -24,6 +31,7 @@ todos/
 tasks/
 data/
 usage-data/
+sessions/
 
 # TypeScript
 node_modules/
@@ -137,6 +145,9 @@ build/
 output
 outputs/
 
+statsig/
+teams/
+
 extras/
 
 # Claude Code data
@@ -149,3 +160,6 @@ extras/
 
 # Task manager data
 apps/task-manager/data/
+
+# Plan files
+plans/

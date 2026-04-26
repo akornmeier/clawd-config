@@ -1,0 +1,14 @@
+[
+  {
+    "from": "team-lead",
+    "text": "{\"type\":\"task_assignment\",\"taskId\":\"4\",\"subject\":\"Prioritize skills for improvement\",\"description\":\"Review both assessment reports (specs/skill-assessment-local.md and specs/skill-assessment-marketplace.md).\\nSelect 3-5 skills to improve, prioritizing:\\n1. Local skills (user-authored, most impactful)\\n2. Skills with poor descriptions (triggering failures)\\n3. Skills with missing examples or unclear instructions\\nPresent prioritized list to user for approval before proceeding.\",\"assignedBy\":\"team-lead\",\"timestamp\":\"2026-03-05T15:55:29.727Z\"}",
+    "timestamp": "2026-03-05T15:55:29.727Z",
+    "read": false
+  },
+  {
+    "from": "team-lead",
+    "text": "{\"type\":\"task_assignment\",\"taskId\":\"6\",\"subject\":\"Review and simplify changed code\",\"description\":\"Get the list of changed files with git diff --name-only.\\nReview all changed skill files for quality, consistency, and simplicity.\\nEnsure no regressions or broken references were introduced.\\nReport PASS or NEEDS_FIXES with specific issues.\",\"assignedBy\":\"team-lead\",\"timestamp\":\"2026-03-05T15:57:58.557Z\"}",
+    "timestamp": "2026-03-05T15:57:58.557Z",
+    "read": false
+  }
+]

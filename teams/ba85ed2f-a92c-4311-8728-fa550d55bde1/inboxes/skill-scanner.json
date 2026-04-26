@@ -1,0 +1,8 @@
+[
+  {
+    "from": "team-lead",
+    "text": "{\"type\":\"task_assignment\",\"taskId\":\"1\",\"subject\":\"Scan all skill directories and build inventory\",\"description\":\"Scan these 5 skill source directories:\\n- ~/.claude/skills/ (local)\\n- ~/.claude/plugins/marketplaces/claude-skills/skills/\\n- ~/.claude/plugins/marketplaces/claude-code-plugins/plugins/*/skills/*/\\n- ~/.claude/plugins/marketplaces/claude-plugins-official/plugins/*/skills/*/ and external_plugins/*/skills/*/\\n- ~/.claude/plugins/marketplaces/mcp-use/skills/\\n\\nFor each skill, extract: name, description, source, path, line count, has-examples (y/n), has-references (y/n), allowed-tools.\\nIdentify duplicate skill names across sources.\\nSave inventory to specs/skill-inventory.md as a categorized table.\",\"assignedBy\":\"team-lead\",\"timestamp\":\"2026-03-05T15:38:44.503Z\"}",
+    "timestamp": "2026-03-05T15:38:44.503Z",
+    "read": false
+  }
+]
