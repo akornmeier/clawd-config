@@ -230,7 +230,7 @@
     "padding": 0
   },
   "enabledPlugins": {
-    "elements-of-style@superpowers-marketplace": true,
+    "elements-of-style@superpowers-marketplace": false,
     "explanatory-output-style@claude-plugins-official": false,
     "feature-dev@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
@@ -243,7 +243,7 @@
     "pyright-lsp@claude-plugins-official": false,
     "qodo-skills@claude-plugins-official": false,
     "code-review@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": false,
     "github@claude-plugins-official": false,
     "code-simplifier@claude-plugins-official": true,
     "playwright@claude-plugins-official": true,
@@ -267,7 +267,11 @@
     "all-skills@mcp-use": true,
     "claude-session-driver@superpowers-marketplace": true,
     "episodic-memory@superpowers-marketplace": true,
-    "superpowers-lab@superpowers-marketplace": true
+    "superpowers-lab@superpowers-marketplace": false,
+    "chrome-devtools-mcp@chrome-devtools-plugins": true,
+    "compound-engineering@compound-engineering-plugin": true,
+    "tk-agent-team@tk-agent-team-plugin": true,
+    "tk-agent-team@tk-agent-team": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -287,9 +291,26 @@
         "source": "github",
         "repo": "mcp-use/mcp-use"
       }
+    },
+    "chrome-devtools-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "ChromeDevTools/chrome-devtools-mcp"
+      }
+    },
+    "compound-engineering-plugin": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/tk/Code/compound-engineering-plugin"
+      }
+    },
+    "tk-agent-team": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/tk/Code/tk-agent-team/plugins/tk-agent-team"
+      }
     }
   },
   "alwaysThinkingEnabled": true,
-  "skipDangerousModePermissionPrompt": true,
-  "teammateMode": "tmux"
+  "skipDangerousModePermissionPrompt": true
 }

@@ -3,26 +3,6 @@ description: Creates a concise engineering implementation plan based on user req
 argument-hint: [user prompt] [orchestration prompt]
 model: opus
 disallowed-tools: Task, EnterPlanMode
-hooks:
-  Stop:
-    - hooks:
-        - type: command
-          command: >-
-            uv run $CLAUDE_PROJECT_DIR/.claude/hooks/validators/validate_new_file.py
-            --directory specs
-            --extension .md
-        - type: command
-          command: >-
-            uv run $CLAUDE_PROJECT_DIR/.claude/hooks/validators/validate_file_contains.py
-            --directory specs
-            --extension .md
-            --contains '## Task Description'
-            --contains '## Objective'
-            --contains '## Relevant Files'
-            --contains '## Step by Step Tasks'
-            --contains '## Acceptance Criteria'
-            --contains '## Team Orchestration'
-            --contains '### Team Members'
 ---
 
 # Plan With Team
@@ -34,7 +14,7 @@ Create a detailed implementation plan based on the user's requirements provided 
 USER_PROMPT: $1
 ORCHESTRATION_PROMPT: $2 - (Optional) Guidance for team assembly, task structure, and execution strategy
 PLAN_OUTPUT_DIRECTORY: `specs/`
-TEAM_MEMBERS: `.claude/agents/team/*.md`
+TEAM_MEMBERS: `.claude/agents/*.md`
 GENERAL_PURPOSE_AGENT: `general-purpose`
 
 ## Instructions
@@ -353,7 +333,7 @@ Use these files to complete the task:
 - Run all validation commands
 - Verify acceptance criteria met
 
-<continue with additional tasks as needed. Agent types must exist in .claude/agents/team/\*.md>
+<continue with additional tasks as needed.>
 
 ## Acceptance Criteria
 
