@@ -3,15 +3,21 @@ history.jsonl
 projects/
 security_warnings_state_*.json
 session-env/
+sessions/
 
 # Cache and temporary files
 cache/
 paste-cache/
 shell-snapshots/
 stats-cache.json
+statsig/
 debug/
 file-history/
 telemetry/
+mcp-needs-auth-cache.json
+
+# Machine-specific symlinks
+skills/agents
 
 # Transient state
 todos/
