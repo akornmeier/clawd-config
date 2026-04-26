@@ -216,10 +216,7 @@
     "claude-session-driver@superpowers-marketplace": true,
     "episodic-memory@superpowers-marketplace": true,
     "superpowers-lab@superpowers-marketplace": false,
-    "chrome-devtools-mcp@chrome-devtools-plugins": true,
-    "compound-engineering@compound-engineering-plugin": true,
-    "tk-agent-team@tk-agent-team-plugin": true,
-    "tk-agent-team@tk-agent-team": true
+    "chrome-devtools-mcp@chrome-devtools-plugins": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -244,18 +241,6 @@
       "source": {
         "source": "github",
         "repo": "ChromeDevTools/chrome-devtools-mcp"
-      }
-    },
-    "compound-engineering-plugin": {
-      "source": {
-        "source": "directory",
-        "path": "/Users/tk/Code/compound-engineering-plugin"
-      }
-    },
-    "tk-agent-team": {
-      "source": {
-        "source": "directory",
-        "path": "/Users/tk/Code/tk-agent-team/plugins/tk-agent-team"
       }
     }
   },
