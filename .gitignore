@@ -17,9 +17,14 @@ cache/
 paste-cache/
 shell-snapshots/
 stats-cache.json
+statsig/
 debug/
 file-history/
 telemetry/
+mcp-needs-auth-cache.json
+
+# Machine-specific symlinks
+skills/agents
 
 # Transient state
 todos/
@@ -155,6 +160,3 @@ extras/
 
 # Task manager data
 apps/task-manager/data/
-
-# Plan files
-plans/
