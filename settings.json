@@ -33,10 +33,6 @@
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/pre_tool_use.py"
-          },
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type PreToolUse --summarize"
           }
         ]
       }
@@ -48,10 +44,6 @@
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/post_tool_use.py"
-          },
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type PostToolUse --summarize"
           }
         ]
       },
@@ -71,10 +63,6 @@
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/notification.py --notify"
-          },
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type Notification --summarize"
           }
         ]
       }
@@ -85,10 +73,6 @@
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/stop.py --chat"
-          },
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type Stop --add-chat"
           }
         ]
       }
@@ -99,10 +83,6 @@
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/subagent_stop.py --notify"
-          },
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type SubagentStop"
           }
         ]
       }
@@ -113,10 +93,6 @@
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/pre_compact.py"
-          },
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type PreCompact"
           }
         ]
       }
@@ -127,10 +103,6 @@
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/user_prompt_submit.py --log-only --store-last-prompt --name-agent"
-          },
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type UserPromptSubmit --summarize"
           }
         ]
       }
@@ -141,10 +113,6 @@
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/session_start.py"
-          },
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type SessionStart"
           }
         ]
       }
@@ -155,10 +123,6 @@
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/session_end.py"
-          },
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type SessionEnd"
           }
         ]
       }
@@ -170,10 +134,6 @@
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/permission_request.py --log-only"
-          },
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type PermissionRequest --summarize"
           }
         ]
       }
@@ -185,10 +145,6 @@
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/post_tool_use_failure.py"
-          },
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type PostToolUseFailure --summarize"
           }
         ]
       }
@@ -200,10 +156,6 @@
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/subagent_start.py"
-          },
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type SubagentStart"
           }
         ]
       }
@@ -215,10 +167,6 @@
           {
             "type": "command",
             "command": "uv run ~/.claude/hooks/setup.py"
-          },
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type Setup"
           }
         ]
       }
