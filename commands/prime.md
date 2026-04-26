@@ -11,11 +11,18 @@ Run the commands under the `Execute` section to gather information about the pro
 - `git ls-files`
 
 ## Read
-- README.md
-- ai_docs/cc_hooks_docs.md
-- ai_docs/uv-single-file-scripts.md
-- ai_docs/anthropic_custom_slash_commands.md
-- ai_docs/anthropic_docs_subagents.md
+
+Read the project README first:
+- `README.md`
+
+Then read each reference doc below. For each one, prefer the project-local copy at `ai_docs/<file>` if it exists; otherwise fall back to the global copy at `~/.claude/ai_docs/<file>`:
+
+- `cc_hooks_docs.md`
+- `uv-single-file-scripts.md`
+- `anthropic_custom_slash_commands.md`
+- `anthropic_docs_subagents.md`
+
+If a doc is missing from both locations, skip it and note that in the report.
 
 ## Report
 
