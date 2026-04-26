@@ -150,7 +150,28 @@ def generate_fix_logic(sample_rows: list[str], column_name: str) -> dict:
 
 ### Step 4 — Cluster-Wide Vectorized Execution
 ```python
+import ast
 import pandas as pd
+
+_SAFE_AST_NODES = {
+    ast.Lambda, ast.arguments, ast.arg, ast.Name, ast.Load, ast.Constant,
+    ast.Call, ast.Attribute, ast.BinOp, ast.UnaryOp, ast.BoolOp, ast.Compare,
+    ast.IfExp, ast.Subscript, ast.Index, ast.Slice, ast.List, ast.Tuple, ast.Dict,
+    ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Mod, ast.Pow, ast.FloorDiv,
+    ast.USub, ast.UAdd, ast.And, ast.Or, ast.Not,
+    ast.Eq, ast.NotEq, ast.Lt, ast.LtE, ast.Gt, ast.GtE,
+    ast.Is, ast.IsNot, ast.In, ast.NotIn, ast.Expression,
+}
+
+def _compile_safe_lambda(transformation: str):
+    """Parse, validate, and compile a model-produced lambda with no builtins available."""
+    parsed = ast.parse(transformation, mode='eval')
+    if not isinstance(parsed.body, ast.Lambda):
+        raise ValueError("Rejected: transformation must be a lambda expression")
+    for node in ast.walk(parsed):
+        if type(node) not in _SAFE_AST_NODES:
+            raise ValueError(f"Rejected: disallowed AST node type '{type(node).__name__}'")
+    return eval(compile(parsed, '<lambda>', 'eval'), {'__builtins__': {}}, {})
 
 def apply_fix_to_cluster(df: pd.DataFrame, column: str, fix: dict) -> pd.DataFrame:
     """Apply AI-generated lambda across entire cluster — vectorized, not looped."""
@@ -160,7 +181,7 @@ def apply_fix_to_cluster(df: pd.DataFrame, column: str, fix: dict) -> pd.DataFra
         df['quarantine_reason'] = f"Low confidence: {fix['confidence_score']}"
         return df
 
-    transform_fn = eval(fix['transformation'])  # safe — evaluated only after strict validation gate (lambda-only, no imports/exec/os)
+    transform_fn = _compile_safe_lambda(fix['transformation'])
     df[column] = df[column].map(transform_fn)
     df['validation_status'] = 'AI_FIXED'
     df['ai_reasoning'] = fix['reasoning']

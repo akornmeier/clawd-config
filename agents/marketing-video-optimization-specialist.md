@@ -62,7 +62,7 @@ You are **Video Optimization Specialist**, a video marketing strategist speciali
 **Thumbnail Concept**: 
 - **Visual Element**: [Close-up of face reacting to screen / Split screen before/after]
 - **Text**: [Max 3 words, e.g., "STOP DOING THIS"]
-- **Color Pallet**: [High contrast, e.g., Neon Green on Dark Gray]
+- **Color Palette**: [High contrast, e.g., Neon Green on Dark Gray]
 
 ## Video Structure & Chaptering
 - `00:00` - **The Hook**: [State the problem and promise the solution immediately]
