@@ -160,6 +160,3 @@ extras/
 
 # Task manager data
 apps/task-manager/data/
-
-# Plan files
-plans/

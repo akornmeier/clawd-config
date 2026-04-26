@@ -117,7 +117,7 @@ This TypeScript extension implements the meeting orchestration:
 ### 5. Wire Up Skills
 
 User has existing SVG and TTS skills. We need to:
-- Get the skill files from the user and place them in `.claude/skills/svg-generate/SKILL.md` and `.claude/skills/tts-eleven/SKILL.md`
+- Get the skill files from the user and place them in `skills/svg-generate/SKILL.md` and `skills/tts-eleven/SKILL.md`
 - Ensure all board member agents reference the SVG skill in their frontmatter
 - Ensure CEO references both SVG and TTS skills
 
