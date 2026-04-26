@@ -4,11 +4,11 @@
 
 We're building a board meeting deliberation system on top of **Pi** (a terminal coding harness). The system simulates a CEO running a strategic board meeting with AI advisors, each bringing a distinct strategic lens. The CEO agent (Opus) orchestrates debate among board member agents (Sonnet), driven by a **brief** that frames a business decision. The meeting produces a final **memo** with the decision, SVG diagrams, and a TTS summary.
 
-**Current state:** 3 of 8 agents exist (CEO, Compounder, Contrarian - the latter two need polish). No Pi extension exists yet. Skills (SVG, TTS) are provided by the user.
+**Current state:** 3 of 9 agents exist (CEO, Compounder, Contrarian - the latter two need polish). No Pi extension exists yet. Skills (SVG, TTS) are provided by the user.
 
 ## Scope
 
-### 1. Create 5 Missing Board Member Agents
+### 1. Create 6 Missing Board Member Agents
 
 Each follows the Compounder template structure. All agents use `anthropic/claude-sonnet-4-6`.
 
@@ -129,7 +129,7 @@ User has existing SVG and TTS skills. We need to:
 ## Build Sequence
 
 1. **Polish existing agents** (CEO, Contrarian, Compounder) - fix typos, fill placeholders
-2. **Create 5 new agents** - can be done in parallel
+2. **Create 6 new agents** - can be done in parallel
 3. **Create expertise scratch pad files** - trivial, do alongside agents
 4. **Build the Pi extension** - the core orchestration logic
 5. **Wire up skills** - get files from user, place in correct locations
@@ -137,7 +137,7 @@ User has existing SVG and TTS skills. We need to:
 
 ## Verification
 
-1. All 8 agent .md files parse correctly (valid YAML frontmatter, no template syntax errors)
+1. All 9 agent .md files parse correctly (valid YAML frontmatter, no template syntax errors)
 2. Pi extension loads without errors (`pi -e .pi/ceo-agents/extensions/board-meeting.ts`)
 3. `converse("all", "...")` spawns all board members and returns responses
 4. Budget and time tracking report accurate numbers
