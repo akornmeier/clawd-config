@@ -2,7 +2,7 @@
 name: turborepo-runner
 description: Orchestrates Turborepo commands. Use for building, testing, or linting across monorepo packages.
 model: sonnet
-color: green
+color: cyan
 tools: Bash, Read, Glob
 ---
 

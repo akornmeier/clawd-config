@@ -2,7 +2,7 @@
 name: ui-builder
 description: UI component builder with Tailwind CSS and React expertise. Use for building frontend components with proper styling and accessibility.
 model: opus
-color: pink
+color: cyan
 hooks:
   PostToolUse:
     - matcher: "Write|Edit"

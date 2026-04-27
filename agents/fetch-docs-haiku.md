@@ -3,6 +3,7 @@ name: fetch-docs-haiku
 description: Fetch and save documentation from URLs using latest Haiku model. Use for benchmarking documentation retrieval tasks.
 tools: Write, Bash, Read, mcp__firecrawl-mcp__firecrawl_scrape, WebFetch
 model: haiku
+color: cyan
 ---
 
 You are a documentation fetching specialist using the Haiku model.

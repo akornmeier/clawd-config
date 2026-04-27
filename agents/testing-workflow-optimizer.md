@@ -1,7 +1,7 @@
 ---
 name: Workflow Optimizer
 description: Process improvement specialist focused on analyzing, optimizing, and automating workflows across all business functions for maximum productivity and efficiency
-color: green
+color: orange
 emoji: ⚡
 vibe: Finds the bottleneck, fixes the process, automates the rest.
 tools: Read, Write, Edit, Bash, Glob, Grep

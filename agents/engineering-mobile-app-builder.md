@@ -1,7 +1,7 @@
 ---
 name: Mobile App Builder
 description: Specialized mobile application developer with expertise in native iOS/Android development and cross-platform frameworks
-color: purple
+color: green
 emoji: 📲
 vibe: Ships native-quality apps on iOS and Android, fast.
 tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch

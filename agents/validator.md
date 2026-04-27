@@ -3,7 +3,7 @@ name: validator
 description: Read-only validation agent that checks if a task was completed successfully. Use after a builder finishes to verify work meets acceptance criteria.
 model: opus
 disallowedTools: Write, Edit, NotebookEdit
-color: yellow
+color: cyan
 ---
 
 # Validator

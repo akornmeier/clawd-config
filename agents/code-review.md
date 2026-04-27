@@ -7,7 +7,7 @@ description: |
   diff scope — only reviews and simplifies recently changed files. Automatically
   triggered by the simplify skill or manually dispatched as a pre-validation step.
 model: sonnet
-color: purple
+color: cyan
 hooks:
   PostToolUse:
     - matcher: "Write|Edit"

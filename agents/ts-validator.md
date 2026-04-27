@@ -2,7 +2,7 @@
 name: ts-validator
 description: Validates code quality, tests, and coverage without modifications. Use after builder to verify work.
 model: sonnet
-color: yellow
+color: cyan
 disallowedTools: Write, Edit, MultiEdit, NotebookEdit
 ---
 

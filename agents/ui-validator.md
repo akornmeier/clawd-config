@@ -2,7 +2,7 @@
 name: ui-validator
 description: Validates UI components against design specifications. Use after UI builders to verify styling, accessibility, and component patterns.
 model: sonnet
-color: pink
+color: cyan
 disallowedTools: Write, Edit, MultiEdit, NotebookEdit
 ---
 

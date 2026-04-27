@@ -2,7 +2,7 @@
 name: coverage-checker
 description: Validates test coverage meets threshold. Use to check coverage after tests pass.
 model: haiku
-color: purple
+color: cyan
 disallowedTools: Write, Edit
 ---
 
