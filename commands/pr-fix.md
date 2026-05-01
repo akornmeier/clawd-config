@@ -71,7 +71,7 @@ Dispatch builder agents for all parallel groups simultaneously:
    - Each builder gets:
      - PR context (title, branch)
      - All tasks in its group (comment text, file path, line range, diff context)
-     - Instruction: "Address these PR review comments. Read each file, understand the context, and make the requested changes. Be precise — only change what the comments ask for."
+     - Instruction: "Address these PR review comments. Read each file, understand the context, and make the requested changes. Be precise — only change what the comments ask for. Reach for engineering skills when triggered: use `tdd` to write a regression test before fixing a reported bug, `diagnose` when a bug's root cause isn't obvious, and `zoom-out` if you're unfamiliar with the area of code."
    - If a group has multiple tasks (same-file comments), the builder handles them sequentially
 2. Wait for all builders to complete
 

@@ -245,7 +245,7 @@
     }
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "voice": {
     "enabled": true,
     "mode": "hold"
@@ -253,5 +253,6 @@
   "skipDangerousModePermissionPrompt": true,
   "voiceEnabled": true,
   "teammateMode": "tmux",
-  "theme": "dark-daltonized"
+  "theme": "dark-daltonized",
+  "voiceEnabled": true
 }
