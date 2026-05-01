@@ -17,6 +17,10 @@ Sets up a PreToolUse hook that intercepts and blocks dangerous git commands befo
 
 When blocked, Claude sees a message telling it that it does not have authority to access these commands.
 
+## Prerequisites
+
+The hook script depends on `jq` to parse tool input. Verify it is installed (`command -v jq`); if missing, install with `brew install jq` (macOS) or `apt install jq` (Debian/Ubuntu).
+
 ## Steps
 
 ### 1. Ask scope

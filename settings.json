@@ -232,12 +232,6 @@
         "repo": "obra/superpowers-marketplace"
       }
     },
-    "tk-agent-team": {
-      "source": {
-        "source": "directory",
-        "path": "/path/to/tk-agent-team"
-      }
-    },
     "mcp-use": {
       "source": {
         "source": "github",

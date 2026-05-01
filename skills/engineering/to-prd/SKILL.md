@@ -15,7 +15,7 @@ The issue tracker and triage label vocabulary should have been provided to you â
 
 A deep module (as opposed to a shallow module) is one which encapsulates a lot of functionality in a simple, testable interface which rarely changes.
 
-Check with the user that these modules match their expectations. Check with the user which modules they want tests written for.
+Only if the module breakdown is genuinely ambiguous from the conversation context, briefly confirm with the user that these modules match their expectations and which modules they want tests written for. Otherwise, decide and document it in the PRD.
 
 3. Write the PRD using the template below, then publish it to the project issue tracker. Apply the `needs-triage` triage label so it enters the normal triage flow.
 

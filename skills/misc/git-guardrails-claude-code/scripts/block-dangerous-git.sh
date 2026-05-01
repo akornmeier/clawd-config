@@ -1,7 +1,11 @@
 #!/bin/bash
+set -euo pipefail
 
 INPUT=$(cat)
-COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command')
+if ! COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""'); then
+  echo "BLOCKED: failed to parse hook input as JSON. The user has prevented you from doing this." >&2
+  exit 2
+fi
 
 DANGEROUS_PATTERNS=(
   "git push"
