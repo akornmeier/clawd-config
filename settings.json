@@ -216,7 +216,8 @@
     "claude-session-driver@superpowers-marketplace": true,
     "episodic-memory@superpowers-marketplace": true,
     "superpowers-lab@superpowers-marketplace": false,
-    "chrome-devtools-mcp@chrome-devtools-plugins": true
+    "chrome-devtools-mcp@chrome-devtools-plugins": true,
+    "tk-agent-team@tk-agent-team": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -229,6 +230,12 @@
       "source": {
         "source": "github",
         "repo": "obra/superpowers-marketplace"
+      }
+    },
+    "tk-agent-team": {
+      "source": {
+        "source": "directory",
+        "path": "/path/to/tk-agent-team"
       }
     },
     "mcp-use": {
@@ -245,11 +252,11 @@
     }
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "high",
-  "skipDangerousModePermissionPrompt": true,
-  "voiceEnabled": true,
+  "effortLevel": "xhigh",
   "voice": {
     "enabled": true,
     "mode": "hold"
-  }
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "voiceEnabled": true
 }
