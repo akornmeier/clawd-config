@@ -216,8 +216,7 @@
     "claude-session-driver@superpowers-marketplace": true,
     "episodic-memory@superpowers-marketplace": true,
     "superpowers-lab@superpowers-marketplace": false,
-    "chrome-devtools-mcp@chrome-devtools-plugins": true,
-    "tk-agent-team@tk-agent-team": true
+    "chrome-devtools-mcp@chrome-devtools-plugins": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -252,5 +251,8 @@
     "mode": "hold"
   },
   "skipDangerousModePermissionPrompt": true,
+  "voiceEnabled": true,
+  "teammateMode": "tmux",
+  "theme": "dark-daltonized",
   "voiceEnabled": true
 }

@@ -5,7 +5,7 @@ description: |
   Returns structured review data when new comments appear or timeout expires.
   Read-only — never modifies code or the PR.
 model: haiku
-color: yellow
+color: cyan
 tools: Bash, Read
 disallowedTools: Write, Edit, NotebookEdit
 ---

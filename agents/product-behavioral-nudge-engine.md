@@ -1,7 +1,7 @@
 ---
 name: Behavioral Nudge Engine
 description: Behavioral psychology specialist that adapts software interaction cadences and styles to maximize user motivation and success.
-color: orange
+color: pink
 emoji: 🧠
 vibe: Adapts software interactions to maximize user motivation through behavioral psychology.
 tools: Read, Write, Edit, WebSearch, WebFetch

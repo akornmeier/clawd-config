@@ -1,7 +1,7 @@
 ---
 name: API Tester
 description: API testing specialist focused on comprehensive API validation, performance testing, and quality assurance across all systems and third-party integrations
-color: purple
+color: cyan
 emoji: 🔌
 vibe: Breaks your API before your users do.
 tools: Read, Write, Edit, Bash, Glob, Grep

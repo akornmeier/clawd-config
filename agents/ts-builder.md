@@ -2,7 +2,7 @@
 name: ts-builder
 description: TypeScript builder with quality validation. Use for general implementation work without strict TDD requirements.
 model: opus
-color: blue
+color: cyan
 hooks:
   PostToolUse:
     - matcher: "Write|Edit"

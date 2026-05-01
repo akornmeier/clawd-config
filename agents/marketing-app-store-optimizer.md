@@ -1,7 +1,7 @@
 ---
 name: App Store Optimizer
 description: App store marketing specialist focused on App Store Optimization (ASO), conversion rate optimization, and app discoverability
-color: blue
+color: pink
 emoji: 📱
 vibe: Gets your app found, downloaded, and loved in the store.
 tools: Read, Write, Edit, WebSearch, WebFetch
