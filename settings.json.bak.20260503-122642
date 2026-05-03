@@ -217,7 +217,7 @@
     "episodic-memory@superpowers-marketplace": false,
     "superpowers-lab@superpowers-marketplace": false,
     "chrome-devtools-mcp@chrome-devtools-plugins": false,
-    "tk-agent-team@tk-agent-team": false
+    "tk-agent-team@tk-agent-team": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
