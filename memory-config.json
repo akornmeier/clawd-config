@@ -1,0 +1,49 @@
+{
+  "$comment": "Canonical Pinecone config consumed by skills (recall, wrap-up, graphify, etc.). See pinecone-config.md for architecture rationale.",
+
+  "personal_index": "personal-memory",
+  "knowledge_indexes": [],
+
+  "code_index": "code-corpus",
+  "project_docs_index": "project-docs",
+
+  "embedding_model": "llama-text-embed-v2",
+  "cloud": "aws",
+  "region": "us-east-1",
+  "namespace_strategy": "per-repo",
+
+  "metadata_schemas": {
+    "memory": {
+      "required": ["kind", "repo", "created_at"],
+      "optional": ["tags", "session_id", "source_path"],
+      "kind_values": ["decision", "learning", "summary", "incident"]
+    },
+    "knowledge": {
+      "required": ["source", "topic", "created_at"],
+      "optional": ["author", "url", "tags"]
+    },
+    "code": {
+      "required": ["repo", "file_path", "language", "kind", "updated_at"],
+      "optional": ["symbol", "branch", "lines", "imports"],
+      "kind_values": ["function", "class", "module", "type", "test"]
+    },
+    "project_docs": {
+      "required": ["repo", "file_path", "doc_type", "updated_at"],
+      "optional": ["tags", "author", "status"],
+      "doc_type_values": ["readme", "spec", "plan", "decision", "issue", "claude_md"]
+    }
+  },
+
+  "namespace_conventions": {
+    "personal-memory": {
+      "_global": "cross-cutting decisions, learnings not tied to one repo",
+      "<repo-name>": "memory scoped to a specific repo"
+    },
+    "code-corpus": {
+      "<repo-name>": "code embeddings for that repo (one namespace per repo)"
+    },
+    "project-docs": {
+      "<repo-name>": "project docs (READMEs, specs, plans) for that repo"
+    }
+  }
+}
