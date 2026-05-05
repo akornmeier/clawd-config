@@ -1,0 +1,12 @@
+{
+  "eval_id": 0,
+  "eval_name": "embed-and-upsert-code-file",
+  "prompt": "I have a Python file at /tmp/sample_code.py and I want to embed it with Voyage AI and store it in my Pinecone index called code-corpus-voyage under the namespace 'pono'. Walk me through it and write the command I should run.",
+  "assertions": [
+    {"text": "Recommends voyage-code-3 as the model for code", "id": "model-correct"},
+    {"text": "References the canonical script at scripts/embed_and_upsert.py from this skill", "id": "uses-bundled-script"},
+    {"text": "Specifies input_type=document for upsert (or notes default)", "id": "input-type-document"},
+    {"text": "Notes that Pinecone MCP search-records won't work for standard indexes (CLI fallback)", "id": "mcp-cli-fallback"},
+    {"text": "Provides an exact runnable command with --index, --namespace, --model flags", "id": "exact-command"}
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "expectations": [
+    {"text": "Recommends voyage-code-3 (not voyage-4-large or other generals)", "passed": true, "evidence": "'Use voyage-code-3' — explicitly contrasts vs voyage-4-large"},
+    {"text": "Mentions Matryoshka or dimension-flexibility (1024 default, can truncate)", "passed": true, "evidence": "'voyage-code-3 is Matryoshka, so you can truncate to 256, 512, or extend to 2048'"},
+    {"text": "Surfaces input_type document/query asymmetry (the silent-bug gotcha)", "passed": true, "evidence": "Dedicated section 'The thing you didn't ask about: input_type' calling it the #1 silent bug"},
+    {"text": "Notes Voyage requires a standard (not integrated) Pinecone index", "passed": true, "evidence": "'voyage-code-3 is not an integrated Pinecone embedder, so you embed client-side and upsert vectors to a standard index'"}
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "expectations": [
+    {"text": "Recommends voyage-code-3 as the model for code", "passed": true, "evidence": "Step 2: 'Embed with voyage-code-3. This is the right model for source code'"},
+    {"text": "References the canonical script at scripts/embed_and_upsert.py from this skill", "passed": true, "evidence": "Command uses '~/.claude/skills/voyage-embeddings/scripts/embed_and_upsert.py'"},
+    {"text": "Specifies input_type=document for upsert (or notes default)", "passed": true, "evidence": "Step 3 explicitly: 'input_type=document. Critical for retrieval quality. The script defaults to document'"},
+    {"text": "Notes that Pinecone MCP search-records won't work for standard indexes (CLI fallback)", "passed": true, "evidence": "Verifying section: 'The Pinecone MCP search-records tool won't work here — that's for integrated indexes only'"},
+    {"text": "Provides an exact runnable command with --index, --namespace, --model flags", "passed": true, "evidence": "Full command block with --index code-corpus-voyage --namespace pono --model voyage-code-3 --file /tmp/sample_code.py"}
+  ]
+}

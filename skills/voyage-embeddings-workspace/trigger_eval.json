@@ -1,0 +1,22 @@
+[
+  {"query": "ok so we're switching from openai text-embedding-3-large to something else for our internal docs search since the new pricing tier is killing us. heard voyage might be cheaper. is voyage-3.5 still the latest or is there a v4? our corpus is mostly english product docs and slack threads.", "should_trigger": true},
+  {"query": "we have ~200k legal contracts in an s3 bucket (pdfs, mostly NDAs and master service agreements) and want to do retrieval over them with pinecone. our current embedding model is jina-v3 but the retrieval is mediocre on legal language. what would you recommend", "should_trigger": true},
+  {"query": "im embedding python source code from a monorepo (about 800 files, ~80k LOC across packages). running it through pinecone for code search. which voyage model and what dim should i use? worried about storage costs", "should_trigger": true},
+  {"query": "im seeing weird retrieval results from my pinecone index. top hits look semantically related but miss exact identifier matches like fn parse_config. using voyage-code-3 with input_type=document on upsert. what am i doing wrong", "should_trigger": true},
+  {"query": "voyage api keeps returning 429s when i hit it with larger batches. im sending ~200 docs per request. whats the recommended batch size and do they have a paid tier with higher limits", "should_trigger": true},
+  {"query": "i have a pinecone index that uses llama-text-embed-v2 as an integrated model. i want to switch the embedding model to voyage-code-3 (it's a code corpus). is that even possible without rebuilding the index? if not whats the safest migration", "should_trigger": true},
+  {"query": "my coworker mentioned matryoshka embeddings yesterday and i nodded along but i have no idea what those are. she was talking about cutting our pinecone storage. does voyage support this", "should_trigger": true},
+  {"query": "ive been embedding both my docs and my queries with input_type=None because i wasnt sure if the parameter mattered. is that bad? im using voyage-3.5 against a 50k record pinecone index", "should_trigger": true},
+  {"query": "do voyage embeddings work with cosine or dot product on pinecone, or does it matter? im setting up a new index", "should_trigger": true},
+  {"query": "whats the difference between voyage-3.5 and voyage-4-lite? building a customer support search bot with maybe 30k articles, expect modest query volume. cost matters but not at the expense of bad results", "should_trigger": true},
+  {"query": "how do i query my pinecone integrated index using the MCP tool? i want to find docs related to 'oauth setup' across my project-docs index", "should_trigger": false},
+  {"query": "set up sentence-transformers/all-MiniLM-L6-v2 locally for embedding our internal docs without sending data to a third party. python codebase", "should_trigger": false},
+  {"query": "whats the best openai embedding model for code? we use text-embedding-3-large currently but i heard 3-small might be enough", "should_trigger": false},
+  {"query": "i want to build a vector search using huggingface BAAI/bge-large-en-v1.5 against a chromadb instance. python", "should_trigger": false},
+  {"query": "create a new pinecone serverless index called 'product-feedback' on aws us-east-1, dim 1536, metric cosine", "should_trigger": false},
+  {"query": "can you explain dot product vs cosine similarity to me? what should i pick for normalized embeddings vs unnormalized", "should_trigger": false},
+  {"query": "how do i upsert vectors to pinecone with the python sdk in batches? im using openai embeddings already", "should_trigger": false},
+  {"query": "im fine-tuning a sentence transformer on our internal product docs to improve retrieval. has anyone else done this and what learning rate worked", "should_trigger": false},
+  {"query": "implement BM25 retrieval in elasticsearch for our product search. we're moving off algolia", "should_trigger": false},
+  {"query": "whats the input format for openai's /v1/embeddings endpoint? need to make sure i pass it correctly", "should_trigger": false}
+]

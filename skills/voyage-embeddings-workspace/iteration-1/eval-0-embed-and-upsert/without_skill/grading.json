@@ -1,0 +1,9 @@
+{
+  "expectations": [
+    {"text": "Recommends voyage-code-3 as the model for code", "passed": true, "evidence": "'You'll use voyage-code-3 (Voyage's code-specialized model)'"},
+    {"text": "References the canonical script at scripts/embed_and_upsert.py from this skill", "passed": false, "evidence": "Writes its own ad-hoc script at /tmp/embed_and_upsert.py — doesn't know about the bundled script"},
+    {"text": "Specifies input_type=document for upsert (or notes default)", "passed": true, "evidence": "input_type=\"document\" used in the embed call"},
+    {"text": "Notes that Pinecone MCP search-records won't work for standard indexes (CLI fallback)", "passed": false, "evidence": "Notes integrated-vs-standard distinction but doesn't address the MCP query path specifically"},
+    {"text": "Provides an exact runnable command with --index, --namespace, --model flags", "passed": false, "evidence": "Provides a python script to run, not a CLI command with flags"}
+  ]
+}

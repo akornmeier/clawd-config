@@ -1,0 +1,9 @@
+{
+  "expectations": [
+    {"text": "Recommends parallel-run/blue-green migration (not in-place)", "passed": true, "evidence": "'build a parallel index, dual-write, verify, cut over, then retire the old one. Treat it like a blue/green deploy'"},
+    {"text": "Specifies dim=1024, metric=cosine for the new standard index", "passed": true, "evidence": "'create a standard dense index... 1024 recommended... metric cosine'"},
+    {"text": "References memory-config.json or graphify update path (ecosystem-aware)", "passed": false, "evidence": "Generic advice about flipping application's index name; no mention of user's actual config files or skills"},
+    {"text": "Calls out input_type=query at verification/search time", "passed": true, "evidence": "Step 5 quality eval: 'voyage-code-3 needs input_type=query at search time'"},
+    {"text": "References the bundled embed_and_upsert.py script", "passed": false, "evidence": "Describes the algorithm in prose; doesn't reference the canonical script"}
+  ]
+}

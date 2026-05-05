@@ -1,0 +1,9 @@
+{
+  "expectations": [
+    {"text": "Recommends parallel-run/blue-green migration (not in-place)", "passed": true, "evidence": "'The safe path is parallel run, then swap — never mutate the existing index'"},
+    {"text": "Specifies dim=1024, metric=cosine for the new standard index", "passed": true, "evidence": "Full pc command with --dimension 1024 --metric cosine, plus reasoning"},
+    {"text": "References memory-config.json or graphify update path (ecosystem-aware)", "passed": true, "evidence": "Step 5: 'Update ~/.claude/memory-config.json' and 'Update the graphify skill's ingest path'"},
+    {"text": "Calls out input_type=query at verification/search time", "passed": true, "evidence": "Verify step: 'Embed each one with input_type=query (not document — this is the #1 silent bug)'"},
+    {"text": "References the bundled embed_and_upsert.py script", "passed": true, "evidence": "'Use ~/.claude/skills/voyage-embeddings/scripts/embed_and_upsert.py per repo'"}
+  ]
+}
