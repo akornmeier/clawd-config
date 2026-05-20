@@ -255,5 +255,7 @@
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark-daltonized",
   "teammateMode": "tmux",
-  "voiceEnabled": true
+  "agentPushNotifEnabled": true,
+  "voiceEnabled": true,
+  "remoteControlAtStartup": false
 }
