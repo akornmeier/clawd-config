@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Strategy Overview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070810;
+    --card: #0f1119;
+    --card-2: #131623;
+    --ui: #171a27;
+    --ui-2: #1b1e2c;
+    --border: #242838;
+    --border-2: #2e3244;
+    --text: #f4f4f5;
+    --muted: #a1a1aa;
+    --dim: #6b7280;
+    --orange: #ff6b35;
+    --orange-2: #ff8c5a;
+    --green: #4ade80;
+    --amber: #fbbf24;
+    --red: #ef4444;
+    --purple: #a78bfa;
+    --blue: #60a5fa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg); color: var(--text);
+    line-height: 1.55; -webkit-font-smoothing: antialiased;
+    min-height: 100vh; position: relative; padding-bottom: 120px;
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0;
+    background:
+      radial-gradient(900px at 12% 8%, rgba(255,107,53,0.08), transparent 60%),
+      radial-gradient(700px at 88% 80%, rgba(167,139,250,0.07), transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes flash { 0%,100% { background: var(--ui); } 50% { background: rgba(74,222,128,0.15); } }
+
+  .wrap { position: relative; z-index: 2; max-width: 1100px; margin: 0 auto; padding: 50px 24px 30px; }
+
+  /* ===== HEADER ===== */
+  .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 36px; flex-wrap: wrap; }
+  .header-left { flex: 1; min-width: 260px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.16em; color: var(--orange-2); text-transform: uppercase; margin-bottom: 12px;
+  }
+  .eyebrow::before { content: ''; width: 18px; height: 2px; background: var(--orange); }
+  h1 {
+    font-size: clamp(28px, 4vw, 42px); font-weight: 900; letter-spacing: -0.025em;
+    line-height: 1.1; margin-bottom: 6px;
+  }
+  .meta { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--dim); letter-spacing: 0.08em; }
+
+  .header-right { display: flex; gap: 8px; align-items: center; }
+  .pill {
+    padding: 8px 14px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; border-radius: 100px; cursor: pointer;
+    border: 1px solid var(--border-2); background: var(--ui); color: var(--text);
+    transition: all 0.2s; text-transform: uppercase;
+  }
+  .pill:hover { border-color: var(--orange); color: var(--orange-2); }
+  .pill.primary { background: linear-gradient(135deg, var(--orange-2), var(--orange)); color: white; border-color: transparent; box-shadow: 0 6px 18px rgba(255,107,53,0.3); }
+  .pill.primary:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(255,107,53,0.4); }
+
+  /* ===== SECTIONS ===== */
+  .sections { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px) { .sections { grid-template-columns: 1fr; } }
+
+  .section { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; animation: fadeIn 0.5s ease; transition: border-color 0.3s; position: relative; }
+  .section:hover { border-color: var(--border-2); }
+  .section.full { grid-column: 1 / -1; }
+
+  .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px; }
+  .section-title { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
+  .section-tag { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+
+  .section[data-id="current-focus"] { --c: var(--orange); }
+  .section[data-id="dont-do-list"] { --c: var(--red); }
+  .section[data-id="decisions-log"] { --c: var(--amber); }
+  .section[data-id="customer-insights"] { --c: var(--blue); }
+  .section[data-id="market-signals"] { --c: var(--purple); }
+  .section[data-id="hypotheses"] { --c: var(--purple); }
+  .section[data-id="wins"] { --c: var(--green); }
+  .section[data-id="open-questions"] { --c: var(--amber); }
+  .section[data-id="active-offers"] { --c: var(--orange-2); }
+  .section[data-id="archive"] { --c: var(--dim); }
+  .section[data-id="north-star"] { --c: var(--orange); }
+  .section[data-id="customer-audience"] { --c: var(--blue); }
+  .section[data-id="voice-rules"] { --c: var(--purple); }
+
+  .section-tag { color: var(--c, var(--dim)); }
+  .section::before { content: ''; position: absolute; top: 0; left: 22px; right: 22px; height: 2px; background: linear-gradient(90deg, transparent, var(--c, var(--orange)), transparent); opacity: 0.6; }
+
+  /* ===== ITEMS ===== */
+  .items { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 9px 11px; background: var(--ui); border: 1px solid var(--border); border-radius: 10px;
+    font-size: 13px; line-height: 1.5; transition: all 0.2s;
+    animation: slideIn 0.3s ease;
+  }
+  .item:hover { border-color: var(--border-2); background: var(--ui-2); }
+  .item .item-date {
+    flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--c, var(--orange-2)); font-weight: 700; padding-top: 2px;
+    min-width: 70px;
+  }
+  .item .item-text { flex: 1; color: var(--text); }
+  .item-text[contenteditable="true"] {
+    outline: none; border-radius: 4px; padding: 1px 4px;
+    background: rgba(255,107,53,0.06);
+  }
+  .item .item-x {
+    flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--border-2);
+    background: transparent; color: var(--dim); cursor: pointer; font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; line-height: 1; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .item .item-x:hover { border-color: var(--red); color: var(--red); background: rgba(239,68,68,0.08); }
+  .item.deleted { opacity: 0.4; text-decoration: line-through; }
+  .item.deleted .item-x { background: var(--red); color: white; border-color: var(--red); }
+  .item.added { background: rgba(74,222,128,0.07); border-color: rgba(74,222,128,0.4); animation: flash 1.4s ease; }
+  .item.added .item-date { color: var(--green); }
+  .item.edited { border-color: var(--amber); background: rgba(251,191,36,0.05); }
+
+  /* ===== ADD ROW ===== */
+  .add-row {
+    display: flex; gap: 8px; margin-top: 10px; padding: 10px 11px;
+    background: var(--ui-2); border: 1px dashed var(--border-2); border-radius: 10px;
+    transition: all 0.2s;
+  }
+  .add-row:focus-within { border-color: var(--c, var(--orange)); border-style: solid; }
+  .add-row input {
+    flex: 1; background: transparent; border: none; outline: none;
+    font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text);
+  }
+  .add-row input::placeholder { color: var(--dim); font-style: italic; }
+  .add-row .add-btn {
+    width: 24px; height: 24px; border-radius: 50%; border: none;
+    background: var(--c, var(--orange)); color: white; cursor: pointer;
+    font-size: 14px; font-weight: 700; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .add-row .add-btn:hover { transform: scale(1.1); }
+
+  /* ===== PARAGRAPH SECTIONS (single-text) ===== */
+  .section.paragraph .item { background: transparent; border: none; padding: 0; font-size: 14px; line-height: 1.6; color: var(--muted); }
+  .section.paragraph .item:hover { background: transparent; }
+
+  /* ===== STICKY APPLY BAR ===== */
+  .apply-bar {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--card); border: 1px solid var(--border-2); border-radius: 100px;
+    padding: 10px 16px 10px 22px; display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 16px 48px -8px rgba(0,0,0,0.7), 0 0 0 4px rgba(255,107,53,0.04);
+    z-index: 50; backdrop-filter: blur(20px);
+    opacity: 0; transform: translateX(-50%) translateY(20px); pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .apply-bar.visible { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+  .apply-bar .ab-count {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text); font-weight: 600;
+  }
+  .apply-bar .ab-count strong { color: var(--orange-2); }
+  .apply-bar .ab-buttons { display: flex; gap: 8px; }
+
+  /* ===== TOAST ===== */
+  .toast {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+    padding: 12px 24px; background: var(--card); border: 1px solid var(--green);
+    border-radius: 100px; color: var(--green); font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    z-index: 60;
+  }
+  .toast.visible { opacity: 1; }
+
+  /* ===== DIFF MODAL ===== */
+  .modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+    display: none; align-items: center; justify-content: center; z-index: 100;
+    padding: 20px;
+  }
+  .modal.visible { display: flex; }
+  .modal-card {
+    background: var(--card); border: 1px solid var(--border-2); border-radius: 16px;
+    max-width: 720px; width: 100%; max-height: 85vh; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .modal-head { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-head h3 { font-size: 16px; font-weight: 800; }
+  .modal-close { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 22px; }
+  .modal-body {
+    padding: 18px 22px; overflow-y: auto; font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px; color: var(--text); line-height: 1.65; white-space: pre-wrap;
+    background: var(--ui); border: 1px solid var(--border); border-radius: 10px; margin: 0 22px;
+  }
+  .modal-foot { padding: 18px 22px; display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="header">
+    <div class="header-left">
+      <div class="eyebrow">Strategy Overview</div>
+      <h1 id="title">Loading…</h1>
+      <div class="meta" id="meta">—</div>
+    </div>
+    <div class="header-right">
+      <button class="pill" id="btn-reset" title="Discard all unsaved changes">↺ Reset</button>
+      <button class="pill primary" id="btn-apply">Apply changes</button>
+    </div>
+  </div>
+
+  <div class="sections" id="sections"></div>
+
+</div>
+
+<!-- Sticky apply bar -->
+<div class="apply-bar" id="apply-bar">
+  <div class="ab-count">
+    <strong id="ab-count-num">0</strong> pending change(s)
+  </div>
+  <div class="ab-buttons">
+    <button class="pill" id="btn-discard">Discard</button>
+    <button class="pill primary" id="btn-apply-2">Copy diff &amp; apply</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">Diff copied to clipboard — paste in Claude</div>
+
+<!-- Diff modal -->
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>Diff ready — paste this into Claude</h3>
+      <button class="modal-close" id="btn-close-modal">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot">
+      <button class="pill" id="btn-copy-diff">Copy to clipboard</button>
+      <button class="pill primary" id="btn-close-modal-2">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Strategy data injected here by the skill -->
+<script id="strategy-data" type="application/json">
+/* {{STRATEGY_JSON}} */
+{
+  "title": "Strategy Overview",
+  "lastUpdated": "0000-00-00",
+  "sections": []
+}
+</script>
+
+<script>
+  // ===== LOAD DATA =====
+  const data = JSON.parse(document.getElementById('strategy-data').textContent);
+
+  // Track changes locally
+  const changes = {
+    deleted: new Set(),  // item IDs to delete
+    added: [],           // {sectionId, text}
+    edited: new Map(),   // itemId -> new text
+  };
+
+  // ===== RENDER =====
+  function renderHeader() {
+    document.getElementById('title').textContent = data.title || 'Strategy Overview';
+    document.getElementById('meta').textContent = `Last updated: ${data.lastUpdated || '—'}`;
+    document.title = data.title || 'Strategy Overview';
+  }
+
+  function renderSections() {
+    const root = document.getElementById('sections');
+    root.innerHTML = '';
+    (data.sections || []).forEach(section => {
+      const card = document.createElement('div');
+      card.className = 'section' + (section.type === 'paragraph' ? ' paragraph full' : '');
+      card.dataset.id = section.id;
+
+      const head = document.createElement('div');
+      head.className = 'section-head';
+      head.innerHTML = `<div class="section-title">${section.name}</div>
+                       <div class="section-tag">${section.type === 'paragraph' ? '▸ paragraph' : '▸ list · ' + (section.items || []).length}</div>`;
+      card.appendChild(head);
+
+      const ul = document.createElement('ul');
+      ul.className = 'items';
+
+      if (section.type === 'paragraph') {
+        const li = document.createElement('li');
+        li.className = 'item';
+        li.innerHTML = `<div class="item-text" contenteditable="true">${escapeHtml(section.content || '')}</div>`;
+        const txtEl = li.querySelector('.item-text');
+        txtEl.addEventListener('input', () => {
+          changes.edited.set(section.id + ':paragraph', txtEl.textContent);
+          updateApplyBar();
+        });
+        ul.appendChild(li);
+      } else {
+        (section.items || []).forEach(item => {
+          ul.appendChild(renderItem(section, item));
+        });
+      }
+
+      card.appendChild(ul);
+
+      // Add row (only for list sections)
+      if (section.type !== 'paragraph') {
+        const addRow = document.createElement('div');
+        addRow.className = 'add-row';
+        addRow.innerHTML = `<input type="text" placeholder="Add to ${section.name}…" />
+                            <button class="add-btn" title="Add">+</button>`;
+        const input = addRow.querySelector('input');
+        const btn = addRow.querySelector('.add-btn');
+        const submit = () => {
+          const txt = input.value.trim();
+          if (!txt) return;
+          const newId = 'new-' + Math.random().toString(36).slice(2, 9);
+          changes.added.push({ sectionId: section.id, sectionName: section.name, text: txt, id: newId });
+          // Render the new item visually
+          const tempItem = { id: newId, date: todayISO(), text: txt };
+          const liEl = renderItem(section, tempItem, true);
+          ul.appendChild(liEl);
+          input.value = '';
+          updateApplyBar();
+        };
+        btn.addEventListener('click', submit);
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+        card.appendChild(addRow);
+      }
+
+      root.appendChild(card);
+    });
+  }
+
+  function renderItem(section, item, isNew = false) {
+    const li = document.createElement('li');
+    li.className = 'item' + (isNew ? ' added' : '');
+    li.dataset.id = item.id;
+    const dateHtml = item.date ? `<div class="item-date">${item.date}</div>` : '';
+    li.innerHTML = `${dateHtml}
+                    <div class="item-text" contenteditable="true">${escapeHtml(item.text || '')}</div>
+                    <button class="item-x" title="Mark for deletion">×</button>`;
+
+    const txtEl = li.querySelector('.item-text');
+    txtEl.addEventListener('input', () => {
+      if (txtEl.textContent.trim() !== (item.text || '').trim()) {
+        changes.edited.set(item.id, txtEl.textContent.trim());
+        li.classList.add('edited');
+      } else {
+        changes.edited.delete(item.id);
+        li.classList.remove('edited');
+      }
+      updateApplyBar();
+    });
+
+    li.querySelector('.item-x').addEventListener('click', () => {
+      if (isNew) {
+        // Just remove the visual + the pending add
+        const idx = changes.added.findIndex(a => a.id === item.id);
+        if (idx >= 0) changes.added.splice(idx, 1);
+        li.remove();
+      } else if (li.classList.contains('deleted')) {
+        // Undo deletion
+        changes.deleted.delete(item.id);
+        li.classList.remove('deleted');
+      } else {
+        changes.deleted.add(item.id);
+        li.classList.add('deleted');
+      }
+      updateApplyBar();
+    });
+
+    return li;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  }
+
+  function todayISO() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  // ===== APPLY BAR =====
+  function updateApplyBar() {
+    const total = changes.deleted.size + changes.added.length + changes.edited.size;
+    document.getElementById('ab-count-num').textContent = total;
+    document.getElementById('apply-bar').classList.toggle('visible', total > 0);
+  }
+
+  // ===== DIFF GENERATION =====
+  function buildDiff() {
+    const lines = ['Apply these changes to ~/.claude/strategy.md:', ''];
+
+    if (changes.deleted.size) {
+      lines.push('## DELETE');
+      changes.deleted.forEach(id => {
+        const found = findItem(id);
+        if (found) lines.push(`- Section: "${found.section.name}" — line: "${found.item.text}"`);
+      });
+      lines.push('');
+    }
+
+    if (changes.added.length) {
+      lines.push('## ADD');
+      changes.added.forEach(a => {
+        lines.push(`- Section: "${a.sectionName}" — text: "${a.text}" (date today)`);
+      });
+      lines.push('');
+    }
+
+    if (changes.edited.size) {
+      lines.push('## EDIT');
+      changes.edited.forEach((newText, id) => {
+        if (id.endsWith(':paragraph')) {
+          const sectionId = id.replace(':paragraph', '');
+          const section = data.sections.find(s => s.id === sectionId);
+          if (section) lines.push(`- Section: "${section.name}" (paragraph) — replace with: "${newText}"`);
+        } else {
+          const found = findItem(id);
+          if (found) lines.push(`- Section: "${found.section.name}" — change: "${found.item.text}" → "${newText}"`);
+        }
+      });
+      lines.push('');
+    }
+
+    lines.push('Apply surgical edits, preserve everything else, update the Last updated date, and confirm what changed.');
+    return lines.join('\n');
+  }
+
+  function findItem(itemId) {
+    for (const section of data.sections) {
+      if (section.type === 'paragraph') continue;
+      for (const item of (section.items || [])) {
+        if (item.id === itemId) return { section, item };
+      }
+    }
+    return null;
+  }
+
+  // ===== APPLY HANDLERS =====
+  function showDiff() {
+    const total = changes.deleted.size + changes.added.length + changes.edited.size;
+    if (!total) return;
+    const diff = buildDiff();
+    document.getElementById('modal-body').textContent = diff;
+    document.getElementById('modal').classList.add('visible');
+    // Auto-copy to clipboard
+    navigator.clipboard.writeText(diff).then(() => {
+      showToast('Diff copied to clipboard — paste in Claude');
+    }).catch(() => {});
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('visible');
+    setTimeout(() => t.classList.remove('visible'), 2500);
+  }
+
+  // ===== EVENTS =====
+  document.getElementById('btn-apply').addEventListener('click', showDiff);
+  document.getElementById('btn-apply-2').addEventListener('click', showDiff);
+  document.getElementById('btn-discard').addEventListener('click', () => location.reload());
+  document.getElementById('btn-reset').addEventListener('click', () => location.reload());
+  document.getElementById('btn-close-modal').addEventListener('click', () => document.getElementById('modal').classList.remove('visible'));
+  document.getElementById('btn-close-modal-2').addEventListener('click', () => document.getElementById('modal').classList.remove('visible'));
+  document.getElementById('btn-copy-diff').addEventListener('click', () => {
+    const diff = buildDiff();
+    navigator.clipboard.writeText(diff).then(() => showToast('Copied!'));
+  });
+
+  // ===== INIT =====
+  renderHeader();
+  renderSections();
+  updateApplyBar();
+</script>
+
+</body>
+</html>
