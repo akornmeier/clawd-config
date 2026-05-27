@@ -120,7 +120,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/tk/.claude/skills/gstack/bin/gstack-session-update"
+            "command": "~/.claude/skills/gstack/bin/gstack-session-update"
           }
         ]
       }
