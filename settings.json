@@ -115,6 +115,14 @@
             "command": "uv run ~/.claude/hooks/session_start.py"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tk/.claude/skills/gstack/bin/gstack-session-update"
+          }
+        ]
       }
     ],
     "SessionEnd": [
@@ -195,7 +203,8 @@
     "superpowers@superpowers-marketplace": true,
     "superpowers-chrome@superpowers-marketplace": true,
     "superpowers-developing-for-claude-code@superpowers-marketplace": true,
-    "superpowers-lab@superpowers-marketplace": true
+    "superpowers-lab@superpowers-marketplace": true,
+    "warp@claude-code-warp": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -220,6 +229,12 @@
       "source": {
         "source": "github",
         "repo": "EveryInc/compound-engineering-plugin"
+      }
+    },
+    "claude-code-warp": {
+      "source": {
+        "source": "github",
+        "repo": "warpdotdev/claude-code-warp"
       }
     }
   },
