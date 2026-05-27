@@ -1,0 +1,4 @@
+[submodule "claude-code-warp"]
+	path = plugins/marketplaces/claude-code-warp
+	url = https://github.com/warpdotdev/claude-code-warp.git
+	ignore = untracked
