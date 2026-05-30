@@ -34,6 +34,9 @@ generic code review. This means a React/Next.js project gets reviewed against
 React composition patterns, performance best practices, and Next.js conventions,
 not just generic bug/security checks.
 
+Use the /thermo-nuclear-code-quality-review skill (if available) to apply rigor to
+this code review process.
+
 ## Workflow
 
 ### Phase 1: Scope Discovery
@@ -65,12 +68,12 @@ Only invoke skills when changed files are relevant to that skill's domain. For
 example, skip React composition patterns if only a server-side utility file
 changed.
 
-| Detected Stack | Changed File Types | Skill to Invoke | What It Checks |
-|---|---|---|---|
-| React + TypeScript | `.tsx`, `.jsx` | `/vercel:react-best-practices` | Component structure, hooks, a11y, performance, TS patterns, design system |
-| React (any) | `.tsx`, `.jsx` with component logic | `/vercel:composition-patterns` | Compound components, boolean prop proliferation, state management, context patterns |
-| React + Next.js or Vercel | `.tsx`, `.jsx`, `.ts` | `/vercel:react-best-practices` | 58 rules: waterfall elimination, bundle size, server perf, re-render optimization |
-| Next.js (App Router) | `page.tsx`, `layout.tsx`, `route.ts`, server actions, proxy/middleware | `/vercel:nextjs` | App Router conventions, async APIs, Server Components, caching, proxy.ts |
+| Detected Stack            | Changed File Types                                                     | Skill to Invoke                | What It Checks                                                                      |
+| ------------------------- | ---------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------- |
+| React + TypeScript        | `.tsx`, `.jsx`                                                         | `/vercel:react-best-practices` | Component structure, hooks, a11y, performance, TS patterns, design system           |
+| React (any)               | `.tsx`, `.jsx` with component logic                                    | `/vercel:composition-patterns` | Compound components, boolean prop proliferation, state management, context patterns |
+| React + Next.js or Vercel | `.tsx`, `.jsx`, `.ts`                                                  | `/vercel:react-best-practices` | 58 rules: waterfall elimination, bundle size, server perf, re-render optimization   |
+| Next.js (App Router)      | `page.tsx`, `layout.tsx`, `route.ts`, server actions, proxy/middleware | `/vercel:nextjs`               | App Router conventions, async APIs, Server Components, caching, proxy.ts            |
 
 **Detection heuristics:**
 
@@ -124,6 +127,7 @@ patterns and anti-patterns to check for — your job is to match those against t
 actual code changes.
 
 When invoking framework skills:
+
 - Pass the list of relevant changed files as context
 - Focus on the diff, not the entire file — unless the skill specifically asks
   for full-file analysis (e.g., composition patterns need to see the full
@@ -164,12 +168,14 @@ Output a structured report:
 Group findings by skill when framework skills were applied:
 
 **[vercel:react-best-practices]**
+
 - [ ] `file:line` — [finding]
 
 **[vercel:composition-patterns]**
+
 - [ ] `file:line` — [finding]
 
-*(Omit sections for skills that produced no findings)*
+_(Omit sections for skills that produced no findings)_
 
 ### Simplifications Applied
 
