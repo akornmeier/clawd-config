@@ -6,6 +6,7 @@
 import json
 import sys
 import re
+import os
 from pathlib import Path
 from utils.constants import ensure_session_log_dir
 
@@ -14,161 +15,126 @@ ALLOWED_RM_DIRECTORIES = [
     'trees/',
 ]
 
-def is_path_in_allowed_directory(command, allowed_dirs):
-    """
-    Check if the rm command targets paths exclusively within allowed directories.
-    Returns True if all paths in the command are within allowed directories.
-    """
-    # Extract the path portion after rm and its flags
-    # Pattern: rm [flags] path1 path2 ...
-    path_pattern = r'rm\s+(?:-[\w]+\s+|--[\w-]+\s+)*(.+)$'
-    match = re.search(path_pattern, command, re.IGNORECASE)
+# Catastrophic `rm -r` targets — the cases this guard actually exists for.
+# Deliberately NOT "any path containing a slash or dot": routine recursive
+# deletes of real subdirectories (`git rm -r pkg/foo`, `rm -rf node_modules`)
+# must pass. Matched against the lowercased, whitespace-normalized statement.
+_CATASTROPHIC_TARGETS = [
+    r'(?:^|\s)/\*?(?:\s|$)',  # root only: bare "/" or "/*" (not a trailing slash)
+    r'~(?:/\S*)?(?:\s|$)',    # home: ~ or ~/...
+    r'\$home\b',              # $HOME (normalized to lowercase)
+    r'\.\.(?:/|\s|$)',        # parent dir ..
+    r'(?:^|\s)\*',            # bare wildcard target
+    r'(?:^|\s)\.(?:\s|$)',    # current dir . as a target
+    # absolute delete rooted at a system directory (/etc, /usr/local/lib, ...).
+    # NOT /tmp, /home, /Users, /private — those are legitimate work roots.
+    r'(?:^|\s)/(?:etc|usr|var|bin|sbin|lib|boot|dev|proc|sys|opt|system|library)(?:/|\s|$)',
+]
 
+
+def _split_statements(command):
+    """
+    Split a compound command into individual statements on shell separators
+    (&&, ||, ;, |, newline). Without this, a recursive flag in one statement
+    (e.g. a trailing `grep -rn`) gets misattributed to an `rm` in another.
+    """
+    return re.split(r'&&|\|\||[;\n|]', command)
+
+
+# Wrappers that prefix a real command; their leading options must be skipped to
+# find the actual executable. Flags listed here take a separate argument
+# (`sudo -u root`, `env -u VAR`), so the following token is consumed too. The
+# set is best-effort: a missed arg-flag only risks an over-cautious confirm.
+_COMMAND_WRAPPERS = {'sudo', 'doas', 'env', 'nice', 'nohup', 'time', 'command'}
+_WRAPPER_ARG_FLAGS = {'-u', '-g', '-h', '-p', '-C', '-U', '-r', '-t', '-D', '-a'}
+
+
+def _executable(statement):
+    """
+    Basename of the command word, skipping privilege/env wrappers (sudo, doas,
+    env, ...) plus their option flags, flag-arguments, and leading VAR=val
+    assignments. So `sudo -E rm`, `sudo -u root rm`, and `env FOO=bar rm` all
+    resolve to `rm`, while `git rm` resolves to `git`.
+    """
+    tokens = statement.split()
+    i = 0
+    while i < len(tokens):
+        tok = tokens[i]
+        if re.match(r'\w+=', tok):  # leading VAR=val assignment
+            i += 1
+            continue
+        base = os.path.basename(tok)
+        if base in _COMMAND_WRAPPERS:
+            i += 1  # consume the wrapper, then its option flags/arguments
+            while i < len(tokens) and tokens[i].startswith('-'):
+                takes_arg = tokens[i] in _WRAPPER_ARG_FLAGS
+                i += 1
+                if takes_arg and i < len(tokens):
+                    i += 1
+            continue
+        return base
+    return ''
+
+
+def is_path_in_allowed_directory(statement, allowed_dirs):
+    """
+    Check if an `rm` statement targets paths exclusively within allowed dirs.
+    Returns True only if every path argument is within an allowed directory.
+    """
+    match = re.search(r'rm\s+(?:-[\w]+\s+|--[\w-]+\s+)*(.+)$', statement, re.IGNORECASE)
     if not match:
         return False
 
-    path_str = match.group(1).strip()
-
-    # Split by spaces to get individual paths (simple approach)
-    # This might not handle all edge cases but works for common usage
-    paths = path_str.split()
-
+    paths = [p.strip('\'"') for p in match.group(1).split() if p.strip('\'"')]
     if not paths:
         return False
 
-    # Check if all paths are within allowed directories
-    for path in paths:
-        # Remove quotes
-        path = path.strip('\'"')
+    return all(
+        any(path.startswith(d) or path.startswith('./' + d) for d in allowed_dirs)
+        for path in paths
+    )
 
-        # Skip if empty
-        if not path:
-            continue
-
-        # Check if this path is within any allowed directory
-        is_allowed = False
-        for allowed_dir in allowed_dirs:
-            # Check various formats:
-            # - trees/something
-            # - ./trees/something
-            if path.startswith(allowed_dir) or path.startswith('./' + allowed_dir):
-                is_allowed = True
-                break
-
-        # If any path is not in allowed directories, return False
-        if not is_allowed:
-            return False
-
-    # All paths are within allowed directories
-    return True
 
 def is_dangerous_rm_command(command, allowed_dirs=None):
     """
-    Comprehensive detection of dangerous rm commands.
-    Matches various forms of rm -rf and similar destructive patterns.
-    Returns False if the command targets only allowed directories.
+    Detect genuinely destructive `rm` invocations: a recursive `rm` whose
+    target is catastrophic (/, ~, $HOME, .., *, ., or a system dir like
+    /etc or /usr). Scoped per-statement and
+    to the actual `rm` executable, so `git rm`/`npm rm`/`cargo rm` and a
+    later unrelated `-r` flag (grep -rn, ls -R) no longer trigger it.
 
-    Args:
-        command: The bash command to check
-        allowed_dirs: List of directory paths where rm -rf is permitted
-
-    Returns:
-        True if the command is dangerous and should be blocked, False otherwise
+    Returns True only when the statement is dangerous AND its targets are not
+    confined to `allowed_dirs`.
     """
-    if allowed_dirs is None:
-        allowed_dirs = []
+    allowed_dirs = allowed_dirs or []
 
-    # Normalize command by removing extra spaces and converting to lowercase
-    normalized = ' '.join(command.lower().split())
+    for statement in _split_statements(command):
+        if _executable(statement) != 'rm':
+            continue  # not the rm executable — skip git/npm/cargo rm, grep, ls
 
-    # Pattern 1: Standard rm -rf variations
-    patterns = [
-        r'\brm\s+.*-[a-z]*r[a-z]*f',  # rm -rf, rm -fr, rm -Rf, etc.
-        r'\brm\s+.*-[a-z]*f[a-z]*r',  # rm -fr variations
-        r'\brm\s+--recursive\s+--force',  # rm --recursive --force
-        r'\brm\s+--force\s+--recursive',  # rm --force --recursive
-        r'\brm\s+-r\s+.*-f',  # rm -r ... -f
-        r'\brm\s+-f\s+.*-r',  # rm -f ... -r
-    ]
+        low = ' '.join(statement.lower().split())
+        has_recursive = bool(re.search(r'(?<![\w])-[a-z]*r', low))  # also matches --recursive
+        if not has_recursive:
+            continue  # non-recursive rm of named files is never blocked
 
-    # Check for dangerous patterns
-    is_potentially_dangerous = False
-    for pattern in patterns:
-        if re.search(pattern, normalized):
-            is_potentially_dangerous = True
-            break
-
-    # If not found in Pattern 1, check Pattern 2
-    if not is_potentially_dangerous:
-        # Pattern 2: Check for rm with recursive flag targeting dangerous paths
-        dangerous_paths = [
-            r'/',           # Root directory
-            r'/\*',         # Root with wildcard
-            r'~',           # Home directory
-            r'~/',          # Home directory path
-            r'\$HOME',      # Home environment variable
-            r'\.\.',        # Parent directory references
-            r'\*',          # Wildcards in general rm -rf context
-            r'\.',          # Current directory
-            r'\.\s*$',      # Current directory at end of command
-        ]
-
-        if re.search(r'\brm\s+.*-[a-z]*r', normalized):  # If rm has recursive flag
-            for path in dangerous_paths:
-                if re.search(path, normalized):
-                    is_potentially_dangerous = True
-                    break
-
-    # If not potentially dangerous at all, it's safe
-    if not is_potentially_dangerous:
-        return False
-
-    # It's potentially dangerous - check if targeting only allowed directories
-    if allowed_dirs and is_path_in_allowed_directory(command, allowed_dirs):
-        return False  # Allowed directory, so not dangerous
-
-    # Dangerous and not in allowed directories
-    return True
-
-def is_env_file_access(tool_name, tool_input):
-    """
-    Check if any tool is trying to access .env files containing sensitive data.
-    """
-    if tool_name in ['Read', 'Edit', 'MultiEdit', 'Write', 'Bash']:
-        # Check file paths for file-based tools
-        if tool_name in ['Read', 'Edit', 'MultiEdit', 'Write']:
-            file_path = tool_input.get('file_path', '')
-            if '.env' in file_path and not file_path.endswith('.env.sample'):
-                return True
-
-        # Check bash commands for .env file access
-        elif tool_name == 'Bash':
-            command = tool_input.get('command', '')
-            # Pattern to detect .env file access (but allow .env.sample)
-            env_patterns = [
-                r'\b\.env\b(?!\.sample)',  # .env but not .env.sample
-                r'cat\s+.*\.env\b(?!\.sample)',  # cat .env
-                r'echo\s+.*>\s*\.env\b(?!\.sample)',  # echo > .env
-                r'touch\s+.*\.env\b(?!\.sample)',  # touch .env
-                r'cp\s+.*\.env\b(?!\.sample)',  # cp .env
-                r'mv\s+.*\.env\b(?!\.sample)',  # mv .env
-            ]
-
-            for pattern in env_patterns:
-                if re.search(pattern, command):
-                    return True
+        if any(re.search(target, low) for target in _CATASTROPHIC_TARGETS):
+            if allowed_dirs and is_path_in_allowed_directory(statement, allowed_dirs):
+                continue  # confined to an allowed directory
+            return True
 
     return False
 
-def deny_tool(reason):
+def confirm_tool(reason):
     """
-    Deny a tool call using the JSON hookSpecificOutput.permissionDecision pattern.
-    Prints JSON to stdout and exits with code 0.
+    Surface a tool call for human confirmation via the JSON
+    hookSpecificOutput.permissionDecision pattern. Uses "ask" (not "deny")
+    so a genuinely-intended destructive command can be approved rather than
+    hard-blocked. Prints JSON to stdout and exits with code 0.
     """
     output = {
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
-            "permissionDecision": "deny",
+            "permissionDecision": "ask",
             "permissionDecisionReason": reason
         }
     }
@@ -321,20 +287,20 @@ def main():
         tool_input = input_data.get('tool_input', {})
         tool_use_id = input_data.get('tool_use_id', '')
 
-        # Check for .env file access (blocks access to sensitive environment files)
-        # COMMENTED OUT: Allows worktree command to create .env files automatically
-        # if is_env_file_access(tool_name, tool_input):
-        #     deny_tool("Access to .env files containing sensitive data is prohibited. Use .env.sample for template files instead")
+        # Note: .env access is intentionally NOT guarded here — the worktree
+        # command needs to create .env files automatically.
 
         # Check for dangerous rm -rf commands
         if tool_name == 'Bash':
             command = tool_input.get('command', '')
 
-            # Block rm -rf commands unless they target allowed directories
+            # Surface catastrophic recursive deletes for confirmation. Routine
+            # recursive deletes of real subdirectories pass through silently.
             if is_dangerous_rm_command(command, ALLOWED_RM_DIRECTORIES):
-                deny_tool(
-                    f"Dangerous rm command detected and prevented. "
-                    f"rm -rf is only allowed in these directories: {', '.join(ALLOWED_RM_DIRECTORIES)}"
+                confirm_tool(
+                    "Recursive delete targeting a catastrophic path "
+                    "(/, ~, $HOME, .., *, or a system dir like /etc). "
+                    "Confirm this is intended."
                 )
 
         # Extract session_id
