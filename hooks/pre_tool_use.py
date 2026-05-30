@@ -41,10 +41,39 @@ def _split_statements(command):
     return re.split(r'&&|\|\||[;\n|]', command)
 
 
+# Wrappers that prefix a real command; their leading options must be skipped to
+# find the actual executable. Flags listed here take a separate argument
+# (`sudo -u root`, `env -u VAR`), so the following token is consumed too. The
+# set is best-effort: a missed arg-flag only risks an over-cautious confirm.
+_COMMAND_WRAPPERS = {'sudo', 'doas', 'env', 'nice', 'nohup', 'time', 'command'}
+_WRAPPER_ARG_FLAGS = {'-u', '-g', '-h', '-p', '-C', '-U', '-r', '-t', '-D', '-a'}
+
+
 def _executable(statement):
-    """Return the basename of the command word, ignoring a leading sudo/doas."""
-    m = re.match(r'\s*(?:sudo\s+|doas\s+)?((?:\S*/)?[\w.+-]+)', statement)
-    return os.path.basename(m.group(1)) if m else ''
+    """
+    Basename of the command word, skipping privilege/env wrappers (sudo, doas,
+    env, ...) plus their option flags, flag-arguments, and leading VAR=val
+    assignments. So `sudo -E rm`, `sudo -u root rm`, and `env FOO=bar rm` all
+    resolve to `rm`, while `git rm` resolves to `git`.
+    """
+    tokens = statement.split()
+    i = 0
+    while i < len(tokens):
+        tok = tokens[i]
+        if re.match(r'\w+=', tok):  # leading VAR=val assignment
+            i += 1
+            continue
+        base = os.path.basename(tok)
+        if base in _COMMAND_WRAPPERS:
+            i += 1  # consume the wrapper, then its option flags/arguments
+            while i < len(tokens) and tokens[i].startswith('-'):
+                takes_arg = tokens[i] in _WRAPPER_ARG_FLAGS
+                i += 1
+                if takes_arg and i < len(tokens):
+                    i += 1
+            continue
+        return base
+    return ''
 
 
 def is_path_in_allowed_directory(statement, allowed_dirs):
