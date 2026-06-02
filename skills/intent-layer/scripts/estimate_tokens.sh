@@ -25,32 +25,36 @@ DIR_NAME=$(basename "$TARGET_PATH")
 echo "=== Token Estimate: $DIR_NAME ==="
 echo ""
 
+# Shared find expression so byte/token and file counts describe the same set
+NAME_FILTERS=(
+    -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx"
+    -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.java"
+    -o -name "*.rb" -o -name "*.php" -o -name "*.swift" -o -name "*.kt"
+    -o -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.cs"
+    -o -name "*.vue" -o -name "*.svelte" -o -name "*.astro"
+    -o -name "*.md" -o -name "*.mdx" -o -name "*.json"
+    -o -name "*.yaml" -o -name "*.yml" -o -name "*.toml"
+    -o -name "*.sql" -o -name "*.graphql" -o -name "*.prisma"
+)
+PATH_EXCLUDES=(
+    -not -path "*/node_modules/*"
+    -not -path "*/.git/*"
+    -not -path "*/dist/*"
+    -not -path "*/.next/*"
+    -not -path "*/build/*"
+    -not -path "*/__pycache__/*"
+)
+
 # Count bytes and estimate tokens
 BYTES=$(find "$TARGET_PATH" -type f \
-    \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \
-    -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.java" \
-    -o -name "*.rb" -o -name "*.php" -o -name "*.swift" -o -name "*.kt" \
-    -o -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.cs" \
-    -o -name "*.vue" -o -name "*.svelte" -o -name "*.astro" \
-    -o -name "*.md" -o -name "*.mdx" -o -name "*.json" \
-    -o -name "*.yaml" -o -name "*.yml" -o -name "*.toml" \
-    -o -name "*.sql" -o -name "*.graphql" -o -name "*.prisma" \) \
-    -not -path "*/node_modules/*" \
-    -not -path "*/.git/*" \
-    -not -path "*/dist/*" \
-    -not -path "*/.next/*" \
-    -not -path "*/build/*" \
-    -not -path "*/__pycache__/*" \
+    \( "${NAME_FILTERS[@]}" \) \
+    "${PATH_EXCLUDES[@]}" \
     -exec cat {} + 2>/dev/null | wc -c | tr -d ' ')
 
 TOKENS=$((BYTES / 4))
 FILE_COUNT=$(find "$TARGET_PATH" -type f \
-    \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \
-    -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.java" \
-    -o -name "*.astro" -o -name "*.vue" -o -name "*.svelte" \
-    -o -name "*.md" -o -name "*.mdx" \) \
-    -not -path "*/node_modules/*" \
-    -not -path "*/.git/*" \
+    \( "${NAME_FILTERS[@]}" \) \
+    "${PATH_EXCLUDES[@]}" \
     2>/dev/null | wc -l | tr -d ' ')
 
 # Format tokens

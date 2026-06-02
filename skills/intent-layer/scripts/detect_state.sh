@@ -28,7 +28,7 @@ fi
 # Find child AGENTS.md files
 while IFS= read -r file; do
     CHILD_NODES+=("$file")
-done < <(find "$TARGET_PATH" -name "AGENTS.md" -not -path "$TARGET_PATH/AGENTS.md" -not -path "*/node_modules/*" 2>/dev/null)
+done < <(find "$TARGET_PATH" -mindepth 2 -name "AGENTS.md" -not -path "*/node_modules/*" 2>/dev/null)
 
 # Output state
 echo "=== Intent Layer State ==="
