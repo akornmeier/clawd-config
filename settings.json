@@ -50,15 +50,10 @@
     "learning-output-style@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
     "pinecone@claude-plugins-official": true,
-    "agent-skills@addy-agent-skills": true,
-    "compound-engineering@compound-engineering-plugin": true,
     "elements-of-style@superpowers-marketplace": true,
-    "episodic-memory@superpowers-marketplace": true,
     "superpowers@superpowers-marketplace": true,
-    "superpowers-chrome@superpowers-marketplace": true,
     "superpowers-developing-for-claude-code@superpowers-marketplace": true,
-    "superpowers-lab@superpowers-marketplace": true,
-    "warp@claude-code-warp": true
+    "superpowers-lab@superpowers-marketplace": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -71,24 +66,6 @@
       "source": {
         "source": "github",
         "repo": "ChromeDevTools/chrome-devtools-mcp"
-      }
-    },
-    "addy-agent-skills": {
-      "source": {
-        "source": "github",
-        "repo": "addyosmani/agent-skills"
-      }
-    },
-    "compound-engineering-plugin": {
-      "source": {
-        "source": "github",
-        "repo": "EveryInc/compound-engineering-plugin"
-      }
-    },
-    "claude-code-warp": {
-      "source": {
-        "source": "github",
-        "repo": "warpdotdev/claude-code-warp"
       }
     }
   },
