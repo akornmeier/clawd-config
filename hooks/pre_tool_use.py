@@ -3,12 +3,17 @@
 # requires-python = ">=3.8"
 # ///
 
+"""
+PreToolUse guard: surface catastrophic recursive deletes for confirmation.
+
+This is the only hook still wired. It does one job and does not log, so a
+failure here can only ever cost the guard, never a tool call.
+"""
+
 import json
 import sys
 import re
 import os
-from pathlib import Path
-from utils.constants import ensure_session_log_dir
 
 # Allowed directories where rm -rf is permitted
 ALLOWED_RM_DIRECTORIES = [
@@ -124,6 +129,7 @@ def is_dangerous_rm_command(command, allowed_dirs=None):
 
     return False
 
+
 def confirm_tool(reason):
     """
     Surface a tool call for human confirmation via the JSON
@@ -142,157 +148,12 @@ def confirm_tool(reason):
     sys.exit(0)
 
 
-def summarize_tool_input(tool_name, tool_input):
-    """
-    Create a summary dict of key fields for the tool, for logging purposes.
-    """
-    summary = {"tool_name": tool_name}
-
-    if tool_name == 'Bash':
-        summary["command"] = tool_input.get("command", "")[:200]
-        if tool_input.get("description"):
-            summary["description"] = tool_input["description"][:100]
-        if tool_input.get("timeout"):
-            summary["timeout"] = tool_input["timeout"]
-        if tool_input.get("run_in_background"):
-            summary["run_in_background"] = True
-
-    elif tool_name == 'Write':
-        summary["file_path"] = tool_input.get("file_path", "")
-        summary["content_length"] = len(tool_input.get("content", ""))
-
-    elif tool_name == 'Edit':
-        summary["file_path"] = tool_input.get("file_path", "")
-        summary["replace_all"] = tool_input.get("replace_all", False)
-
-    elif tool_name == 'Read':
-        summary["file_path"] = tool_input.get("file_path", "")
-        if tool_input.get("offset"):
-            summary["offset"] = tool_input["offset"]
-        if tool_input.get("limit"):
-            summary["limit"] = tool_input["limit"]
-
-    elif tool_name == 'Glob':
-        summary["pattern"] = tool_input.get("pattern", "")
-        if tool_input.get("path"):
-            summary["path"] = tool_input["path"]
-
-    elif tool_name == 'Grep':
-        summary["pattern"] = tool_input.get("pattern", "")
-        if tool_input.get("path"):
-            summary["path"] = tool_input["path"]
-        if tool_input.get("glob"):
-            summary["glob"] = tool_input["glob"]
-
-    elif tool_name == 'WebFetch':
-        summary["url"] = tool_input.get("url", "")
-        summary["prompt"] = tool_input.get("prompt", "")[:100]
-
-    elif tool_name == 'WebSearch':
-        summary["query"] = tool_input.get("query", "")
-        if tool_input.get("allowed_domains"):
-            summary["allowed_domains"] = tool_input["allowed_domains"]
-        if tool_input.get("blocked_domains"):
-            summary["blocked_domains"] = tool_input["blocked_domains"]
-
-    elif tool_name == 'Task':
-        summary["description"] = tool_input.get("description", "")[:100]
-        summary["subagent_type"] = tool_input.get("subagent_type", "")
-        if tool_input.get("model"):
-            summary["model"] = tool_input["model"]
-        if tool_input.get("run_in_background"):
-            summary["run_in_background"] = True
-        if tool_input.get("resume"):
-            summary["resume"] = tool_input["resume"]
-
-    elif tool_name == 'TaskOutput':
-        summary["task_id"] = tool_input.get("task_id", "")
-        summary["block"] = tool_input.get("block", True)
-        if tool_input.get("timeout"):
-            summary["timeout"] = tool_input["timeout"]
-
-    elif tool_name == 'TaskStop':
-        summary["task_id"] = tool_input.get("task_id", "")
-
-    elif tool_name == 'SendMessage':
-        summary["type"] = tool_input.get("type", "")
-        if tool_input.get("recipient"):
-            summary["recipient"] = tool_input["recipient"]
-        if tool_input.get("summary"):
-            summary["summary"] = tool_input["summary"]
-
-    elif tool_name == 'TaskCreate':
-        summary["subject"] = tool_input.get("subject", "")[:100]
-        if tool_input.get("activeForm"):
-            summary["activeForm"] = tool_input["activeForm"]
-
-    elif tool_name == 'TaskGet':
-        summary["taskId"] = tool_input.get("taskId", "")
-
-    elif tool_name == 'TaskUpdate':
-        summary["taskId"] = tool_input.get("taskId", "")
-        if tool_input.get("status"):
-            summary["status"] = tool_input["status"]
-        if tool_input.get("owner"):
-            summary["owner"] = tool_input["owner"]
-
-    elif tool_name == 'TaskList':
-        pass  # No params
-
-    elif tool_name == 'TeamCreate':
-        summary["team_name"] = tool_input.get("team_name", "")
-        if tool_input.get("description"):
-            summary["description"] = tool_input["description"][:100]
-
-    elif tool_name == 'TeamDelete':
-        pass  # No params
-
-    elif tool_name == 'NotebookEdit':
-        summary["notebook_path"] = tool_input.get("notebook_path", "")
-        if tool_input.get("cell_type"):
-            summary["cell_type"] = tool_input["cell_type"]
-        if tool_input.get("edit_mode"):
-            summary["edit_mode"] = tool_input["edit_mode"]
-
-    elif tool_name == 'EnterPlanMode':
-        pass  # No params
-
-    elif tool_name == 'ExitPlanMode':
-        if tool_input.get("allowedPrompts"):
-            summary["allowedPrompts_count"] = len(tool_input["allowedPrompts"])
-
-    elif tool_name == 'AskUserQuestion':
-        if tool_input.get("questions"):
-            summary["questions_count"] = len(tool_input["questions"])
-
-    elif tool_name == 'Skill':
-        summary["skill"] = tool_input.get("skill", "")
-        if tool_input.get("args"):
-            summary["args"] = tool_input["args"][:100]
-
-    elif tool_name.startswith('mcp__'):
-        # MCP tools - log the full tool name and available input keys
-        summary["mcp_tool"] = tool_name
-        summary["input_keys"] = list(tool_input.keys())[:10]
-
-    return summary
-
-
 def main():
     try:
-        # Read JSON input from stdin
         input_data = json.load(sys.stdin)
 
-        tool_name = input_data.get('tool_name', '')
-        tool_input = input_data.get('tool_input', {})
-        tool_use_id = input_data.get('tool_use_id', '')
-
-        # Note: .env access is intentionally NOT guarded here — the worktree
-        # command needs to create .env files automatically.
-
-        # Check for dangerous rm -rf commands
-        if tool_name == 'Bash':
-            command = tool_input.get('command', '')
+        if input_data.get('tool_name', '') == 'Bash':
+            command = input_data.get('tool_input', {}).get('command', '')
 
             # Surface catastrophic recursive deletes for confirmation. Routine
             # recursive deletes of real subdirectories pass through silently.
@@ -303,47 +164,18 @@ def main():
                     "Confirm this is intended."
                 )
 
-        # Extract session_id
-        session_id = input_data.get('session_id', 'unknown')
-
-        # Ensure session log directory exists
-        log_dir = ensure_session_log_dir(session_id)
-        log_path = log_dir / 'pre_tool_use.json'
-
-        # Read existing log data or initialize empty list
-        if log_path.exists():
-            with open(log_path, 'r') as f:
-                try:
-                    log_data = json.load(f)
-                except (json.JSONDecodeError, ValueError):
-                    log_data = []
-        else:
-            log_data = []
-
-        # Build log entry with tool_use_id and tool summary
-        log_entry = {
-            "tool_name": tool_name,
-            "tool_use_id": tool_use_id,
-            "session_id": session_id,
-            "hook_event_name": input_data.get("hook_event_name", "PreToolUse"),
-            "tool_summary": summarize_tool_input(tool_name, tool_input),
-        }
-
-        # Append log entry
-        log_data.append(log_entry)
-
-        # Write back to file with formatting
-        with open(log_path, 'w') as f:
-            json.dump(log_data, f, indent=2)
-
         sys.exit(0)
 
     except json.JSONDecodeError:
-        # Gracefully handle JSON decode errors
+        # Malformed input: fail open rather than blocking the tool call.
         sys.exit(0)
-    except Exception:
-        # Handle any other errors gracefully
-        sys.exit(0)
+    except Exception as e:
+        # Fail open, but make the failure visible — a silently dead guard is
+        # worse than a noisy one. Exit 1 is non-blocking; stderr shows in the
+        # transcript.
+        print(f"pre_tool_use guard error: {e}", file=sys.stderr)
+        sys.exit(1)
+
 
 if __name__ == '__main__':
     main()
