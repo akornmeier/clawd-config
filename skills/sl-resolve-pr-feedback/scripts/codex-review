@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+
+# Runs a Codex review over local git state and prints the result on stdout, or a
+# skip sentinel when Codex is unavailable. Used by sl-resolve-pr-feedback
+# Full-mode step 5b as a pre-push gate: the resolvers' combined diff gets a
+# second-model read before it becomes a public PR commit.
+#
+# CONTRACT: this script ALWAYS exits 0. It runs after fixes exist in the working
+# tree but before they are committed, so a non-zero exit would abort the
+# fix/verify loop at its worst possible position -- validated work stranded in an
+# uncommitted tree, with no human present in an unattended run. Every failure
+# mode (missing binary, auth failure, timeout, Codex crash) is reported as text
+# and swallowed as exit 0. The caller decides what to do; this script never
+# decides for it.
+#
+# The caller distinguishes outcomes by the FIRST TOKEN of line 1:
+#   codex-review: ok            -> review ran; findings (if any) follow
+#   codex-review: unavailable   -> codex CLI not installed; gate skipped
+#   codex-review: timed-out     -> exceeded TIMEOUT_SECONDS; gate skipped
+#   codex-review: failed        -> codex exited non-zero; stderr follows
+
+set -e
+
+# Review target. Defaults to the uncommitted working tree, which is what step 5b
+# wants: the resolvers' fixes are staged/unstaged but not yet committed. Pass
+# `--base <ref>` to review a whole branch instead.
+if [ $# -eq 0 ]; then
+    TARGET_ARGS=(--uncommitted)
+else
+    TARGET_ARGS=("$@")
+fi
+
+# Per-run timeout (seconds). Measured runs were 24-31s on a small diff; this is
+# ~6x headroom for a large combined diff. The bound exists because hanging is
+# the worst failure -- the loop must always reach its push. Single tunable.
+TIMEOUT_SECONDS=180
+POLL_INTERVAL=2
+
+# No Codex installed is the common case, not an error. Report and skip.
+if ! command -v codex >/dev/null 2>&1; then
+    echo "codex-review: unavailable (codex CLI not installed)"
+    exit 0
+fi
+
+# stdout and stderr are captured to SEPARATE files, deliberately. `codex review`
+# writes a full agent trace to stderr -- the model banner, sandbox settings, and
+# every command the reviewer ran along with its complete output (it independently
+# runs git diff, ripgrep, and often the project's test suite). That is hundreds of
+# lines. stdout carries only the verdict and findings. Merging the two with 2>&1
+# would flood the caller's context with trace noise on every successful run, so
+# stderr is surfaced only on the failure path where it is the diagnostic.
+out_file=$(mktemp)
+err_file=$(mktemp)
+trap 'rm -f "$out_file" "$err_file"' EXIT
+
+# `< /dev/null` guarantees the reviewer can never block on a TTY read. Codex runs
+# with `approval: never` and a read-only sandbox, so it cannot prompt or write to
+# the working tree, but closing stdin makes that independent of Codex's config.
+#
+# `set -m` puts the review in its own process group so the timeout path can
+# signal the whole tree. Codex shells out (git, ripgrep, sometimes the project's
+# test runner); signalling only the parent pid leaves those children orphaned and
+# running, which on a real timeout means an abandoned review still burning tokens.
+set -m
+codex review "${TARGET_ARGS[@]}" >"$out_file" 2>"$err_file" </dev/null &
+codex_pid=$!
+set +m
+
+# Bounded wait. The loop condition carries the timeout guard, so this always
+# terminates even if Codex hangs on a network read.
+waited=0
+while kill -0 "$codex_pid" 2>/dev/null && [ "$waited" -lt "$TIMEOUT_SECONDS" ]; do
+    sleep "$POLL_INTERVAL"
+    waited=$((waited + POLL_INTERVAL))
+done
+
+if kill -0 "$codex_pid" 2>/dev/null; then
+    # Still running past the bound. Signal the process GROUP (-pid) so Codex's
+    # children die with it, falling back to the bare pid if the group signal
+    # fails. TERM first, then KILL for anything that ignores it.
+    #
+    # Every kill is `|| true`-guarded and the whole block's stderr is discarded.
+    # Two distinct reasons, both load-bearing: the process can exit between the
+    # kill -0 check and the signal, and under `set -e` a failed kill would abort
+    # the script before it prints the timeout line -- bypassing the very bound
+    # this block implements. The stderr redirect suppresses the shell's own
+    # "Terminated: 15" job-control notice, which would otherwise leak into the
+    # caller's output as if it were part of the review.
+    {
+        kill -TERM -"$codex_pid" 2>/dev/null || kill -TERM "$codex_pid" 2>/dev/null || true
+        sleep "$POLL_INTERVAL"
+        kill -KILL -"$codex_pid" 2>/dev/null || kill -KILL "$codex_pid" 2>/dev/null || true
+        wait "$codex_pid" || true
+    } 2>/dev/null
+    echo "codex-review: timed-out after ${TIMEOUT_SECONDS}s"
+    exit 0
+fi
+
+# `wait` reports the child's exit status, which is non-zero on a Codex failure.
+# The `|| exit_code=$?` guard is load-bearing: a bare `wait` under `set -e` would
+# abort the script on any non-zero child status, skipping the failure reporting
+# below and violating the always-exit-0 contract.
+exit_code=0
+wait "$codex_pid" || exit_code=$?
+
+if [ "$exit_code" -ne 0 ]; then
+    echo "codex-review: failed (exit $exit_code)"
+    cat "$err_file"
+    exit 0
+fi
+
+echo "codex-review: ok"
+cat "$out_file"
+exit 0
