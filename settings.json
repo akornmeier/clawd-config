@@ -46,7 +46,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "rtk hook claude"
+            "command": "rtk hook claude",
+            "timeout": 5
           }
         ]
       }

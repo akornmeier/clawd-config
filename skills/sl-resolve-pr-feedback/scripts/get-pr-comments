@@ -61,7 +61,7 @@ fi
 # we trust that layer instead. Add new logins to the CI list only if their
 # output is structurally non-actionable like codecov's.
 
-threads_pages=$(gh api graphql --paginate --slurp \
+if ! threads_pages=$(gh api graphql --paginate --slurp \
   -f owner="$OWNER" -f repo="$REPO" -F pr="$PR_NUMBER" \
   -f query='
 query Threads($owner: String!, $repo: String!, $pr: Int!, $endCursor: String) {
@@ -92,9 +92,12 @@ query Threads($owner: String!, $repo: String!, $pr: Int!, $endCursor: String) {
       }
     }
   }
-}')
+}'); then
+    echo "Error: failed to fetch review threads via gh api graphql (see error above)." >&2
+    exit 1
+fi
 
-comments_pages=$(gh api graphql --paginate --slurp \
+if ! comments_pages=$(gh api graphql --paginate --slurp \
   -f owner="$OWNER" -f repo="$REPO" -F pr="$PR_NUMBER" \
   -f query='
 query Comments($owner: String!, $repo: String!, $pr: Int!, $endCursor: String) {
@@ -110,9 +113,12 @@ query Comments($owner: String!, $repo: String!, $pr: Int!, $endCursor: String) {
       }
     }
   }
-}')
+}'); then
+    echo "Error: failed to fetch PR conversation comments via gh api graphql (see error above)." >&2
+    exit 1
+fi
 
-reviews_pages=$(gh api graphql --paginate --slurp \
+if ! reviews_pages=$(gh api graphql --paginate --slurp \
   -f owner="$OWNER" -f repo="$REPO" -F pr="$PR_NUMBER" \
   -f query='
 query Reviews($owner: String!, $repo: String!, $pr: Int!, $endCursor: String) {
@@ -129,7 +135,10 @@ query Reviews($owner: String!, $repo: String!, $pr: Int!, $endCursor: String) {
       }
     }
   }
-}')
+}'); then
+    echo "Error: failed to fetch review submissions via gh api graphql (see error above)." >&2
+    exit 1
+fi
 
 # Resolution semantics: `isOutdated` means the diff hunk around the comment
 # has shifted since the thread was opened -- not that the reviewer concern

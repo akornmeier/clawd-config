@@ -67,7 +67,10 @@ query Threads($owner: String!, $repo: String!, $pr: Int!, $endCursor: String) {
       }
     }
   }
-}')
+}') || {
+    echo "Error: failed to fetch review threads for PR $PR_NUMBER via gh api graphql (check auth/network)." >&2
+    exit 1
+}
 
 echo "$threads_pages" | jq -e --arg cid "$COMMENT_NODE_ID" '
   [.[].data.repository.pullRequest.reviewThreads.nodes[]
