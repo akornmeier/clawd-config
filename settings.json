@@ -1,8 +1,4 @@
 {
-  "statusLine": {
-    "type": "command",
-    "command": "bash ~/.claude/statusline-command.sh"
-  },
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "ENABLE_TOOL_SEARCH": "true"
@@ -29,6 +25,7 @@
     ],
     "deny": []
   },
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -53,6 +50,10 @@
       }
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline-command.sh"
+  },
   "enabledPlugins": {
     "feature-dev@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
@@ -67,7 +68,8 @@
     "elements-of-style@superpowers-marketplace": true,
     "superpowers@superpowers-marketplace": true,
     "superpowers-developing-for-claude-code@superpowers-marketplace": true,
-    "superpowers-lab@superpowers-marketplace": true
+    "superpowers-lab@superpowers-marketplace": true,
+    "scroll-world@scroll-world": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -80,6 +82,12 @@
       "source": {
         "source": "github",
         "repo": "ChromeDevTools/chrome-devtools-mcp"
+      }
+    },
+    "scroll-world": {
+      "source": {
+        "source": "github",
+        "repo": "oso95/scroll-world"
       }
     }
   },

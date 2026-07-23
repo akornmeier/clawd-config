@@ -110,22 +110,6 @@ if [ -n "$worktree_label" ] && [ -n "$git_info" ]; then
     git_info="${git_info} $(printf "${GRAY}(%s)${RESET}" "$worktree_label")"
 fi
 
-# PR badge, colored by review state
-if [ -n "$pr_number" ]; then
-    case "$pr_state" in
-        approved) pr_color="$GREEN" ;;
-        changes_requested) pr_color="$RED" ;;
-        draft) pr_color="$GRAY" ;;
-        *) pr_color="$YELLOW" ;;
-    esac
-    pr_badge="$(printf "${pr_color}PR#%s${RESET}" "$pr_number")"
-    if [ -n "$git_info" ]; then
-        git_info="${git_info} ${pr_badge}"
-    else
-        git_info="$pr_badge"
-    fi
-fi
-
 if [ -n "$git_info" ]; then
     parts="${parts} $(printf "${GRAY}|${RESET}") ${git_info}"
 fi
