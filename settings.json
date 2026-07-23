@@ -25,156 +25,26 @@
     ],
     "deny": []
   },
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "",
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "uv run ~/.claude/hooks/pre_tool_use.py"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/post_tool_use.py"
+            "command": "uv run --script ~/.claude/hooks/pre_tool_use.py",
+            "timeout": 5
           }
         ]
       },
       {
-        "matcher": "Write|Edit|MultiEdit",
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "uv run ~/.claude/hooks/validators/tsc_validator.py"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/notification.py --notify"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/stop.py --chat"
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/subagent_stop.py --notify"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/pre_compact.py"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/user_prompt_submit.py --log-only --store-last-prompt --name-agent"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/session_start.py"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/skills/gstack/bin/gstack-session-update"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/session_end.py"
-          }
-        ]
-      }
-    ],
-    "PermissionRequest": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/permission_request.py --log-only"
-          }
-        ]
-      }
-    ],
-    "PostToolUseFailure": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/post_tool_use_failure.py"
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/subagent_start.py"
-          }
-        ]
-      }
-    ],
-    "Setup": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run ~/.claude/hooks/setup.py"
+            "command": "rtk hook claude",
+            "timeout": 5
           }
         ]
       }
@@ -182,8 +52,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "uv run ~/.claude/status_lines/status_line_v6.py",
-    "padding": 0
+    "command": "bash ~/.claude/statusline-command.sh"
   },
   "enabledPlugins": {
     "feature-dev@claude-plugins-official": true,
@@ -196,15 +65,11 @@
     "learning-output-style@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
     "pinecone@claude-plugins-official": true,
-    "agent-skills@addy-agent-skills": true,
-    "compound-engineering@compound-engineering-plugin": true,
     "elements-of-style@superpowers-marketplace": true,
-    "episodic-memory@superpowers-marketplace": true,
     "superpowers@superpowers-marketplace": true,
-    "superpowers-chrome@superpowers-marketplace": true,
     "superpowers-developing-for-claude-code@superpowers-marketplace": true,
     "superpowers-lab@superpowers-marketplace": true,
-    "warp@claude-code-warp": true
+    "scroll-world@scroll-world": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -219,22 +84,10 @@
         "repo": "ChromeDevTools/chrome-devtools-mcp"
       }
     },
-    "addy-agent-skills": {
+    "scroll-world": {
       "source": {
         "source": "github",
-        "repo": "addyosmani/agent-skills"
-      }
-    },
-    "compound-engineering-plugin": {
-      "source": {
-        "source": "github",
-        "repo": "EveryInc/compound-engineering-plugin"
-      }
-    },
-    "claude-code-warp": {
-      "source": {
-        "source": "github",
-        "repo": "warpdotdev/claude-code-warp"
+        "repo": "oso95/scroll-world"
       }
     }
   },

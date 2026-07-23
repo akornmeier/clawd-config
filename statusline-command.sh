@@ -4,9 +4,16 @@
 input=$(cat)
 
 # Extract values from JSON
-model=$(echo "$input" | jq -r '.model.display_name')
-current_dir=$(echo "$input" | jq -r '.workspace.current_dir')
-project_dir=$(echo "$input" | jq -r '.workspace.project_dir')
+model=$(echo "$input" | jq -r '.model.display_name // .model.id // "?"')
+current_dir=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // "."')
+
+# Worktree, PR, and rate limit info
+wt_name=$(echo "$input" | jq -r '.worktree.name // empty')
+git_worktree=$(echo "$input" | jq -r '.workspace.git_worktree // empty')
+pr_number=$(echo "$input" | jq -r '.pr.number // empty')
+pr_state=$(echo "$input" | jq -r '.pr.review_state // empty')
+five_hour_pct=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
+seven_day_pct=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
 
 # Get pre-calculated context usage percentage
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
@@ -77,19 +84,19 @@ if [ -n "$used_pct" ]; then
     for ((i=0; i<empty; i++)); do bar="${bar}░"; done
     bar="${bar}]"
 
-    parts="${parts} $(printf "${GRAY}|${RESET}") $(printf "${bar_color}%s${RESET}" "$bar") $(printf "${GRAY}|${RESET}") $(printf "${MAGENTA}%sK${RESET}" "$current_k")$(printf "${GRAY}/${RESET}")$(printf "${MAGENTA}%sK${RESET}" "$max_k")"
+    parts="${parts} $(printf "${GRAY}|${RESET}") $(printf "${bar_color}%s${RESET}" "$bar") $(printf "${bar_color}%s%%${RESET}" "$used_pct") $(printf "${GRAY}|${RESET}") $(printf "${MAGENTA}%sK${RESET}" "$current_k")$(printf "${GRAY}/${RESET}")$(printf "${MAGENTA}%sK${RESET}" "$max_k")"
 else
     parts="${parts} $(printf "${GRAY}|${RESET}") $(printf "${GREEN}%s${RESET}" "[░░░░░░░░░░░░░░░░░░░░]") $(printf "${GRAY}|${RESET}") $(printf "${MAGENTA}%sK${RESET}" "$current_k")$(printf "${GRAY}/${RESET}")$(printf "${MAGENTA}%sK${RESET}" "$max_k")"
 fi
 
-# 4. Git Branch with dirty indicator
+# 4. Git Branch with dirty indicator, worktree label, and PR badge
 # Green (clean), Yellow (dirty)
 git_info=""
-if git -C "$current_dir" rev-parse --git-dir > /dev/null 2>&1; then
-    git_branch=$(git -C "$current_dir" branch --show-current 2>/dev/null || echo "")
+if git -C "$current_dir" --no-optional-locks rev-parse --git-dir > /dev/null 2>&1; then
+    git_branch=$(git -C "$current_dir" --no-optional-locks branch --show-current 2>/dev/null || echo "")
     if [ -n "$git_branch" ]; then
         # Check for dirty status (uncommitted changes)
-        if ! git -C "$current_dir" diff --quiet 2>/dev/null || ! git -C "$current_dir" diff --cached --quiet 2>/dev/null; then
+        if ! git -C "$current_dir" --no-optional-locks diff --quiet 2>/dev/null || ! git -C "$current_dir" --no-optional-locks diff --cached --quiet 2>/dev/null; then
             git_info="$(printf "${YELLOW}%s*${RESET}" "$git_branch")"
         else
             git_info="$(printf "${GREEN}%s${RESET}" "$git_branch")"
@@ -97,13 +104,37 @@ if git -C "$current_dir" rev-parse --git-dir > /dev/null 2>&1; then
     fi
 fi
 
+# Worktree label (Claude worktree name, falling back to git worktree name)
+worktree_label="${wt_name:-$git_worktree}"
+if [ -n "$worktree_label" ] && [ -n "$git_info" ]; then
+    git_info="${git_info} $(printf "${GRAY}(%s)${RESET}" "$worktree_label")"
+fi
+
 if [ -n "$git_info" ]; then
     parts="${parts} $(printf "${GRAY}|${RESET}") ${git_info}"
 fi
 
-# 5. Project Name (Blue)
-project_name=$(basename "$project_dir")
-parts="${parts} $(printf "${GRAY}|${RESET}") $(printf "${BLUE}%s${RESET}" "$project_name")"
+# 5. Working Directory (Blue)
+dir_name=$(basename "$current_dir")
+parts="${parts} $(printf "${GRAY}|${RESET}") $(printf "${BLUE}%s${RESET}" "$dir_name")"
+
+# 6. Rate limits (Claude.ai subscription usage: 5h / 7d)
+rate_parts=""
+if [ -n "$five_hour_pct" ]; then
+    five_val=$(printf "%.0f" "$five_hour_pct")
+    if [ "$five_val" -lt 50 ]; then five_color="$GREEN"; elif [ "$five_val" -lt 75 ]; then five_color="$YELLOW"; else five_color="$RED"; fi
+    rate_parts="$(printf "${five_color}5h:%s%%${RESET}" "$five_val")"
+fi
+if [ -n "$seven_day_pct" ]; then
+    week_val=$(printf "%.0f" "$seven_day_pct")
+    if [ "$week_val" -lt 50 ]; then week_color="$GREEN"; elif [ "$week_val" -lt 75 ]; then week_color="$YELLOW"; else week_color="$RED"; fi
+    [ -n "$rate_parts" ] && rate_parts="${rate_parts} "
+    rate_parts="${rate_parts}$(printf "${week_color}7d:%s%%${RESET}" "$week_val")"
+fi
+
+if [ -n "$rate_parts" ]; then
+    parts="${parts} $(printf "${GRAY}|${RESET}") ${rate_parts}"
+fi
 
 # Output the status line
 echo -e "$parts"
