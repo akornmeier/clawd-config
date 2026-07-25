@@ -19,9 +19,19 @@ Pick the sub-workflow based on the incoming `USER_PROMPT`:
 | Create | The prompt asks to generate, fill, or add the plan's images from scratch (empty `{{...IMAGE` slots) |
 | Update | The prompt asks to change, refine, regenerate, or replace images that already exist in the plan |
 
-Scripts (run with `uv run`, needs `OPENAI_API_KEY`). Script paths resolve from the skill's base directory — announced when the skill loads — not from the working directory, so always prefix them with `<skill-dir>`:
-- Create image: `uv run <skill-dir>/scripts/generate_gpt_image.py "<prompt>" <output.png> --size 1536x1024 --quality high`
-- Edit image: `uv run <skill-dir>/scripts/edit_gpt_image.py "<instruction>" <output.png> <input.png> --size 1536x1024 --quality high`
+Scripts (run with `uv run`, needs `OPENAI_API_KEY`). The Bash working directory is the
+project root, not the skill directory, and shell state does not persist between Bash calls —
+so set the anchor inline in the same command as the script it resolves:
+
+```bash
+SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"
+
+# Create image
+uv run "$SKILL_DIR/scripts/generate_gpt_image.py" "<prompt>" <output.png> --size 1536x1024 --quality high
+
+# Edit image
+uv run "$SKILL_DIR/scripts/edit_gpt_image.py" "<instruction>" <output.png> <input.png> --size 1536x1024 --quality high
+```
 
 Shared rules for every image prompt:
 - always generate in wide format (`--size 1536x1024`) at high quality (`--quality high`)

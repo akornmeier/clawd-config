@@ -63,7 +63,8 @@ Called by other workflows rather than selected directly from the `USER_PROMPT`.
 
 ## Files
 
-Paths are relative to this skill's base directory, announced when the skill loads.
+Paths below are relative to this skill's own directory — Claude Code announces it as
+"Base directory for this skill" when the skill loads — not to the working directory.
 
 | Path | What it is | Read it when |
 | --- | --- | --- |
