@@ -2,6 +2,8 @@
 
 Read this reference when Mode Detection (in SKILL.md) routes to **Full Mode** — no argument given, or a PR number was provided. Full mode processes all unresolved threads on the PR.
 
+**Bundled script paths.** The Bash tool's working directory is the user's project root, not this skill's directory, and shell state does not persist between Bash calls. Every fenced block below therefore sets `SKILL_DIR` in the same command as the script it resolves — copy the block whole. Substitute the absolute skill directory Claude Code announces as "Base directory for this skill" when the skill loads.
+
 ## 1. Fetch Unresolved Threads
 
 If no PR number was provided, detect from the current branch:
@@ -12,7 +14,8 @@ gh pr view --json number -q .number
 Then fetch all feedback using the GraphQL script at [scripts/get-pr-comments](../scripts/get-pr-comments):
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/get-pr-comments" PR_NUMBER
+SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"
+bash "$SKILL_DIR/scripts/get-pr-comments" PR_NUMBER
 ```
 
 Returns a JSON object with three keys:
@@ -78,13 +81,11 @@ Each agent returns a short summary:
 - **files_changed**: list of files modified (empty if replied/not-addressing)
 - **reason**: brief explanation of what was done or why it was skipped
 
-Verdict meanings:
-- `fixed` -- code change made as requested
-- `fixed-differently` -- code change made, but with a better approach than suggested
-- `replied` -- no code change needed; answered a question, explained a design decision, or judged a correct point not worth a change
-- `not-addressing` -- feedback is factually wrong about the code; skip with evidence
-- `declined` -- observation may be valid, but implementing the suggested fix would actively make the code worse; reply cites the specific harm
-- `needs-human` -- cannot determine the right action; needs user decision
+Verdicts are defined and assigned in `sl-pr-comment-resolver`. The parent only routes on them:
+
+- `fixed` / `fixed-differently` are the verdicts that carry a non-empty `files_changed`, which is what engages steps 5, 5b, 6 and 8.
+- `needs-human` gets its reply posted and its thread left **open**.
+- `replied` / `not-addressing` / `declined` change nothing. A round of only these is a reply-only round.
 
 ### Batching and conflict avoidance
 
@@ -127,10 +128,11 @@ git rev-parse --show-toplevel
 Run the review over the uncommitted diff:
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/codex-review"
+SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"
+bash "$SKILL_DIR/scripts/codex-review"
 ```
 
-Keep this a single pinned command, not an `if [ -f … ]` guard -- a compound guard defeats the narrow `Bash(bash *codex-review)` allow-rule (the permission checker evaluates the `[` subcommand separately) and prompts on every run.
+Keep this a single pinned command, not an `if [ -f … ]` guard. A guard that evaluates false skips the gate *silently* and the round reads as reviewed when it never was; an unguarded call that cannot find its script fails loudly and is fixed in one step. Prefer the loud failure.
 
 Route on the **first token of line 1**:
 
@@ -140,7 +142,7 @@ Route on the **first token of line 1**:
 | `codex-review: unavailable` | Gate skipped -- Codex is not installed. Note the reason for step 9 and proceed to step 6. |
 | `codex-review: timed-out` / `codex-review: failed` | Gate skipped -- note the reason for step 9 and proceed to step 6. |
 
-**The gate never blocks the push.** Every path terminates at step 6. It is advisory: a gate that can refuse to push would, in an unattended run, strand validated fixes in an uncommitted working tree with no human to unblock it -- strictly worse than pushing with a noted concern, since the PR's own bots and required status checks remain as the real gate. If `${CLAUDE_SKILL_DIR}` is unresolved (e.g. running off Claude Code), the call fails loudly with "No such file or directory" -- treat that as "skip the gate" and proceed to step 6, degrading to the pre-gate behavior, never worse.
+**The gate never blocks the push.** Every path terminates at step 6. It is advisory: a gate that can refuse to push would, in an unattended run, strand validated fixes in an uncommitted working tree with no human to unblock it -- strictly worse than pushing with a noted concern, since the PR's own bots and required status checks remain as the real gate.
 
 ## 6. Commit and Push
 
@@ -162,30 +164,9 @@ git push
 
 After the push succeeds, post replies and resolve where applicable. The mechanism depends on the feedback type.
 
-### Reply format
+### What to post
 
-All replies should quote the relevant part of the original feedback for continuity. Quote the specific sentence or passage being addressed, not the entire comment if it's long.
-
-For fixed items:
-```markdown
-> [quoted relevant part of original feedback]
-
-Addressed: [brief description of the fix]
-```
-
-For items not addressed:
-```markdown
-> [quoted relevant part of original feedback]
-
-Not addressing: [reason with evidence, e.g., "null check already exists at line 85"]
-```
-
-For declined items:
-```markdown
-> [quoted relevant part of original feedback]
-
-Declined: [specific harm cited, e.g., "this would add a defensive null check the type system already guarantees" or "violates the no-premature-abstraction guidance in CLAUDE.md"]
-```
+Each resolver returned a composed `reply_text`, already quoting the relevant part of the original feedback. **Post it verbatim.** Do not re-write or re-format it here — the per-verdict formats live in `sl-pr-comment-resolver`, where the text is actually written.
 
 For `needs-human` verdicts, post the reply but do NOT resolve the thread. Leave it open for human input.
 
@@ -195,13 +176,15 @@ For `needs-human` verdicts, post the reply but do NOT resolve the thread. Leave 
 ```bash
 # Extract numeric comment ID from the comment URL (e.g. discussion_r2589700 → 2589700)
 GH_REPO=OWNER/REPO gh api repos/{owner}/{repo}/pulls/comments/COMMENT_ID --jq .node_id
-bash "${CLAUDE_SKILL_DIR}/scripts/get-thread-for-comment" PR_NUMBER COMMENT_NODE_ID OWNER/REPO
+SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"
+bash "$SKILL_DIR/scripts/get-thread-for-comment" PR_NUMBER COMMENT_NODE_ID OWNER/REPO
 ```
 The returned `id` is the authoritative thread ID to use for reply and resolve. If it differs from what `get-pr-comments` returned, use the one from this script.
 
 1. **Reply** using [scripts/reply-to-pr-thread](../scripts/reply-to-pr-thread):
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/reply-to-pr-thread" THREAD_ID <<'EOF'
+SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"
+bash "$SKILL_DIR/scripts/reply-to-pr-thread" THREAD_ID <<'EOF'
 REPLY_TEXT
 EOF
 ```
@@ -209,7 +192,8 @@ Check that the returned comment URL contains the correct `OWNER/REPO` and PR num
 
 2. **Resolve** using [scripts/resolve-pr-thread](../scripts/resolve-pr-thread):
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/resolve-pr-thread" THREAD_ID
+SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"
+bash "$SKILL_DIR/scripts/resolve-pr-thread" THREAD_ID
 ```
 
 ### PR comments and review bodies
@@ -224,35 +208,19 @@ Include enough quoted context in the reply so the reader can follow which commen
 
 ## 8. Verify
 
-Automated reviewers (Copilot, CodeRabbit, Greptile) re-review **asynchronously**: a fix push triggers a re-review that lands seconds-to-minutes later. Re-fetching immediately after the push sees "0 unresolved," concludes, and the bot's next round arrives afterward -- forcing the user to re-run. So when this round pushed a fix, **wait for the active bots to re-review the pushed commit before re-fetching.**
-
 ### Reviewer-quiescence gate
 
-**Engage the gate only when this round pushed a fix** -- i.e., step 5's aggregated `files_changed` was non-empty and step 6 ran. A reply-only round (all verdicts `replied` / `not-addressing` / `declined` / `needs-human`, nothing pushed) **skips the wait** and proceeds straight to the re-fetch: there is no new commit for a bot to re-review.
+**Engage the gate only when this round pushed a fix** -- i.e., step 5's aggregated `files_changed` was non-empty and step 6 ran. A reply-only round (all verdicts `replied` / `not-addressing` / `declined` / `needs-human`, nothing pushed) **skips the wait** and proceeds straight to the re-fetch below: there is no new commit for a bot to re-review.
 
-When a fix was pushed, wait for the active automated reviewers to re-review the pushed HEAD:
-
-```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/wait-for-bot-review" PR_NUMBER "$(git rev-parse HEAD)"
-```
-
-Keep this a single pinned command, not an `if [ -f … ]` guard -- a compound guard defeats the narrow `Bash(bash *wait-for-bot-review)` allow-rule (the permission checker evaluates the `[` subcommand separately) and prompts on every run. `${CLAUDE_SKILL_DIR}` resolves to this skill's directory on Claude Code; if it is unresolved (e.g. running off Claude Code), the call fails loudly with "No such file or directory" -- treat that as "skip the wait" and proceed straight to the re-fetch below, degrading to the pre-gate "re-fetch now" behavior, never worse.
-
-**Bots only -- never humans.** The wait targets known automated reviewer logins that are *active* on this PR (have at least one prior review). It **never waits on human reviewers** -- human threads are handled in the round they are present, not waited on. The script intersects its known-bot list with the PR's actual reviewers, so a configured bot that never reviews this PR is a no-op, not a wait.
-
-**Two bounds keep the gate from hanging:**
-
-- **Per-wait timeout.** The script stops waiting and exits after ~5 minutes even if an active bot never reaches HEAD (hanging is the worst failure). On timeout it prints `timed-out waiting for: <logins>` -- **proceed anyway** (re-fetch), and note in the step 9 summary that a late bot round may still arrive, so the result does not imply full quiescence.
-- **Max fix-round cap of 3** (below): after the third fix-verify cycle the recurring-pattern escalation fires instead of looping again.
-
-**Settle-window fallback (C).** Some reviewers post feedback that is *not* detectable as a re-review on HEAD -- a top-level comment with no SHA-tied review. For those the `commit.oid == HEAD` signal never trips, so do not wait on it forever: fall back to a **settle-window** -- after the gate returns, wait ~60s and re-fetch once via `get-pr-comments`; if no new threads appeared, conclude. This bounds the wait for non-SHA reviewers rather than blocking on a signal that will not come. Option A (poll-for-review-on-HEAD, above) is the primary, deterministic path; C is the documented secondary path for the non-SHA case.
+When a fix was pushed, read `references/verify-gate.md` and follow it -- the wait command, the bots-only rule, the ~5-minute timeout and the settle-window fallback live there. On timeout, proceed anyway and note it in the step 9 summary, since the result then does not imply full quiescence. Every path returns here.
 
 ### Re-fetch and loop
 
-Once the gate returns (quiescent or timed out), re-fetch feedback to confirm resolution:
+Runs on every round, pushed or not. Re-fetch feedback to confirm resolution:
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/get-pr-comments" PR_NUMBER
+SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"
+bash "$SKILL_DIR/scripts/get-pr-comments" PR_NUMBER
 ```
 
 The `review_threads` array should be empty (except `needs-human` items).
@@ -281,37 +249,14 @@ Not addressing (count): [what was skipped and why]
 Declined (count): [what was declined and the harm cited]
 
 Validation: [one line -- e.g., "bun test passed (893/893)" or "bun test passed with pre-existing failure in X noted"; omit when no code changes were committed]
-Codex gate: [one line -- "approved", "N finding(s) addressed, M noted", or a skip reason such as "skipped (codex CLI not installed)". Include only when step 5b ran; omit entirely when no fix was pushed, so the summary never implies a review that did not happen. Findings are reported here only -- never counted in the verdict tallies above.]
-Reviewer wait: [include only when the step-8 quiescence gate timed out or fell back to the settle-window -- "an active reviewer (<logins>) had not re-reviewed the pushed commit at verify time; a late bot round may still arrive." Omit when the gate confirmed quiescence or no fix was pushed, so the summary never implies full quiescence it did not reach.]
+Codex gate: [one line -- "approved", "N finding(s) addressed, M noted", or a skip reason such as "skipped (codex CLI not installed)"]
+Reviewer wait: [one line, only when the step-8 gate timed out or fell back to the settle-window]
 ```
 
-If any agent returned `needs-human`, append a decisions section. These are rare but high-signal. Each `needs-human` agent returns a `decision_context` field with a structured analysis: what the reviewer said, what the agent investigated, why it needs a decision, concrete options with tradeoffs, and the agent's lean if it has one.
+Three reporting rules the format alone does not carry:
 
-Present the `decision_context` directly -- it's already structured for the user to read and decide quickly:
+- **Omit the `Codex gate` line entirely when no fix was pushed**, so the summary never implies a review that did not happen.
+- **Omit the `Reviewer wait` line when the gate confirmed quiescence or no fix was pushed**, so it never implies quiescence it did not reach.
+- **Never count Codex findings in the verdict tallies.** They carry no thread ID and belong only on the `Codex gate` line; counting them misreports how much reviewer feedback was addressed, which is the number the user actually reads.
 
-```
-Needs your input (count):
-
-1. [decision_context from the agent -- includes quoted feedback,
-   investigation findings, why it needs a decision, options with
-   tradeoffs, and the agent's recommendation if any]
-```
-
-The `needs-human` threads already have a natural-sounding acknowledgment reply posted and remain open on the PR.
-
-If there are **pending decisions from a previous run** (threads detected in step 2 as already responded to but still unresolved), surface them after the new work:
-
-```
-Still pending from a previous run (count):
-
-1. [Thread path:line] -- [brief description of what's pending]
-   Previous reply: [link to the existing reply]
-   [Re-present the decision options if the original context is available,
-   or summarize what was asked]
-```
-
-If a blocking question tool is available, use it to ask about all pending decisions (both new `needs-human` and previous-run pending) together. If there are only pending decisions and no new work was done, the summary is just the pending items.
-
-Use `AskUserQuestion` (call `ToolSearch` with `select:AskUserQuestion` first if its schema isn't loaded). Use it to present the decisions and wait for the user's response. After they decide, process the remaining items: fix the code, compose the reply, post it, and resolve the thread.
-
-Fall back to presenting the decisions in the summary output and waiting in conversation only if it is unavailable or the call errors. Never silently skip. If the user doesn't respond, the items remain open on the PR for later handling.
+**If this round has any `needs-human` verdict, or step 2 found a pending decision from a previous run**, read `references/summary.md` and follow it for those blocks. Most rounds have neither and can stop here.
