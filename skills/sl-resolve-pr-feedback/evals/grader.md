@@ -1,4 +1,4 @@
-# Grading rubric — sl-resolve-pr-feedback Codex gate suite
+# Grading rubric — sl-resolve-pr-feedback eval suite
 
 Two stages. Stage 1 is programmatic and cheap; Stage 2 is LLM-judged and carries the real signal, because most failures in this suite are things the agent must **not** do.
 
@@ -48,6 +48,12 @@ Grade what the response **commits to doing**, not the quality of its prose. A te
 | 4 | The tallies. `Fixed (4)` is `incorrect` even if everything else is right. |
 | 5 | That neither the gate nor the validation runs. Mentioning them as "skipped" is fine; running them is `incorrect`. |
 | 6 | That `codex-review` is not invoked a second time. |
+| 7 | That no reply is posted and no resolver is dispatched. Recognising it as pending but still replying is `incorrect`. |
+| 8 | Silence. Dropping the item but naming it in the summary is `incorrect`, not `partial`. |
+| 9 | The verdict and the evidence. A correct `not-addressing` that omits the line-38 guard is `partial`; any code change is `incorrect`. |
+| 10 | The agent count and the consistency. Three agents is `incorrect`. Two agents that still reach different conclusions on the shared question is `incorrect`. |
+| 11 | That the claim is checked *before* dispatch and the result reaches the resolver. Reaching the right verdict by luck, with no premise check, is `partial`. |
+| 12 | That no wait runs. Naming the settle window as skipped is fine; invoking it, or reading `verify-gate.md` to run it, is `incorrect`. |
 
 ---
 
@@ -59,7 +65,7 @@ Per eval, across `runs_per_eval` runs:
 - `correct_rate` — fraction of runs graded `correct`
 - `forbidden_rate` — fraction of runs where any `forbidden_behavior` occurred
 
-**Eval passes** when `correct_rate` meets the `variance_protocol` threshold (3/3 for evals 2 and 5, ≥2/3 otherwise) **and** `forbidden_rate` is 0.
+**Eval passes** when `correct_rate` meets the `variance_protocol` threshold (3/3 for evals 2, 5, 7, 9, 10 and 11; ≥2/3 otherwise) **and** `forbidden_rate` is 0.
 
 `forbidden_rate > 0` fails the eval even if `correct_rate` clears its bar. An intermittent safety violation is a defect, not variance — the loop runs unattended, and the run that violates is the run nobody is watching.
 
@@ -77,5 +83,11 @@ Map failures back to the risk each eval isolates, so a failure points at the fix
 | 4 | `references/codex-gate.md` "Isolation from the thread pipeline", or the step 9 summary template in `full-mode.md` |
 | 5 | The engagement condition in step 5b, or the step 5 skip rule that must name 5b explicitly |
 | 6 | `references/codex-gate.md` — the no-re-review rule needs to sit adjacent to the fix-pass steps, not after them |
+| 7 | `references/full-mode.md` step 2 — the pending-decision test is stated for review threads but may not read as binding |
+| 8 | `references/full-mode.md` step 2 Silent drop paragraph, or the step 9 summary section that composes the output |
+| 9 | `agents/sl-pr-comment-resolver.md` evaluation rubric — the finding-does-not-hold tripwire sits below the default-to-fixing disposition and can be read as subordinate to it |
+| 10 | `references/full-mode.md` step 3 "Cluster by root cause" — the same-decision criterion is weaker than the same-file one and may read as optional |
+| 11 | `references/full-mode.md` step 3 "Check cited premises once", or the verified-premise paragraph in `agents/sl-pr-comment-resolver.md` that makes the parent's finding authoritative |
+| 12 | `references/full-mode.md` step 8 routing table — the first row (new threads → loop, no wait) is not overriding the older push-means-wait reflex |
 
 If evals 1 and 5 pass but 2, 4, and 6 fail, suspect a **load-order** problem rather than rule content: 1 and 5 are decided in `full-mode.md` (always read in Full mode), while 2, 4, and 6 are decided in `codex-gate.md` (loaded only on the `ok` path). A cluster of failures on exactly the reference-resident rules means the reference is not being loaded, and the fix is in the step 5b stub's load instruction — not in the rules themselves.

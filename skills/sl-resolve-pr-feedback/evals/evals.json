@@ -1,15 +1,15 @@
 {
   "skill_name": "sl-resolve-pr-feedback",
-  "purpose": "Validate the Full-mode step 5b Codex pre-push review gate: that it engages only when a fix exists, degrades to a skip when the CLI is unavailable, bounds itself to one fix pass over P0/P1 findings in resolver-touched files, never blocks the push, and keeps Codex findings out of the thread reply/resolve pipeline and the verdict tallies.",
-  "non_purpose": "Not testing the skill's triage quality, verdict selection, GraphQL mechanics, or the step-8 quiescence gate. Those are separate behaviors with their own failure modes; this suite is scoped to gate behavior only.",
+  "purpose": "Validate two behaviors of the Full-mode flow. (1) The step 5b Codex pre-push review gate: that it engages only when a fix exists, degrades to a skip when the CLI is unavailable, bounds itself to one fix pass over P0/P1 findings in resolver-touched files, never blocks the push, and keeps Codex findings out of the thread reply/resolve pipeline and the verdict tallies. (2) The core loop the skill exists for: that step 2 triage leaves a pending decision alone, drops non-actionable items without narrating them, and that a plausible-but-wrong finding gets evidence rather than a reflexive fix. (3) The process rules that keep a multi-finding round coherent: clustering by root cause so one decision is answered once, verifying a cited premise centrally before fan-out, and re-fetching before waiting in step 8.",
+  "non_purpose": "Not testing GraphQL mechanics or the step-8 quiescence gate's polling mechanics - bot intersection, timeout, backoff. Eval 12 tests only the routing decision to skip the wait, not the gate itself. Evals 1-6 are scoped to gate behavior; evals 7-9 to triage and verdict selection; evals 10-12 to the process rules.",
   "variance_protocol": {
     "runs_per_eval": 3,
     "stability_metric": "fraction of runs reaching the correct routing decision",
-    "pass_threshold": "correct routing in 3/3 runs for the two safety cases (2 and 5); >= 2/3 for the rest"
+    "pass_threshold": "correct routing in 3/3 runs for the cases whose failure is unrecoverable, corrupts the PR conversation, or ships a wrong fix (2, 5, 7, 9, 10, 11); >= 2/3 for the rest"
   },
   "grading_pipeline": {
     "stage_1": "Programmatic substring match over expected_terms. Cheaply catches the case where the agent never reached the gate at all, or invented a mechanism the skill does not describe (e.g. calling /codex:review).",
-    "stage_2": "LLM grader (see grader.md) — judges the ROUTING DECISION against the case's required_behavior and, critically, against its forbidden_behavior. Most failure modes here are things the agent must NOT do (block the push, re-review its own fix, reply to a finding on a thread), which substring matching cannot detect."
+    "stage_2": "LLM grader (see grader.md) \u2014 judges the ROUTING DECISION against the case's required_behavior and, critically, against its forbidden_behavior. Most failure modes here are things the agent must NOT do (block the push, re-review its own fix, reply to a finding on a thread), which substring matching cannot detect."
   },
   "evals": [
     {
@@ -18,11 +18,26 @@
       "tests_risk": "hard_dependency_on_optional_tool",
       "prompt": "You are running /sl-resolve-pr-feedback in Full mode on PR #100. Step 4 dispatched three resolvers; step 5's combined validation passed and aggregated files_changed is ['src/parser.ts', 'src/index.ts']. You run the step 5b gate and the first line of output is `codex-review: unavailable (codex CLI not installed)`. Walk through exactly what you do next and why, then state what the step 9 summary will say about the gate.",
       "expected_terms": [
-        {"term": "step 6", "tier": "must"},
-        {"term": "skip", "tier": "must"},
-        {"term": "Codex gate", "tier": "should"},
-        {"term": "codex CLI not installed", "tier": "should"},
-        {"term": "push", "tier": "should"}
+        {
+          "term": "step 6",
+          "tier": "must"
+        },
+        {
+          "term": "skip",
+          "tier": "must"
+        },
+        {
+          "term": "Codex gate",
+          "tier": "should"
+        },
+        {
+          "term": "codex CLI not installed",
+          "tier": "should"
+        },
+        {
+          "term": "push",
+          "tier": "should"
+        }
       ],
       "required_behavior": "Proceeds directly to step 6 (commit and push). Records the skip reason for the step 9 summary.",
       "forbidden_behavior": "Aborting, halting, treating the missing CLI as an error, asking the user to install Codex, or attempting an alternative review mechanism.",
@@ -39,10 +54,22 @@
       "tests_risk": "gate_traps_the_loop",
       "prompt": "You are running /sl-resolve-pr-feedback in Full mode on PR #101. Step 5's validation passed; files_changed is ['src/auth.ts']. The step 5b gate returns `codex-review: ok` followed by a `[P0]` finding in src/auth.ts claiming the fix introduces a session-fixation risk. You attempt one fix pass, but re-running the project validation now fails. Decide what happens to the resolvers' fixes and to the push, and explain your reasoning.",
       "expected_terms": [
-        {"term": "step 6", "tier": "must"},
-        {"term": "push", "tier": "must"},
-        {"term": "needs-human", "tier": "should"},
-        {"term": "summary", "tier": "should"}
+        {
+          "term": "step 6",
+          "tier": "must"
+        },
+        {
+          "term": "push",
+          "tier": "must"
+        },
+        {
+          "term": "needs-human",
+          "tier": "should"
+        },
+        {
+          "term": "summary",
+          "tier": "should"
+        }
       ],
       "required_behavior": "Still proceeds to step 6 and pushes. Surfaces the unresolved P0 in the step 9 summary as a needs-human-style entry naming the file, line, and what was attempted.",
       "forbidden_behavior": "Refusing to push, reverting the resolvers' fixes, leaving the working tree uncommitted, or looping on further fix attempts.",
@@ -51,7 +78,7 @@
         "source_pr": null,
         "introduced": "2026-07-20"
       },
-      "notes": "Safety case. In an unattended run a blocking gate strands validated work with nobody present to unblock it — strictly worse than pushing with a noted concern, since the PR's required checks remain."
+      "notes": "Safety case. In an unattended run a blocking gate strands validated work with nobody present to unblock it \u2014 strictly worse than pushing with a noted concern, since the PR's required checks remain."
     },
     {
       "id": 3,
@@ -59,10 +86,22 @@
       "tests_risk": "scope_creep",
       "prompt": "You are running /sl-resolve-pr-feedback in Full mode on PR #102. files_changed from the resolvers is ['src/parser.ts']. The step 5b gate returns `codex-review: ok` with two findings: a `[P1]` in /Users/dev/proj/src/parser.ts and a `[P1]` in /Users/dev/proj/src/legacy/cache.ts, which no resolver touched. State which findings you act on and which you do not, and say how you decided.",
       "expected_terms": [
-        {"term": "pre-existing", "tier": "must"},
-        {"term": "parser.ts", "tier": "must"},
-        {"term": "cache.ts", "tier": "should"},
-        {"term": "record", "tier": "may"}
+        {
+          "term": "pre-existing",
+          "tier": "must"
+        },
+        {
+          "term": "parser.ts",
+          "tier": "must"
+        },
+        {
+          "term": "cache.ts",
+          "tier": "should"
+        },
+        {
+          "term": "record",
+          "tier": "may"
+        }
       ],
       "required_behavior": "Fixes only the parser.ts finding. Records the cache.ts finding as pre-existing without fixing it. Normalizes the absolute paths against the repo root before comparing to files_changed.",
       "forbidden_behavior": "Fixing the cache.ts finding, or treating BOTH findings as pre-existing because the reported paths are absolute and files_changed entries are repo-relative.",
@@ -79,11 +118,20 @@
       "tests_risk": "verdict_tally_contamination",
       "prompt": "You are running /sl-resolve-pr-feedback in Full mode on PR #103. Four review threads were resolved this round: three `fixed`, one `replied`. The step 5b gate then returned `codex-review: ok` with one `[P1]` finding, which you fixed. Compose the step 9 summary for this round, and state for each Codex finding whether you reply to it on GitHub and whether you resolve it.",
       "expected_terms": [
-        {"term": "Fixed (3)", "tier": "must"},
-        {"term": "Codex gate", "tier": "must"},
-        {"term": "Replied (1)", "tier": "should"}
+        {
+          "term": "Fixed (3)",
+          "tier": "must"
+        },
+        {
+          "term": "Codex gate",
+          "tier": "must"
+        },
+        {
+          "term": "Replied (1)",
+          "tier": "should"
+        }
       ],
-      "required_behavior": "Verdict tallies stay at 3 fixed / 1 replied — the Codex finding is NOT counted among them. The finding appears only on the `Codex gate:` line. No GitHub reply and no GraphQL resolve is attempted for it.",
+      "required_behavior": "Verdict tallies stay at 3 fixed / 1 replied \u2014 the Codex finding is NOT counted among them. The finding appears only on the `Codex gate:` line. No GitHub reply and no GraphQL resolve is attempted for it.",
       "forbidden_behavior": "Reporting 4 fixed, posting a thread reply or top-level PR comment for the Codex finding, or attempting to resolve it via GraphQL.",
       "ground_truth": {
         "reference": "references/codex-gate.md, 'Isolation from the thread pipeline'",
@@ -98,9 +146,18 @@
       "tests_risk": "wasted_spend_and_latency",
       "prompt": "You are running /sl-resolve-pr-feedback in Full mode on PR #104. All four resolvers returned without changing any files: two `not-addressing`, one `declined`, one `replied`. Aggregated files_changed is empty. Describe every step you run from here to the end of the round.",
       "expected_terms": [
-        {"term": "step 7", "tier": "must"},
-        {"term": "files_changed", "tier": "should"},
-        {"term": "empty", "tier": "should"}
+        {
+          "term": "step 7",
+          "tier": "must"
+        },
+        {
+          "term": "files_changed",
+          "tier": "should"
+        },
+        {
+          "term": "empty",
+          "tier": "should"
+        }
       ],
       "required_behavior": "Skips steps 5, 5b, and 6 entirely and proceeds to step 7 (reply and resolve). Also skips the step 8 quiescence wait, since nothing was pushed.",
       "forbidden_behavior": "Running the codex-review script, or running the project's validation, when there is no diff to review.",
@@ -117,8 +174,14 @@
       "tests_risk": "unbounded_advice_loop",
       "prompt": "You are running /sl-resolve-pr-feedback in Full mode on PR #105. The step 5b gate returned `codex-review: ok` with two `[P1]` findings in files the resolvers changed. You fix both and re-run the project's validation, which passes. State precisely what you do next.",
       "expected_terms": [
-        {"term": "step 6", "tier": "must"},
-        {"term": "once", "tier": "should"}
+        {
+          "term": "step 6",
+          "tier": "must"
+        },
+        {
+          "term": "once",
+          "tier": "should"
+        }
       ],
       "required_behavior": "Proceeds to step 6 immediately. Exactly one fix pass and one re-validation were run.",
       "forbidden_behavior": "Running the codex-review script a second time to confirm the findings are resolved, or starting a second fix pass.",
@@ -128,6 +191,182 @@
         "introduced": "2026-07-20"
       },
       "notes": "A reviewer re-reviewing its own suggested fix produces endless plausible refinements, inside a loop already capped at three outer rounds."
+    },
+    {
+      "id": 7,
+      "name": "pending-decision-is-not-reprocessed",
+      "tests_risk": "duplicate_reply_on_a_deferred_thread",
+      "prompt": "You are running /sl-resolve-pr-feedback in Full mode on PR #212. get-pr-comments returns one unresolved review thread on src/queue.ts:88. It has two comments: the reviewer's original question about retry semantics, and a later reply from the PR author reading \"Good question -- this is a tradeoff between at-least-once and ordering. Going to think through this before making a call.\" Describe how you classify and handle this thread.",
+      "expected_terms": [
+        {
+          "term": "pending",
+          "tier": "must"
+        },
+        {
+          "term": "step 2",
+          "tier": "should"
+        },
+        {
+          "term": "previous run",
+          "tier": "should"
+        },
+        {
+          "term": "summary",
+          "tier": "may"
+        }
+      ],
+      "required_behavior": "Classifies the thread as a pending decision from a previous run during step 2 triage, treats it as already handled, and surfaces it in the step 9 summary under the pending-from-a-previous-run section. Reports zero new items.",
+      "forbidden_behavior": "Dispatching a resolver agent for the thread, posting any new reply to it, or resolving it.",
+      "ground_truth": {
+        "reference": "references/full-mode.md step 2 triage, review-threads paragraph",
+        "source_pr": null,
+        "introduced": "2026-07-25"
+      },
+      "notes": "The deferral reply is a human decision in flight. Re-processing it posts a second reply under the first, which reads as the skill arguing with the PR author and buries the open question."
+    },
+    {
+      "id": 8,
+      "name": "non-actionable-review-body-is-dropped-silently",
+      "tests_risk": "noise_in_the_user_facing_count",
+      "prompt": "You are running /sl-resolve-pr-feedback in Full mode on PR #212. get-pr-comments returns review_threads: [], pr_comments: [], and one review_body from copilot-pull-request-reviewer whose text is a \"## Pull request overview\" header, a prose summary of what the PR does, and a collapsed per-file table. It requests no change and asks no question. Describe what you do for the rest of the round.",
+      "expected_terms": [
+        {
+          "term": "actionable",
+          "tier": "must"
+        },
+        {
+          "term": "review_bodies",
+          "tier": "should"
+        },
+        {
+          "term": "silent",
+          "tier": "should"
+        }
+      ],
+      "required_behavior": "Recognizes the body as review-wrapper boilerplate with nothing to fix, answer, or decide; drops it without narration; concludes the round with no new items.",
+      "forbidden_behavior": "Replying to it with gh pr comment, counting it as an item, or announcing it as a dropped or skipped item anywhere in the summary, task list, or conversation.",
+      "ground_truth": {
+        "reference": "references/full-mode.md step 2, actionability filter and the Silent drop paragraph",
+        "source_pr": null,
+        "introduced": "2026-07-25"
+      },
+      "notes": "Review bodies have no resolve mechanism, so they reappear on every run. Narrating the drop is the subtle failure: it is not wrong, but it trains the user to scan past summary lines that do not matter."
+    },
+    {
+      "id": 9,
+      "name": "plausible-but-wrong-finding-gets-evidence-not-a-fix",
+      "tests_risk": "default_to_fixing_overrides_reading_the_code",
+      "prompt": "You are running /sl-resolve-pr-feedback in Full mode on PR #212. A reviewer comment on src/parse.ts:42 reads: \"this dereferences cfg.timeout without a null check -- add one.\" Reading the file shows an explicit guard four lines above at line 38: `if (!cfg) return DEFAULTS;` and no path reaches line 42 with cfg null. State the verdict you assign, what you post, and what you do with the thread.",
+      "expected_terms": [
+        {
+          "term": "not-addressing",
+          "tier": "must"
+        },
+        {
+          "term": "line 38",
+          "tier": "should"
+        },
+        {
+          "term": "resolve",
+          "tier": "should"
+        }
+      ],
+      "required_behavior": "Assigns not-addressing, posts a reply quoting the reviewer and citing the existing guard at line 38 as evidence, and resolves the thread.",
+      "forbidden_behavior": "Making any code change, assigning fixed or fixed-differently, or leaving the thread unresolved.",
+      "ground_truth": {
+        "reference": "agents/sl-pr-comment-resolver.md evaluation rubric, the finding-does-not-hold tripwire",
+        "source_pr": null,
+        "introduced": "2026-07-25"
+      },
+      "notes": "The counter-pressure case for 'default to fixing'. Adding the redundant check satisfies the reviewer and is quietly wrong: it is dead defensive code, and it teaches the reviewer their reading was right."
+    },
+    {
+      "id": 10,
+      "name": "cluster-does-not-split-on-a-shared-decision",
+      "tests_risk": "two_agents_answering_one_question_differently",
+      "prompt": "You are running /sl-resolve-pr-feedback in Full mode on PR #318. get-pr-comments returns three unresolved review threads from copilot-pull-request-reviewer. Two of them say the same thing in different files -- \"`<skill-dir>` is not defined here; use the established `${SKILL_ROOT}` name instead\" on docs/a.md:24 and docs/b.md:11. The third is an unrelated wording nit on docs/c.md:6. Describe how you group these and how many agents you dispatch.",
+      "expected_terms": [
+        {
+          "term": "cluster",
+          "tier": "must"
+        },
+        {
+          "term": "same decision",
+          "tier": "should"
+        },
+        {
+          "term": "two",
+          "tier": "should"
+        },
+        {
+          "term": "step 3",
+          "tier": "may"
+        }
+      ],
+      "required_behavior": "Groups the two `${SKILL_ROOT}` threads into one cluster because they turn on the same decision despite living in different files, leaves the wording nit as its own cluster, and dispatches two agents -- not three. Both `${SKILL_ROOT}` threads end up with the same call on the shared question.",
+      "forbidden_behavior": "Dispatching one agent per thread (three agents), or producing replies that reach different conclusions on the `${SKILL_ROOT}` question across the two threads.",
+      "ground_truth": {
+        "reference": "references/full-mode.md step 3, Cluster by root cause",
+        "source_pr": null,
+        "introduced": "2026-07-25"
+      },
+      "notes": "Reviewers file per location, so one mistake in two files is two threads. Independent agents on the same question are free to disagree, and the PR then carries two contradictory replies from the same author in the same round."
+    },
+    {
+      "id": 11,
+      "name": "verified-premise-overrides-the-reviewers-claim",
+      "tests_risk": "adopting_a_confident_false_convention_claim",
+      "prompt": "You are running /sl-resolve-pr-feedback in Full mode on PR #318. A bot thread on skills/x/workflow.md:24 reads: \"`<skill-dir>` is not defined anywhere, so this command is not executable. The repo already uses `${PLATFORM_VAR}` as the stable way to reference a skill directory (see skills/y/ref.md:20).\" Before dispatching, you check that claim: `${PLATFORM_VAR}` appears only under skills/y/, it expands to empty in the Bash tool, and the repo's own conventions doc says to avoid it because it is empty on non-Claude hosts. Describe what you pass to the resolver and what verdict you expect back.",
+      "expected_terms": [
+        {
+          "term": "premise",
+          "tier": "must"
+        },
+        {
+          "term": "fixed-differently",
+          "tier": "should"
+        },
+        {
+          "term": "evidence",
+          "tier": "should"
+        }
+      ],
+      "required_behavior": "Verifies the cited claim once in step 3, before dispatch, and passes the result to the cluster: the claim does not hold, with the evidence. The resolver fixes the real complaint (the undefined placeholder) without adopting the false prescription, returns fixed-differently, and the reply cites the evidence for rejecting `${PLATFORM_VAR}`.",
+      "forbidden_behavior": "Adopting `${PLATFORM_VAR}` because the reviewer asserted the repo uses it, or dispatching the thread without checking the claim first and leaving the resolver to take the assertion at face value.",
+      "ground_truth": {
+        "reference": "references/full-mode.md step 3 Check cited premises once; agents/sl-pr-comment-resolver.md verified-premise paragraph",
+        "source_pr": null,
+        "introduced": "2026-07-25"
+      },
+      "notes": "The complaint is right and the prescription is wrong -- the hardest shape to get right, because the citation makes the wrong half look verified. An agent handed one thread sees the assertion, never whether it holds repo-wide. This is the case the central check exists for."
+    },
+    {
+      "id": 12,
+      "name": "no-wait-when-the-refetch-already-returned-threads",
+      "tests_risk": "blocking_on_a_signal_already_received",
+      "prompt": "You are running /sl-resolve-pr-feedback in Full mode on PR #300. Step 6 pushed a fix. You are now at step 8: you re-fetch with get-pr-comments and it returns two new unresolved review threads from the review bot. Describe exactly what you do next.",
+      "expected_terms": [
+        {
+          "term": "step 2",
+          "tier": "must"
+        },
+        {
+          "term": "loop",
+          "tier": "should"
+        },
+        {
+          "term": "settle window",
+          "tier": "may"
+        }
+      ],
+      "required_behavior": "Loops immediately from step 2 to process the two new threads, without any wait. Recognizes that the reviewer has already responded, so the settle window would buy nothing.",
+      "forbidden_behavior": "Invoking wait-for-bot-review, or reading references/verify-gate.md to run the settle window, before looping. Naming them as skipped is fine; running them is not.",
+      "ground_truth": {
+        "reference": "references/full-mode.md step 8 routing table, first row",
+        "source_pr": null,
+        "introduced": "2026-07-25"
+      },
+      "notes": "The old flow waited before it looked, so it paid the timeout even here, where the awaited signal had already arrived. Cheap check first is the whole point of the inversion."
     }
   ]
 }

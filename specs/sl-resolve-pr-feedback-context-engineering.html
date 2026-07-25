@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan: Context-Engineer /sl-resolve-pr-feedback for Claude 5</title>
+<style>
+  /* ===== VISUAL IDENTITY =====
+     Source of truth for this page AND every image embedded in it. Inline SVG
+     resolves var() against this page, so diagrams reference these roles
+     (never hardcoded hex) and the identity stays synced. Re-tuned cool/teal
+     for this plan; variable names are fixed by the template contract. */
+  :root {
+    --bg:            #f7f8f7;
+    --paper-2:       #ffffff;
+    --ink:           #16201e;
+    --muted:         #56605d;
+    --soft:          #868f8c;
+    --rule:          rgba(22, 32, 30, 0.12);
+    --rule-solid:    #dde2e0;
+    --accent:        #1f6f63;
+    --accent-tint:   rgba(31, 111, 99, 0.09);
+
+    --sans:  'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono:  'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --serif: ui-serif, 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 4rem 1.5rem 6rem;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  main { max-width: 60rem; margin: 0 auto; }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: 2.5rem;
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0 0 1rem;
+  }
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin: 3.5rem 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  h3 { font-size: 1.0625rem; font-weight: 600; margin: 2rem 0 0.5rem; }
+  h4 {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 1.5rem 0 0.5rem;
+  }
+  p  { margin: 0 0 1rem; max-width: 46rem; }
+  a  { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    background: rgba(22, 32, 30, 0.05);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
+  pre {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  /* --- header + metadata --- */
+  header { margin-bottom: 2.5rem; }
+  header .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--soft);
+    margin: 0 0 0.75rem;
+  }
+  details.meta {
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--paper-2);
+    padding: 0.625rem 1rem;
+    font-size: 0.8125rem;
+  }
+  details.meta summary {
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  details.meta dl {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: 0.25rem 1rem;
+    margin: 0.875rem 0 0.25rem;
+  }
+  details.meta dt {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--soft);
+    padding-top: 0.15rem;
+  }
+  details.meta dd { margin: 0; color: var(--muted); font-family: var(--mono); font-size: 0.75rem; word-break: break-word; }
+
+  /* --- figures --- */
+  figure {
+    margin: 2rem auto;
+    padding: 0;
+    text-align: center;
+  }
+  figure svg, figure img { display: block; width: 100%; max-width: 100%; height: auto; margin: 0 auto; }
+  figcaption {
+    margin-top: 0.875rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--soft);
+    max-width: 40rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* --- tables --- */
+  table { border-collapse: collapse; width: 100%; font-size: 0.875rem; margin: 0 0 1rem; }
+  th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--soft);
+    font-weight: 500;
+  }
+  td code { white-space: nowrap; }
+
+  /* --- relevant files --- */
+  .files ul { list-style: none; padding: 0; margin: 0 0 1rem; }
+  .files li { padding: 0.375rem 0; border-bottom: 1px solid var(--rule); font-size: 0.9375rem; }
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    padding: 0.1rem 0.35rem;
+    margin-right: 0.4rem;
+    border: 1px solid;
+  }
+  .tag.existing { color: var(--muted); border-color: var(--rule-solid); }
+  .tag.new      { color: var(--accent); border-color: var(--accent); background: var(--accent-tint); }
+
+  /* --- phases --- */
+  .phase {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .phase h3 { margin-top: 0.25rem; }
+  ul.checklist { list-style: none; padding: 0; margin: 0 0 1rem; }
+  ul.checklist li { padding: 0.25rem 0; font-size: 0.9375rem; line-height: 1.55; }
+  code.status {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--soft);
+    background: none;
+    padding: 0;
+    margin-right: 0.4rem;
+  }
+  .loop {
+    border-left: 2px solid var(--accent);
+    background: var(--accent-tint);
+    border-radius: 0 4px 4px 0;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  .loop strong { color: var(--ink); }
+
+  /* --- notes / amendments --- */
+  #notes details, #amendments details {
+    border-bottom: 1px solid var(--rule);
+    padding: 0.625rem 0;
+  }
+  #notes summary, #amendments summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+  .qa-answer, #amendments details p { margin: 0.5rem 0 0; color: var(--muted); font-size: 0.9375rem; }
+  .empty { color: var(--soft); font-family: var(--mono); font-size: 0.8125rem; }
+  .refs { list-style: none; padding: 0; font-size: 0.875rem; }
+  .refs li { padding: 0.25rem 0; }
+</style>
+</head>
+<body>
+<main>
+
+  <!-- ===== HEADER + UPDATABLE METADATA ===== -->
+  <header>
+    <p class="eyebrow">Implementation Plan · Claude Code Skill</p>
+    <h1>Plan: Context-Engineer <code>/sl-resolve-pr-feedback</code> for Claude 5</h1>
+    <details class="meta">
+      <summary>Metadata</summary>
+      <dl>
+        <dt>created</dt>      <dd>2026-07-25T03:35:45Z</dd>
+        <dt>modified</dt>     <dd>2026-07-25T03:35:45Z, 2026-07-25T04:02:54Z</dd>
+        <dt>commits</dt>      <dd>20748b5</dd>
+        <dt>agent name</dt>   <dd>claude-opus-5 (planf3 · create-plan), claude-opus-5 (planf3 · build-plan)</dd>
+        <dt>session id</dt>   <dd>058d2b4b-c477-443b-a0ff-cbd393ba35b5, 058d2b4b-c477-443b-a0ff-cbd393ba35b5</dd>
+        <dt>back refs</dt>    <dd>specs/planf3-claude5-context-engineering.html (same guidance applied to planf3; established the Tier 3 anchor decision this plan reuses)</dd>
+        <dt>forward refs</dt> <dd>none yet</dd>
+      </dl>
+    </details>
+  </header>
+
+  <figure>
+    <svg viewBox="0 0 1000 400" role="img" aria-label="Target shape: SKILL.md routes to one mode reference, which pulls push-only references on demand">
+      <rect width="100%" height="100%" fill="var(--bg)"/>
+      <defs>
+        <marker id="h-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="var(--muted)"/>
+        </marker>
+        <marker id="h-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="var(--accent)"/>
+        </marker>
+      </defs>
+
+      <path d="M180 200 H236" stroke="var(--muted)" stroke-width="1" fill="none" marker-end="url(#h-arrow)"/>
+      <path d="M428 200 H484" stroke="var(--muted)" stroke-width="1" fill="none" marker-end="url(#h-arrow)"/>
+      <path d="M700 172 H744 V128 H776" stroke="var(--accent)" stroke-width="1" fill="none" marker-end="url(#h-arrow-accent)"/>
+      <path d="M700 200 H744 V212 H776" stroke="var(--accent)" stroke-width="1" fill="none" marker-end="url(#h-arrow-accent)"/>
+      <path d="M700 228 H744 V296 H776" stroke="var(--accent)" stroke-width="1" fill="none" marker-end="url(#h-arrow-accent)"/>
+
+      <!-- on-demand boundary -->
+      <rect x="764" y="88" width="208" height="248" rx="6" fill="none"
+            stroke="var(--soft)" stroke-width="1" stroke-dasharray="4,4"/>
+      <rect x="784" y="80" width="150" height="16" fill="var(--bg)"/>
+      <text x="792" y="92" fill="var(--soft)" font-size="8" font-family="var(--mono)"
+            letter-spacing="0.14em">ONLY AFTER A PUSH</text>
+
+      <!-- request -->
+      <rect x="32" y="168" width="148" height="64" rx="6"
+            fill="rgba(22,32,30,0.04)" stroke="var(--soft)" stroke-width="1"/>
+      <text x="106" y="196" fill="var(--ink)" font-size="12" font-weight="600"
+            font-family="var(--sans)" text-anchor="middle">Request</text>
+      <text x="106" y="215" fill="var(--muted)" font-size="9"
+            font-family="var(--mono)" text-anchor="middle">/sl-resolve-pr-feedback</text>
+
+      <!-- SKILL.md -->
+      <rect x="236" y="160" width="192" height="80" rx="6"
+            fill="var(--paper-2)" stroke="var(--ink)" stroke-width="1"/>
+      <text x="332" y="192" fill="var(--ink)" font-size="12" font-weight="600"
+            font-family="var(--sans)" text-anchor="middle">SKILL.md</text>
+      <text x="332" y="211" fill="var(--muted)" font-size="9"
+            font-family="var(--mono)" text-anchor="middle">52 lines · already a router</text>
+
+      <!-- full-mode core (focal) -->
+      <rect x="484" y="152" width="216" height="96" rx="6"
+            fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+      <rect x="496" y="164" width="40" height="12" rx="2" fill="none"
+            stroke="var(--accent)" stroke-opacity="0.4" stroke-width="0.8"/>
+      <text x="516" y="173" fill="var(--accent)" font-size="7" font-family="var(--mono)"
+            text-anchor="middle" letter-spacing="0.08em">CORE</text>
+      <text x="592" y="207" fill="var(--ink)" font-size="12" font-weight="600"
+            font-family="var(--sans)" text-anchor="middle">full-mode.md</text>
+      <text x="592" y="226" fill="var(--muted)" font-size="9"
+            font-family="var(--mono)" text-anchor="middle">317 → ~160 lines</text>
+
+      <!-- on-demand leaves -->
+      <rect x="776" y="104" width="184" height="48" rx="6"
+            fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+      <text x="868" y="133" fill="var(--muted)" font-size="10"
+            font-family="var(--mono)" text-anchor="middle">codex-gate.md</text>
+
+      <rect x="776" y="188" width="184" height="48" rx="6"
+            fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+      <text x="868" y="217" fill="var(--ink)" font-size="10"
+            font-family="var(--mono)" text-anchor="middle">verify-gate.md</text>
+
+      <rect x="776" y="272" width="184" height="48" rx="6"
+            fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+      <text x="868" y="301" fill="var(--ink)" font-size="10"
+            font-family="var(--mono)" text-anchor="middle">summary.md</text>
+
+      <!-- legend -->
+      <line x1="32" y1="352" x2="968" y2="352" stroke="var(--rule)" stroke-width="0.8"/>
+      <text x="32" y="372" fill="var(--soft)" font-size="8" font-family="var(--mono)"
+            letter-spacing="0.14em">LEGEND</text>
+      <rect x="112" y="362" width="12" height="12" rx="2" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+      <text x="132" y="372" fill="var(--muted)" font-size="9" font-family="var(--mono)">changed by this plan</text>
+      <rect x="312" y="362" width="12" height="12" rx="2" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+      <text x="332" y="372" fill="var(--muted)" font-size="9" font-family="var(--mono)">already correct</text>
+      <line x1="484" y1="368" x2="508" y2="368" stroke="var(--soft)" stroke-width="1" stroke-dasharray="4,4"/>
+      <text x="516" y="372" fill="var(--muted)" font-size="9" font-family="var(--mono)">progressive disclosure boundary</text>
+    </svg>
+    <figcaption>The skill already routes well at the top. The waste is one level down: <code>full-mode.md</code> carries its push-only tail on every run, including the reply-only rounds that never push.</figcaption>
+  </figure>
+
+  <!-- ===== PURPOSE / PROBLEM / SOLUTION ===== -->
+  <section id="purpose">
+    <h2>Purpose</h2>
+    <p>
+      Apply the Claude&nbsp;5 context-engineering guidance to <code>sl-resolve-pr-feedback</code>, targeting the two
+      things the request names: <strong>accuracy</strong> — the skill currently ships a path bug that makes every
+      bundled script call resolve to the wrong place, and a tool declaration that contradicts its own workflow — and
+      <strong>performance</strong> — <code>full-mode.md</code> loads 317 lines on every run, roughly 73 of which
+      cannot apply until after a push that may never happen.
+    </p>
+    <p>
+      The skill's behaviour is not being redesigned. Its nine-step flow, its verdict taxonomy, its Codex gate and its
+      quiescence gate all survive intact. What changes is what resolves, what loads when, and where each contract
+      is stated exactly once.
+    </p>
+  </section>
+
+  <section id="problem">
+    <h2>Problem</h2>
+    <p>
+      Two of the six findings below are outright defects, not style. The rest are the article's "then vs now" pairs
+      landing on a skill that was written before them: everything upfront, and the same contract restated in three
+      files that must now agree with each other.
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 1000 420" role="img" aria-label="full-mode.md step sizes, with the push-only steps marked as paid on every run">
+        <rect width="100%" height="100%" fill="var(--bg)"/>
+
+        <text x="120" y="40" fill="var(--soft)" font-size="8" font-family="var(--mono)"
+              letter-spacing="0.14em">FULL-MODE.MD · 317 LINES · READ WHOLE AT STEP 1</text>
+
+        <!-- step bars: x scale 1 line = 6px, baseline x=200 -->
+        <!-- 1: 27 -->
+        <rect x="200" y="56"  width="162" height="18" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="192" y="69" fill="var(--muted)" font-size="9" font-family="var(--mono)" text-anchor="end">1 fetch</text>
+        <text x="372" y="69" fill="var(--soft)" font-size="9" font-family="var(--mono)">27</text>
+        <!-- 2: 17 -->
+        <rect x="200" y="80"  width="102" height="18" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="192" y="93" fill="var(--muted)" font-size="9" font-family="var(--mono)" text-anchor="end">2 triage</text>
+        <text x="312" y="93" fill="var(--soft)" font-size="9" font-family="var(--mono)">17</text>
+        <!-- 3: 4 -->
+        <rect x="200" y="104" width="24"  height="18" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="192" y="117" fill="var(--muted)" font-size="9" font-family="var(--mono)" text-anchor="end">3 plan</text>
+        <text x="234" y="117" fill="var(--soft)" font-size="9" font-family="var(--mono)">4</text>
+        <!-- 4: 46 -->
+        <rect x="200" y="128" width="276" height="18" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="192" y="141" fill="var(--muted)" font-size="9" font-family="var(--mono)" text-anchor="end">4 implement</text>
+        <text x="486" y="141" fill="var(--soft)" font-size="9" font-family="var(--mono)">46</text>
+        <!-- 5: 16 -->
+        <rect x="200" y="152" width="96"  height="18" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="192" y="165" fill="var(--muted)" font-size="9" font-family="var(--mono)" text-anchor="end">5 validate</text>
+        <text x="306" y="165" fill="var(--soft)" font-size="9" font-family="var(--mono)">16</text>
+        <!-- 5b: 30 PUSH-ONLY -->
+        <rect x="200" y="176" width="180" height="18" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="192" y="189" fill="var(--accent)" font-size="9" font-family="var(--mono)" text-anchor="end">5b codex gate</text>
+        <text x="390" y="189" fill="var(--accent)" font-size="9" font-family="var(--mono)">30</text>
+        <!-- 6: 16 -->
+        <rect x="200" y="200" width="96"  height="18" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="192" y="213" fill="var(--muted)" font-size="9" font-family="var(--mono)" text-anchor="end">6 commit</text>
+        <text x="306" y="213" fill="var(--soft)" font-size="9" font-family="var(--mono)">16</text>
+        <!-- 7: 64 -->
+        <rect x="200" y="224" width="384" height="18" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="192" y="237" fill="var(--muted)" font-size="9" font-family="var(--mono)" text-anchor="end">7 reply/resolve</text>
+        <text x="594" y="237" fill="var(--soft)" font-size="9" font-family="var(--mono)">64 · ~55 duplicated</text>
+        <!-- 8: 43 PUSH-ONLY -->
+        <rect x="200" y="248" width="258" height="18" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="192" y="261" fill="var(--accent)" font-size="9" font-family="var(--mono)" text-anchor="end">8 verify gate</text>
+        <text x="468" y="261" fill="var(--accent)" font-size="9" font-family="var(--mono)">43</text>
+        <!-- 9: 50 -->
+        <rect x="200" y="272" width="300" height="18" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="192" y="285" fill="var(--muted)" font-size="9" font-family="var(--mono)" text-anchor="end">9 summary</text>
+        <text x="510" y="285" fill="var(--soft)" font-size="9" font-family="var(--mono)">50</text>
+
+        <!-- callout -->
+        <line x1="200" y1="316" x2="700" y2="316" stroke="var(--rule)" stroke-width="0.8"/>
+        <text x="200" y="340" fill="var(--ink)" font-size="12" font-weight="600" font-family="var(--sans)">73 lines gate on a push</text>
+        <text x="200" y="358" fill="var(--muted)" font-size="9" font-family="var(--mono)">a reply-only round reads them and uses none</text>
+
+        <!-- legend -->
+        <line x1="120" y1="380" x2="880" y2="380" stroke="var(--rule)" stroke-width="0.8"/>
+        <text x="120" y="400" fill="var(--soft)" font-size="8" font-family="var(--mono)"
+              letter-spacing="0.14em">LEGEND</text>
+        <rect x="200" y="390" width="12" height="12" rx="2" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="220" y="400" fill="var(--muted)" font-size="9" font-family="var(--mono)">applies only after a push</text>
+        <rect x="420" y="390" width="12" height="12" rx="2" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="440" y="400" fill="var(--muted)" font-size="9" font-family="var(--mono)">applies every run</text>
+      </svg>
+      <figcaption>Step sizes measured from the current file. Steps 5b and 8 both open by declaring they engage only when a fix was pushed — which is exactly the condition that should decide whether they load at all.</figcaption>
+    </figure>
+
+    <table>
+      <thead>
+        <tr><th>#</th><th>Finding</th><th>Where</th><th>Guidance / evidence</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><strong>Every bundled script call resolves to the wrong path.</strong> Ten invocations anchor on
+              <code>${CLAUDE_SKILL_DIR}</code>, which is a Claude-Code-only SKILL.md content substitution, not a shell
+              variable. It expands to empty in the Bash tool, so the calls become <code>bash /scripts/…</code>.</td>
+          <td><code>full-mode.md</code> ×9, <code>targeted-mode.md:20</code></td>
+          <td>Verified empty this session; every script had to be re-anchored by hand to run. The repo's own
+              <code>bundled-script-path-resolution-across-harnesses.md</code> says avoid it and use a model-filled
+              <code>SKILL_DIR</code> anchor.</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><strong><code>allowed-tools</code> omits the tools the workflow requires.</strong> It grants
+              <code>Bash</code> and <code>Read</code> only — no <code>Edit</code>/<code>Write</code>, and nothing that
+              can dispatch a subagent. Yet step 4 spawns <code>sl-pr-comment-resolver</code> agents, step 5 runs an
+              "inline diagnose-and-fix pass", and the Codex gate says "fix the P0/P1 findings inline".</td>
+          <td><code>SKILL.md:5</code> vs <code>full-mode.md:59, 109</code>, <code>codex-gate.md:43</code></td>
+          <td>Either it is enforced and those steps cannot run, or it is unenforced and the declaration is false.
+              Both are defects; the first is silent.</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><strong>The push-only tail loads on every run.</strong> Steps 5b (30 lines) and 8 (43) each begin by
+              stating they engage only when a fix was pushed. A reply-only round — every verdict
+              <code>replied</code>/<code>not-addressing</code>/<code>declined</code> — reads all 73 and uses none.</td>
+          <td><code>full-mode.md:115–144, 225–266</code></td>
+          <td>Put it all upfront → use progressive disclosure.</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><strong>The reply templates exist twice.</strong> Step 7 defines five markdown reply formats; the
+              resolver agent defines the same five and is the component that actually composes
+              <code>reply_text</code>. The parent's copy is never used as a template — it only invites the two to drift.</td>
+          <td><code>full-mode.md:165–190</code>, <code>sl-pr-comment-resolver.md:47–95</code></td>
+          <td>Repeat yourself → say it once, where it's used.</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td><strong>The verdict taxonomy exists three times.</strong> The six verdicts and their meanings are
+              defined in the skill's opening blockquote, again in step 4, and again in the agent's rubric — with the
+              agent's being the only version that decides anything.</td>
+          <td><code>SKILL.md:13</code>, <code>full-mode.md:81–87</code>, <code>sl-pr-comment-resolver.md:16–35</code></td>
+          <td>Three copies to keep in agreement; a change to one silently contradicts the others.</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><strong>The eval suite covers one step.</strong> Six scenarios, all on the Codex gate, and the README
+              explicitly disclaims triage quality, verdict selection and GraphQL mechanics. The core loop the skill
+              exists for — decide new vs pending, pick a verdict, reply, resolve — has no measurement.</td>
+          <td><code>evals/README.md:9</code></td>
+          <td>Build evals for the behaviour you actually depend on.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="solution">
+    <h2>Solution</h2>
+    <p>
+      Four phases, ordered by risk. The defects go first because they are live in every run; the context work follows;
+      measurement lands last so it can regress against a known-good baseline rather than a broken one.
+    </p>
+    <ol>
+      <li><strong>Repair the two defects.</strong> Re-anchor all ten script invocations on a model-filled
+          <code>SKILL_DIR</code>; correct <code>allowed-tools</code> to match what the workflow actually does.</li>
+      <li><strong>Split the push-only tail.</strong> Move steps 5b and 8 behind a one-line conditional stub each, so a
+          reply-only round never pays for them. <code>codex-gate.md</code> already proves the pattern works.</li>
+      <li><strong>Collapse the duplicated contracts.</strong> Reply templates live only in the agent that writes them;
+          the verdict taxonomy gets one definition and two pointers.</li>
+      <li><strong>Extend the evals to the core loop.</strong> Three scenarios covering triage, verdict selection and
+          the non-actionable silent drop — the paths that decide whether the skill is accurate.</li>
+    </ol>
+
+    <figure>
+      <svg viewBox="0 0 1000 392" role="img" aria-label="Four layers of the skill and what each phase changes about when it loads">
+        <rect width="100%" height="100%" fill="var(--bg)"/>
+        <defs>
+          <marker id="s-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="var(--soft)"/>
+          </marker>
+        </defs>
+
+        <text x="200" y="40" fill="var(--soft)" font-size="8" font-family="var(--mono)"
+              letter-spacing="0.14em">WHAT LOADS, AND WHEN</text>
+
+        <path d="M148 84 V320" stroke="var(--soft)" stroke-width="1" fill="none" marker-end="url(#s-arrow)"/>
+        <rect x="112" y="176" width="72" height="48" fill="var(--bg)"/>
+        <text x="148" y="196" fill="var(--soft)" font-size="8" font-family="var(--mono)"
+              text-anchor="middle" letter-spacing="0.08em">LOADED</text>
+        <text x="148" y="212" fill="var(--soft)" font-size="8" font-family="var(--mono)"
+              text-anchor="middle" letter-spacing="0.08em">LATER</text>
+
+        <!-- L1 -->
+        <rect x="200" y="56" width="656" height="60" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="216" y="90" fill="var(--soft)" font-size="9" font-family="var(--mono)" letter-spacing="0.08em">L1</text>
+        <text x="284" y="84" fill="var(--ink)" font-size="14" font-weight="600" font-family="var(--sans)">SKILL.md</text>
+        <text x="284" y="103" fill="var(--muted)" font-size="9" font-family="var(--mono)">52 lines · mode detection · already right</text>
+        <text x="840" y="90" fill="var(--muted)" font-size="10" font-family="var(--mono)" text-anchor="end">on trigger</text>
+
+        <!-- L2 focal -->
+        <rect x="200" y="116" width="656" height="60" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="216" y="150" fill="var(--accent)" font-size="9" font-family="var(--mono)" letter-spacing="0.08em">L2</text>
+        <text x="284" y="144" fill="var(--ink)" font-size="14" font-weight="600" font-family="var(--sans)">full-mode.md</text>
+        <text x="284" y="163" fill="var(--muted)" font-size="9" font-family="var(--mono)">317 → ~160 lines · the layer this plan shrinks</text>
+        <text x="840" y="150" fill="var(--accent)" font-size="10" font-family="var(--mono)" text-anchor="end">on route</text>
+
+        <!-- L3 focal -->
+        <rect x="200" y="176" width="656" height="60" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="216" y="210" fill="var(--accent)" font-size="9" font-family="var(--mono)" letter-spacing="0.08em">L3</text>
+        <text x="284" y="204" fill="var(--ink)" font-size="14" font-weight="600" font-family="var(--sans)">verify-gate.md · summary.md</text>
+        <text x="284" y="223" fill="var(--muted)" font-size="9" font-family="var(--mono)">extracted here · joins codex-gate.md</text>
+        <text x="840" y="210" fill="var(--accent)" font-size="10" font-family="var(--mono)" text-anchor="end">only after a push</text>
+
+        <!-- L4 -->
+        <rect x="200" y="236" width="656" height="60" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="216" y="270" fill="var(--soft)" font-size="9" font-family="var(--mono)" letter-spacing="0.08em">L4</text>
+        <text x="284" y="264" fill="var(--ink)" font-size="14" font-weight="600" font-family="var(--sans)">sl-pr-comment-resolver</text>
+        <text x="284" y="283" fill="var(--muted)" font-size="9" font-family="var(--mono)">separate context · owns the verdict + reply contract</text>
+        <text x="840" y="270" fill="var(--muted)" font-size="10" font-family="var(--mono)" text-anchor="end">per thread</text>
+
+        <rect x="200" y="56" width="656" height="240" fill="none" stroke="var(--ink)" stroke-width="1"/>
+
+        <text x="200" y="336" fill="var(--muted)" font-size="9" font-family="var(--mono)">L4 runs in its own context and never reads L1–L3 — so its copy of the</text>
+        <text x="200" y="352" fill="var(--muted)" font-size="9" font-family="var(--mono)">security rule is not duplication. Its copy of the reply templates is the only one that is.</text>
+      </svg>
+      <figcaption>The load budget after the split. The subagent boundary at L4 is why "say it once" has to be applied with care here — some repetition across a context boundary is load-bearing.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== RELEVANT FILES ===== -->
+  <section id="files" class="files">
+    <h2>Relevant Files</h2>
+
+    <h3>Existing Files</h3>
+    <ul>
+      <li><span class="tag existing">existing</span> <code>skills/sl-resolve-pr-feedback/SKILL.md</code> — <code>allowed-tools</code> corrected; the verdict blockquote compressed to a pointer.</li>
+      <li><span class="tag existing">existing</span> <code>skills/sl-resolve-pr-feedback/references/full-mode.md</code> — the main target: nine script anchors re-pointed, steps 5b/8/9 reduced to conditional stubs, step 7's duplicate templates removed.</li>
+      <li><span class="tag existing">existing</span> <code>skills/sl-resolve-pr-feedback/references/targeted-mode.md</code> — one script anchor re-pointed; its two "Full-mode-only" carve-outs must keep naming the right step numbers after the split.</li>
+      <li><span class="tag existing">existing</span> <code>skills/sl-resolve-pr-feedback/references/codex-gate.md</code> — unchanged as content; it is the pattern the new stubs copy. Verified, not edited.</li>
+      <li><span class="tag existing">existing</span> <code>agents/sl-pr-comment-resolver.md</code> — becomes the single source of the reply templates and the verdict taxonomy. Its security block stays: it is a separate context.</li>
+      <li><span class="tag existing">existing</span> <code>skills/sl-resolve-pr-feedback/evals/evals.json</code>, <code>evals/grader.md</code>, <code>evals/README.md</code> — extended with the core-loop scenarios; the existing six gate scenarios are untouched.</li>
+      <li><span class="tag existing">existing</span> <code>skills/sl-resolve-pr-feedback/scripts/*</code> — unchanged. Only the way they are addressed changes.</li>
+    </ul>
+
+    <h3>New Files</h3>
+    <ul>
+      <li><span class="tag new">new</span> <code>skills/sl-resolve-pr-feedback/references/verify-gate.md</code> — step 8's quiescence gate, settle-window fallback and fix-round cap, loaded only when a fix was pushed.</li>
+      <li><span class="tag new">new</span> <code>skills/sl-resolve-pr-feedback/references/summary.md</code> — step 9's output formats, including the <code>needs-human</code> decision block and the pending-from-previous-run section.</li>
+    </ul>
+  </section>
+
+  <!-- ===== IMPLEMENTATION PHASES ===== -->
+  <section id="phases">
+    <h2>Implementation Phases</h2>
+    <p><strong>IMPORTANT:</strong> Execute every phase and task step by step, in order, top to bottom.</p>
+    <p>Status markers: <code>[]</code> idle · <code>[wip]</code> in progress · <code>[x]</code> complete · <code>[f]</code> failed. All start as <code>[]</code>; the Build Plan workflow updates them as it works.</p>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 1: Repair the two live defects</h3>
+      <p>
+        Both defects affect every run and neither is cosmetic. Do these first so the later phases are re-arranging a
+        working skill rather than a broken one.
+      </p>
+
+      <h4>1. Re-anchor the ten script invocations</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Replace every <code>${CLAUDE_SKILL_DIR}</code> in <code>full-mode.md</code> (9 sites) and <code>targeted-mode.md</code> (1 site) with the model-filled anchor, set inline in the same command: <code>SKILL_DIR="&lt;absolute path of the directory containing the SKILL.md you just read&gt;"</code> followed by <code>bash "$SKILL_DIR/scripts/…"</code>.</li>
+        <li><code class="status">[x]</code> Delete the "if <code>${CLAUDE_SKILL_DIR}</code> is unresolved, treat that as skip the gate" fallback prose at <code>full-mode.md:143</code> and <code>:239</code> — with a model-filled anchor there is no unresolved case, and the fallback currently describes the <em>normal</em> behaviour as an edge case.</li>
+        <li><code class="status">[x]</code> Preserve the single-pinned-command rule in both gate stubs. The reason it exists (a compound <code>[ -f … ]</code> guard defeats the narrow <code>Bash(bash *…)</code> allow-rule) is unaffected by the anchor change.</li>
+        <li><code class="status">[x]</code> Update the <code>allowed-tools</code> patterns if the anchored form no longer matches <code>Bash(bash *get-pr-comments)</code> — confirm the glob still covers <code>bash "$SKILL_DIR/scripts/get-pr-comments"</code>.</li>
+      </ul>
+
+      <h4>2. Make <code>allowed-tools</code> tell the truth</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Determine empirically whether the field is enforced: invoke the skill and attempt one <code>Edit</code>. Record the answer in the commit message — it decides whether this is a silent-failure bug or a documentation bug.</li>
+        <li><code class="status">[x]</code> Add the tools the workflow requires: <code>Edit</code> and <code>Write</code> (step 5's inline diagnose-and-fix pass, the Codex gate's bounded fix pass) and whatever tool name dispatches <code>sl-pr-comment-resolver</code> (step 4).</li>
+        <li><code class="status">[x]</code> Keep the existing narrow <code>Bash(…)</code> patterns rather than widening to bare <code>Bash</code> — they are what stop the skill prompting on every script call.</li>
+        <li><code class="status">[x]</code> If the field turns out to be unenforced for slash-invoked skills, still correct it: a wrong declaration misleads the next reader and breaks the moment enforcement lands.</li>
+      </ul>
+
+      <h4>3. Testing Strategy</h4>
+      <p>
+        Shell assertions over the files, plus one live invocation — the anchor bug is invisible to grep alone, because
+        the broken form is syntactically fine. The edge case that matters: a script invoked from a working directory
+        that is not the repo root, which is the exact condition the anchor exists to survive.
+      </p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>grep -rc 'CLAUDE_SKILL_DIR' skills/sl-resolve-pr-feedback/</code> — every file returns <code>0</code>.</li>
+        <li><code class="status">[x]</code> <code>grep -c 'SKILL_DIR=' skills/sl-resolve-pr-feedback/references/*.md</code> — each file that invokes a script declares the anchor at least once.</li>
+        <li><code class="status">[x]</code> <code>cd /tmp; SKILL_DIR=~/.claude/skills/sl-resolve-pr-feedback; bash "$SKILL_DIR/scripts/get-pr-comments" 26 OWNER/REPO</code> (separate statements — an env-prefix assignment is not visible to its own command's arguments) — returns JSON from outside the repo root, proving the anchored form resolves.</li>
+        <li><code class="status">[x]</code> <code>grep -n 'allowed-tools' skills/sl-resolve-pr-feedback/SKILL.md</code> — the line names Edit, Write, and the dispatch tool.</li>
+        <li><code class="status">[f]</code> Invoke the skill against a real PR with at least one thread and confirm a resolver agent is actually dispatched — the step-4 path is the one <code>allowed-tools</code> was silently blocking.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 2: Move the push-only tail behind conditionals</h3>
+      <p>
+        Steps 5b and 8 already open by declaring their engagement condition. Turn that declaration into the load
+        boundary: a short stub in <code>full-mode.md</code> that states the condition and the routing, with the body
+        in a reference read only when the condition holds. <code>codex-gate.md</code> is the working precedent.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 1000 300" role="img" aria-label="Reply-only rounds skip the extracted references entirely, fix rounds read them">
+          <rect width="100%" height="100%" fill="var(--bg)"/>
+          <defs>
+            <marker id="p2-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="var(--muted)"/>
+            </marker>
+            <marker id="p2-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="var(--accent)"/>
+            </marker>
+          </defs>
+
+          <!-- decision -->
+          <rect x="40" y="112" width="176" height="72" rx="6"
+                fill="var(--paper-2)" stroke="var(--ink)" stroke-width="1"/>
+          <text x="128" y="142" fill="var(--ink)" font-size="12" font-weight="600"
+                font-family="var(--sans)" text-anchor="middle">files_changed</text>
+          <text x="128" y="162" fill="var(--muted)" font-size="9"
+                font-family="var(--mono)" text-anchor="middle">empty?</text>
+
+          <path d="M216 136 H300" stroke="var(--muted)" stroke-width="1" fill="none" marker-end="url(#p2-arrow)"/>
+          <text x="240" y="128" fill="var(--soft)" font-size="8" font-family="var(--mono)">yes</text>
+          <path d="M216 160 H300" stroke="var(--accent)" stroke-width="1" fill="none" marker-end="url(#p2-arrow-accent)"/>
+          <text x="240" y="180" fill="var(--accent)" font-size="8" font-family="var(--mono)">no</text>
+
+          <!-- reply-only path -->
+          <rect x="300" y="104" width="248" height="60" rx="6"
+                fill="rgba(22,32,30,0.04)" stroke="var(--soft)" stroke-width="1"/>
+          <text x="424" y="130" fill="var(--ink)" font-size="11" font-weight="600"
+                font-family="var(--sans)" text-anchor="middle">reply-only round</text>
+          <text x="424" y="149" fill="var(--muted)" font-size="9"
+                font-family="var(--mono)" text-anchor="middle">skips 5b and 8 · reads neither file</text>
+
+          <path d="M548 134 H620" stroke="var(--muted)" stroke-width="1" fill="none" marker-end="url(#p2-arrow)"/>
+          <rect x="620" y="104" width="176" height="60" rx="6"
+                fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+          <text x="708" y="139" fill="var(--muted)" font-size="10"
+                font-family="var(--mono)" text-anchor="middle">summary.md</text>
+
+          <!-- fix path -->
+          <rect x="300" y="188" width="248" height="60" rx="6"
+                fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+          <text x="424" y="214" fill="var(--ink)" font-size="11" font-weight="600"
+                font-family="var(--sans)" text-anchor="middle">fix round</text>
+          <text x="424" y="233" fill="var(--muted)" font-size="9"
+                font-family="var(--mono)" text-anchor="middle">codex-gate.md → verify-gate.md</text>
+
+          <path d="M548 218 H620" stroke="var(--accent)" stroke-width="1" fill="none" marker-end="url(#p2-arrow-accent)"/>
+          <rect x="620" y="188" width="176" height="60" rx="6"
+                fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+          <text x="708" y="223" fill="var(--ink)" font-size="10"
+                font-family="var(--mono)" text-anchor="middle">summary.md</text>
+
+          <text x="840" y="139" fill="var(--soft)" font-size="9" font-family="var(--mono)">0 extra lines</text>
+          <text x="840" y="223" fill="var(--accent)" font-size="9" font-family="var(--mono)">73 lines, earned</text>
+        </svg>
+        <figcaption>The condition already written at the top of each step becomes the condition that decides whether its body loads at all.</figcaption>
+      </figure>
+
+      <h4>1. Extract step 8 to <code>verify-gate.md</code></h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Move the reviewer-quiescence gate, the two bounds, the settle-window fallback and the re-fetch-and-loop rules into <code>references/verify-gate.md</code>, unchanged in substance.</li>
+        <li><code class="status">[x]</code> Leave a stub in <code>full-mode.md</code>: the engagement condition, the reply-only skip, the re-fetch command, and one line routing to the reference. Model it on the step 5b stub's shape.</li>
+        <li><code class="status">[x]</code> Keep the max-fix-round cap of 3 and the recurring-pattern escalation visible <em>in the stub</em> — a loop bound that only exists in a conditionally-loaded file is a loop bound that can be missed.</li>
+      </ul>
+
+      <h4>2. Extract step 9 to <code>summary.md</code></h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Move the summary format block, the <code>needs-human</code> decisions section and the pending-from-previous-run section into <code>references/summary.md</code>.</li>
+        <li><code class="status">[x]</code> Keep in the stub the three lines that are conditional reporting rules, not formatting: omit the Codex line when no fix was pushed, include the reviewer-wait line only on timeout, never count Codex findings in the verdict tallies.</li>
+        <li><code class="status">[x]</code> Note that step 9 runs on every path — so this extraction buys clarity, not load reduction. If the stub cannot be kept genuinely short, leave step 9 inline and record that as a deliberate non-change.</li>
+      </ul>
+
+      <h4>3. Repoint the cross-references</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Update <code>targeted-mode.md</code>'s two carve-outs, which name "Full Mode step 8" and "Full Mode step 5b" — the step numbers survive the split, but confirm rather than assume.</li>
+        <li><code class="status">[x]</code> Update <code>evals/grader.md</code>'s risk-attribution table and <code>evals/README.md</code>'s outcome table, both of which point at file-and-step locations that this phase moves.</li>
+        <li><code class="status">[x]</code> Re-check the Stage 1 automatic-fail rule "reports a step number that does not exist in <code>references/full-mode.md</code>" — still satisfiable after the split.</li>
+      </ul>
+
+      <h4>4. Testing Strategy</h4>
+      <p>
+        The failure mode this phase can introduce is the one <code>grader.md</code> already names: a reference that is
+        never loaded, so its rules silently stop applying. Assertions confirm the files exist and are reachable in one
+        hop; the eval suite confirms the rules still fire.
+      </p>
+      <ul class="checklist">
+        <li><code class="status">[f]</code> <code>wc -l skills/sl-resolve-pr-feedback/references/*.md</code> — <code>full-mode.md</code> at or under 180 lines.</li>
+        <li><code class="status">[x]</code> <code>grep -c 'verify-gate.md\|summary.md' skills/sl-resolve-pr-feedback/references/full-mode.md</code> — both reachable, one level from the file that routes to them.</li>
+        <li><code class="status">[x]</code> <code>grep -rn 'step 8\|step 5b\|Step 8\|Step 5b' skills/sl-resolve-pr-feedback/</code> — every cross-reference still names a step that exists.</li>
+        <li><code class="status">[x]</code> <code>grep -c 'fix-round\|three' skills/sl-resolve-pr-feedback/references/full-mode.md</code> — the loop cap survived in the stub, not only in the extracted file.</li>
+        <li><code class="status">[f]</code> Re-run the existing six Codex-gate evals. Evals 1 and 5 are decided in <code>full-mode.md</code> and 2/4/6 in <code>codex-gate.md</code>; per <code>grader.md</code>, 1 and 5 passing while 2/4/6 fail together means a reference stopped loading — the exact regression this phase risks.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 3: One contract, one location</h3>
+      <p>
+        Apply "say it once" — but only across copies that share a context. The resolver agent runs in its own context
+        and never reads <code>SKILL.md</code>, so its security block is not duplication and stays. Its reply templates
+        are a different matter: the parent's copy of them is dead weight that can silently diverge.
+      </p>
+
+      <h4>1. Reply templates move to the agent alone</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Delete the five markdown reply-format blocks from <code>full-mode.md</code> step 7. The agent composes <code>reply_text</code>; the parent posts it verbatim.</li>
+        <li><code class="status">[x]</code> Replace them with the interface, not the format: post the agent's <code>reply_text</code> as returned, and for <code>needs-human</code> post it but do not resolve the thread.</li>
+        <li><code class="status">[x]</code> Keep the quoting requirement in the agent's copy only, where the text is actually written.</li>
+      </ul>
+
+      <h4>2. The verdict taxonomy gets one definition</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Make <code>sl-pr-comment-resolver.md</code>'s rubric the single definition — it is the component that assigns verdicts.</li>
+        <li><code class="status">[x]</code> Reduce <code>full-mode.md</code>'s step 4 list to the bare vocabulary the parent needs for routing and tallying: which verdicts mean "code changed", and that <code>needs-human</code> is not resolved.</li>
+        <li><code class="status">[x]</code> Compress <code>SKILL.md</code>'s opening blockquote to the disposition it sets — default to fixing — and let the rubric own the divert conditions.</li>
+        <li><code class="status">[x]</code> Do <strong>not</strong> remove the agent's security block or its "default to fixing" framing. Both cross a context boundary and must be restated there.</li>
+      </ul>
+
+      <h4>3. Testing Strategy</h4>
+      <p>
+        Deletion is the risky direction here: a rule that existed in two places and now exists in zero fails silently.
+        Each assertion pairs a "gone from here" check with a "still present there" check.
+      </p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>grep -c 'Not addressing:' skills/sl-resolve-pr-feedback/references/full-mode.md agents/sl-pr-comment-resolver.md</code> — <code>0</code> in the reference, <code>1</code> in the agent.</li>
+        <li><code class="status">[x]</code> <code>grep -c 'Declined:' agents/sl-pr-comment-resolver.md</code> — still <code>1</code>; the templates were moved, not lost.</li>
+        <li><code class="status">[x]</code> <code>grep -c 'untrusted input' skills/sl-resolve-pr-feedback/SKILL.md agents/sl-pr-comment-resolver.md</code> — <code>1</code> each; the cross-context copy survived.</li>
+        <li><code class="status">[x]</code> <code>grep -c 'needs-human' skills/sl-resolve-pr-feedback/references/full-mode.md</code> — at least <code>2</code>; the parent still knows not to resolve those threads.</li>
+        <li><code class="status">[x]</code> <code>wc -l agents/sl-pr-comment-resolver.md</code> — grew or held; templates landed somewhere.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 4: Evaluate the core loop</h3>
+      <p>
+        The existing suite is well-built and narrowly scoped by design — six scenarios, all on the Codex gate. Extend
+        it, in the same shape, to the loop the skill actually exists for. Three scenarios, chosen the way the current
+        six were: each isolates one property that would fail silently.
+      </p>
+
+      <h4>1. Write the core-loop scenarios</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Scenario 7 — <em>triage: pending decision is not re-processed</em>. A thread carrying a substantive deferral reply ("need to align on this") must be classified pending and skipped, not answered again. Forbidden: posting a second reply to that thread.</li>
+        <li><code class="status">[x]</code> Scenario 8 — <em>non-actionable review body is dropped silently</em>. A bot's "Here are some automated review suggestions…" wrapper must not be counted, listed, or replied to. Forbidden: any mention of it in the summary.</li>
+        <li><code class="status">[x]</code> Scenario 9 — <em>verdict selection under a wrong-but-plausible finding</em>. A reviewer claims a missing null check that already exists; the correct verdict is <code>not-addressing</code> with the line cited. Forbidden: a code change, or a <code>fixed</code> verdict.</li>
+        <li><code class="status">[x]</code> Follow the existing schema exactly: <code>prompt</code>, <code>expected_terms</code> tiered <code>must</code>/<code>should</code>/<code>may</code>, and an explicit <code>required_behavior</code> / <code>forbidden_behavior</code> pair.</li>
+        <li><code class="status">[x]</code> Set <code>variance_protocol</code> per scenario. Scenario 8's failure is cosmetic; 7 and 9 corrupt the PR conversation and warrant 3/3.</li>
+      </ul>
+
+      <h4>2. Update the suite's own documentation</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Widen <code>evals/README.md</code>'s purpose and its "at a glance" table; the current <code>non_purpose</code> disclaims triage and verdict selection, which these scenarios now cover.</li>
+        <li><code class="status">[x]</code> Extend <code>grader.md</code>'s per-eval emphasis table and risk-attribution table with rows 7–9, pointing at <code>full-mode.md</code> step 2 and the agent's rubric respectively.</li>
+        <li><code class="status">[x]</code> Keep <code>forbidden_behavior</code> decisive rather than weighted, and keep the rule that <code>forbidden_rate &gt; 0</code> fails regardless of <code>correct_rate</code>.</li>
+      </ul>
+
+      <h4>3. Run the suite and record a baseline</h4>
+      <ul class="checklist">
+        <li><code class="status">[f]</code> Run all nine scenarios through the <code>skill-creator</code> framework — not <code>bun test</code>, which only checks file shape.</li>
+        <li><code class="status">[f]</code> Record the pass rate per scenario as the post-refactor baseline, so the next edit to this skill has something to regress against.</li>
+        <li><code class="status">[f]</code> Where a new scenario fails, fix the skill rather than the scenario — unless the scenario is testing behaviour the skill never promised, in which case correct the scenario and say so.</li>
+      </ul>
+
+      <h4>4. Testing Strategy</h4>
+      <p>The evals are the test. These assertions confirm the suite is well-formed and actually widened.</p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>python3 -c "import json;d=json.load(open('skills/sl-resolve-pr-feedback/evals/evals.json'));print(len(d['evals']))"</code> — returns <code>9</code>.</li>
+        <li><code class="status">[x]</code> <code>python3 -c "import json;d=json.load(open('skills/sl-resolve-pr-feedback/evals/evals.json'));print(all('forbidden_behavior' in e for e in d['evals']))"</code> — <code>True</code>.</li>
+        <li><code class="status">[x]</code> <code>grep -c 'triage\|verdict' skills/sl-resolve-pr-feedback/evals/README.md</code> — at least <code>2</code>; the <code>non_purpose</code> no longer disclaims what the suite now covers.</li>
+        <li><code class="status">[f]</code> <code>bun test tests/skill-evals-shape.test.ts</code> — the shape test still passes with nine scenarios.</li>
+        <li><code class="status">[f]</code> All nine scenarios run, with per-scenario pass rates recorded.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GLOBAL VALIDATION ===== -->
+  <section id="validation">
+    <h2>Validation Commands</h2>
+    <p>Execute these commands from <code>/Users/tk/.claude</code> to validate the entire plan is complete:</p>
+    <ul class="checklist">
+      <li><code class="status">[x]</code> <code>grep -rc 'CLAUDE_SKILL_DIR' skills/sl-resolve-pr-feedback/ | grep -v ':0'</code> — no output; the broken anchor is gone everywhere.</li>
+      <li><code class="status">[f]</code> <code>wc -l skills/sl-resolve-pr-feedback/references/*.md</code> — <code>full-mode.md</code> ≤180 lines — <strong>missed: landed at 262.</strong> The extractable tail was 73 push-only lines, not the ~123 assumed; step 9 and the re-fetch loop run on every path and had to stay inline, and the stubs plus per-command anchors cost ~18 lines back; <code>verify-gate.md</code> and <code>summary.md</code> exist.</li>
+      <li><code class="status">[x]</code> <code>cd /tmp; SKILL_DIR=~/.claude/skills/sl-resolve-pr-feedback; bash "$SKILL_DIR/scripts/get-pr-comments" 26 OWNER/REPO</code> (separate statements — an env-prefix assignment is not visible to its own command's arguments) — returns JSON from outside the repo root.</li>
+      <li><code class="status">[x]</code> <code>grep -c 'Not addressing:' skills/sl-resolve-pr-feedback/references/full-mode.md</code> — returns <code>0</code>; templates live in one place.</li>
+      <li><code class="status">[x]</code> <code>grep -rn 'step 8\|step 5b' skills/sl-resolve-pr-feedback/</code> — every cross-reference resolves to a step that exists.</li>
+      <li><code class="status">[x]</code> <code>git diff --stat skills/sl-resolve-pr-feedback/ agents/sl-pr-comment-resolver.md</code> — the changed-file list matches Relevant Files exactly; <code>scripts/</code> and <code>codex-gate.md</code> untouched.</li>
+      <li><code class="status">[f]</code> All nine eval scenarios run, with the six pre-existing ones at or above their prior pass rate.</li>
+      <li><code class="status">[f]</code> One full end-to-end run against a real PR: threads fetched, resolvers dispatched, fixes pushed, threads replied to and resolved, zero manual path substitution required.</li>
+    </ul>
+    <div class="loop">
+      🔁 <strong>The plan is not complete until every box is checked and every command passes. If for some reason a step is not possible to complete, mark it with [f] and move on if possible.</strong>
+    </div>
+  </section>
+
+  <!-- ===== NOTES ===== -->
+  <section id="notes">
+    <h2>Notes</h2>
+
+    <h3>How the article's pairs land on this skill</h3>
+    <table>
+      <thead><tr><th>Then</th><th>Now</th><th>What it costs this skill today</th></tr></thead>
+      <tbody>
+        <tr><td>Put it all upfront</td><td>Use progressive disclosure</td><td>73 push-only lines on every run. The headline finding, and Phase 2.</td></tr>
+        <tr><td>Repeat yourself</td><td>Say it once, where it's used</td><td>Reply templates in two files, verdict taxonomy in three. Phase 3.</td></tr>
+        <tr><td>Give Claude rules</td><td>Let Claude use judgment</td><td>Mostly already right — the "default to fixing" framing <em>is</em> judgment guidance. See the non-change below.</td></tr>
+        <tr><td>Give Claude examples</td><td>Design interfaces</td><td>Already right. The scripts are the interface, and the resolver's return block is a typed contract.</td></tr>
+        <tr><td>Simple specs</td><td>Rich references</td><td>Already right, and unusually so — <code>grader.md</code> is exactly the "rubric for verification agents" the article names.</td></tr>
+      </tbody>
+    </table>
+    <p>
+      Only two of the five pairs generate work here. That is a good sign about the skill, and it is why this plan is
+      four phases rather than a rewrite: the parts the article would flag hardest — interface design, rich
+      references, evaluation-driven development — are the parts already done well.
+    </p>
+
+    <h3>Deliberate non-changes</h3>
+    <details>
+      <summary>The rationale prose in steps 5b and 8 stays</summary>
+      <p class="qa-answer">
+        Both steps carry multi-sentence justification — why the gate never blocks the push, why hanging is the worst
+        failure. That looks like exactly the padding the guidance says to cut. It is not: <code>evals/README.md</code>
+        states that eval 2 exists precisely "because the wrong answer is the intuitive one." The prose is what stops a
+        plausible safety instinct from stranding a validated fix in an uncommitted tree. Cutting it would be trading a
+        measured behaviour for a line count.
+      </p>
+    </details>
+    <details>
+      <summary>The agent's security block and rubric stay duplicated</summary>
+      <p class="qa-answer">
+        <code>sl-pr-comment-resolver</code> runs in its own context and never reads <code>SKILL.md</code>. Text
+        repeated across a context boundary is not repetition in the sense the article means — it is the only copy that
+        component will ever see. "Say it once" applies per context, not per repository.
+      </p>
+    </details>
+    <details>
+      <summary><code>codex-gate.md</code> and the six existing evals are untouched</summary>
+      <p class="qa-answer">
+        <code>codex-gate.md</code> is already the shape Phase 2 is copying: a conditional reference with its rules
+        ordered so the never-blocks rule precedes the fix instructions. The six evals are well-designed and their
+        rationale is documented. Changing either would mean re-earning confidence this plan can simply inherit.
+      </p>
+    </details>
+
+    <h3>Risks</h3>
+    <ul>
+      <li><strong>An extracted reference stops loading.</strong> The failure <code>grader.md</code> already anticipates:
+          rules that exist but never fire. Phase 2's eval re-run is the guard, and the 1&amp;5-pass / 2&amp;4&amp;6-fail
+          signature is the specific fingerprint to watch for.</li>
+      <li><strong>Deleting a rule that existed in two places and now exists in none.</strong> Phase 3's assertions are
+          deliberately paired — each "gone from here" has a matching "still present there."</li>
+      <li><strong>The <code>allowed-tools</code> answer may be uncomfortable.</strong> If the field is enforced, then
+          step 4 has never dispatched an agent and the skill has been running single-threaded all along — which would
+          make the parallelism in its own description inaccurate. Worth knowing either way.</li>
+      <li><strong>Eval spend.</strong> Nine scenarios at three runs each is 27 dispatches per pass, up from 18.</li>
+    </ul>
+
+    <h3>Dependencies</h3>
+    <p>
+      None added. The scripts already declare theirs; the eval suite runs through the existing
+      <code>skill-creator</code> framework. Everything else is markdown and shell.
+    </p>
+
+    <h3>References</h3>
+    <ul class="refs">
+      <li><a href="https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models">The new rules of context engineering for Claude 5 generation models</a> — the "then vs now" pairs; over 80% of Claude Code's system prompt removed with no measurable loss on coding evaluations.</li>
+      <li><code>plugins/marketplaces/compound-engineering-plugin/docs/solutions/skill-design/bundled-script-path-resolution-across-harnesses.md</code> — the repo's own three-tier path rule and the reason to avoid <code>${CLAUDE_SKILL_DIR}</code>.</li>
+      <li><code>specs/planf3-claude5-context-engineering.html</code> — the same guidance applied to <code>planf3</code>; established the anchor decision this plan reuses.</li>
+      <li><code>skills/sl-resolve-pr-feedback/evals/README.md</code> — the design rationale this plan's Phase 4 extends rather than replaces.</li>
+    </ul>
+  </section>
+
+  <!-- ===== AMENDMENTS ===== -->
+  <section id="amendments">
+    <h2>Amendments</h2>
+    <details>
+      <summary>2026-07-25 — Three process changes beyond this plan's scope: cluster-before-dispatch, central premise check, re-fetch-before-wait</summary>
+      <p>
+        This plan was scoped to context engineering — where bytes live and when they load. Reviewing the skill's
+        <em>process</em> afterwards surfaced three accuracy problems the plan did not address, and the user asked for
+        all three.
+      </p>
+      <p>
+        <strong>1. Dispatch is now per cluster, not per thread.</strong> Reviewers file one thread per location, so
+        one mistake in three files arrives as three threads. Fanning out per thread asked the same question three
+        times in three contexts that could not see each other — they could answer differently on the same PR. Step 3
+        now groups items sharing a file <em>or</em> a decision; step 4 dispatches one agent per cluster. This
+        subsumes the old file-overlap serialization rule, so two rules became one and all clusters run in parallel.
+      </p>
+      <p>
+        <strong>2. Cited premises are verified once, centrally, before fan-out.</strong> Findings that justify
+        themselves with a claim about the repo ("we already use <code>X</code>") are persuasive precisely because of
+        the claim, and the claim is the part most often wrong. An agent handed one thread sees the assertion but not
+        whether it holds repo-wide. Step 3 now checks each distinct claim once and passes the verdict to the cluster
+        that rests on it. This is the step that would have caught the <code>${CLAUDE_SKILL_DIR}</code> defect without
+        needing a human to think of checking.
+      </p>
+      <p>
+        <strong>3. Step 8 re-fetches before it waits.</strong> The old order blocked on bot re-review and only then
+        looked, paying the full timeout even when the reviewer had already responded — and paying it again when the
+        reviewer never would. A re-fetch is one GraphQL call. Now: re-fetch first; new threads mean loop with no wait
+        at all; empty-and-pushed gets a 60s settle window; empty-and-nothing-pushed concludes. The
+        <code>quiescence gate</code> is renamed <code>settle window</code> throughout, and
+        <code>wait-for-bot-review</code> gained an optional fourth argument so the window can be bounded per call
+        (verified: 150s default → 11s with the override).
+      </p>
+      <p>
+        <strong>Not covered by evals.</strong> All three are prose behavioural rules — the class this skill's own
+        eval README says nothing but the suite catches. No scenario tests them yet; the existing nine were checked
+        and none regressed.
+      </p>
+    </details>
+  </section>
+
+</main>
+</body>
+</html>
