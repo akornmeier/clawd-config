@@ -236,17 +236,37 @@ Route on what comes back:
 
 | Re-fetch result | Action |
 |-----------------|--------|
-| New threads present | Loop from step 2. The reviewer already responded — no wait was needed at all. |
+| New threads present | Check the stop condition below, then loop from step 2 if it allows. The reviewer already responded — no wait was needed at all. |
 | Empty, and this round **pushed a fix** | One short settle window, then re-fetch once more. Read `references/verify-gate.md`. |
 | Empty, and **nothing was pushed** | Conclude. There is no new commit for a bot to re-review. |
 
 `review_threads` should be empty apart from `needs-human` items. PR comments and review bodies have no resolve mechanism, so they still appear in the output; confirm they were replied to by checking the PR conversation.
 
-**If new threads remain**, check the fix-round count for this run:
+**If new threads remain**, check the stop condition before looping. It counts across the **whole PR**, not the current invocation — a fresh `/sl-resolve-pr-feedback` call must not reset it. Three invocations of one round each is three rounds, and the reviewer cannot tell the difference.
 
-- **First, second, or third fix-verify cycle**: Repeat from step 2 for the remaining threads.
+### Stop condition — round count
 
-- **After the third fix-verify cycle** (4th pass would begin): Stop looping. Surface remaining issues to the user with context about the recurring pattern: "Multiple rounds of feedback on [area/theme] suggest a deeper issue. Here's what we've fixed so far and what keeps appearing." Use the same `needs-human` escalation pattern -- leave threads open and present the pattern for the user to decide.
+Read it off the PR rather than from memory, since memory ends when the invocation does. Every fix round leaves a commit from step 6, so counting those commits counts the rounds:
+
+```bash
+gh pr view PR_NUMBER --json commits \
+  -q '[.commits[].messageHeadline | select(startswith("Address PR review feedback"))] | length'
+```
+
+`PR_NUMBER` appears **once**, and that is deliberate. `gh pr view` has already scoped the commit list to this one PR, so the match only needs step 6's stable prefix — adding `(#PR_NUMBER)` to the filter would put a second placeholder inside the quoted jq, where substituting the first and missing the second yields a silent `0` on a PR that has already run several rounds. Match the prefix; let `gh` do the scoping.
+
+Ask GitHub, not the local repository. Every `git log`-based form of this counter needs a revision that resolves locally, and each candidate fails somewhere it matters: `origin/$BASE` is absent in a fresh clone or a checkout that never fetched the base branch, and a `baseRefOid` from the API is only a hash — if the base branch has advanced beyond the local history, that object is not present to resolve either. The PR's own commit list has no such dependency, so no fetch is required and a shallow or stale working copy cannot break it.
+
+This counter depends on step 6's commit subject **beginning with** `Address PR review feedback`; the trailing `(#123)` is what a human reads, not what the filter matches. If that prefix changes, this breaks silently and the loop becomes unbounded again — change both together. Distinguish a real zero from a broken counter before trusting it: a genuine first round prints `0`, while a failed `gh` call (unauthenticated, offline, wrong repo) prints nothing at all and reports its error on stderr. Empty output is not round zero — re-run it before looping.
+
+- **Fewer than 3**: repeat from step 2 for the remaining threads.
+- **3 or more**: stop looping and hand back (see *Handing back* below).
+
+### Handing back
+
+Do **not** reclassify the remaining findings as nits and decline them. They are usually correct, and this skill's stated default is to fix — a severity judgment on reviewer prose is exactly the call it refuses to make. What has run out is the value of the *loop*, not of the fixes.
+
+So: apply any remaining findings in one batch, reply to each, and conclude **without** re-entering the wait. Resolve what can be resolved — review threads — and leave PR comments and review bodies replied-to only, since GitHub gives them no resolve mechanism (step 7). Handing back does not change what is resolvable; it only stops the loop. Then surface the pattern for the user to decide on: "Multiple rounds of feedback on [area/theme] — here's what we've fixed so far, what keeps appearing, and whether any of it changed behaviour." For anything genuinely unresolved, use the `needs-human` escalation pattern and leave those threads open.
 
 ## 9. Summary
 
