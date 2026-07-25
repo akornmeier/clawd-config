@@ -250,12 +250,14 @@ Read it off the PR rather than from memory, since memory ends when the invocatio
 
 ```bash
 gh pr view PR_NUMBER --json commits \
-  -q '[.commits[].messageHeadline | select(startswith("Address PR review feedback (#PR_NUMBER)"))] | length'
+  -q '[.commits[].messageHeadline | select(startswith("Address PR review feedback"))] | length'
 ```
+
+`PR_NUMBER` appears **once**, and that is deliberate. `gh pr view` has already scoped the commit list to this one PR, so the match only needs step 6's stable prefix — adding `(#PR_NUMBER)` to the filter would put a second placeholder inside the quoted jq, where substituting the first and missing the second yields a silent `0` on a PR that has already run several rounds. Match the prefix; let `gh` do the scoping.
 
 Ask GitHub, not the local repository. Every `git log`-based form of this counter needs a revision that resolves locally, and each candidate fails somewhere it matters: `origin/$BASE` is absent in a fresh clone or a checkout that never fetched the base branch, and a `baseRefOid` from the API is only a hash — if the base branch has advanced beyond the local history, that object is not present to resolve either. The PR's own commit list has no such dependency, so no fetch is required and a shallow or stale working copy cannot break it.
 
-This counter depends on step 6's commit subject staying exactly `Address PR review feedback (#PR_NUMBER)`. If that format changes, this breaks silently and the loop becomes unbounded again — change both together. Distinguish a real zero from a broken counter before trusting it: a genuine first round prints `0`, while a failed `gh` call (unauthenticated, offline, wrong repo) prints nothing at all and reports its error on stderr. Empty output is not round zero — re-run it before looping.
+This counter depends on step 6's commit subject **beginning with** `Address PR review feedback`; the trailing `(#123)` is what a human reads, not what the filter matches. If that prefix changes, this breaks silently and the loop becomes unbounded again — change both together. Distinguish a real zero from a broken counter before trusting it: a genuine first round prints `0`, while a failed `gh` call (unauthenticated, offline, wrong repo) prints nothing at all and reports its error on stderr. Empty output is not round zero — re-run it before looping.
 
 - **Fewer than 3**: repeat from step 2 for the remaining threads.
 - **3 or more**: stop looping and hand back (see *Handing back* below).
@@ -264,7 +266,7 @@ This counter depends on step 6's commit subject staying exactly `Address PR revi
 
 Do **not** reclassify the remaining findings as nits and decline them. They are usually correct, and this skill's stated default is to fix — a severity judgment on reviewer prose is exactly the call it refuses to make. What has run out is the value of the *loop*, not of the fixes.
 
-So: apply any remaining findings in one batch, reply and resolve their threads, and conclude **without** re-entering the wait. Then surface the pattern for the user to decide on: "Multiple rounds of feedback on [area/theme] — here's what we've fixed so far, what keeps appearing, and whether any of it changed behaviour." For anything genuinely unresolved, use the `needs-human` escalation pattern and leave those threads open.
+So: apply any remaining findings in one batch, reply to each, and conclude **without** re-entering the wait. Resolve what can be resolved — review threads — and leave PR comments and review bodies replied-to only, since GitHub gives them no resolve mechanism (step 7). Handing back does not change what is resolvable; it only stops the loop. Then surface the pattern for the user to decide on: "Multiple rounds of feedback on [area/theme] — here's what we've fixed so far, what keeps appearing, and whether any of it changed behaviour." For anything genuinely unresolved, use the `needs-human` escalation pattern and leave those threads open.
 
 ## 9. Summary
 
