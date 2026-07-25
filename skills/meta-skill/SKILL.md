@@ -1,6 +1,6 @@
 ---
 name: meta-skill
-description: Creates, improves, and reviews Claude Code Agent Skills. Use when the user wants to author a new skill, package a workflow or domain expertise into one, rightsize a skill that has grown too long, or work out why a skill never fires. Triggers on "create a skill", "make a skill for", "turn this into a skill", "improve this skill", "review my skill", "this skill never triggers", "why isn't my skill firing".
+description: Creates, improves, and reviews Claude Code Agent Skills. Use when the user wants to author a new skill, package a workflow or domain expertise into one, rightsize a skill that has grown too long, work out why a skill never fires, or health-check the whole skills directory to find which ones need work. Triggers on "create a skill", "make a skill for", "turn this into a skill", "improve this skill", "review my skill", "this skill never triggers", "why isn't my skill firing", "skills health check", "audit my skills", "which skills need work".
 ---
 
 # meta-skill
@@ -31,6 +31,7 @@ before acting.
 | --- | --- | --- |
 | Create Skill | The prompt asks for a new skill, or to package a workflow or expertise into one | `workflows/create-skill.md` |
 | Improve Skill | The prompt asks to fix, shrink, review, or debug the triggering of a skill that already exists | `workflows/improve-skill.md` |
+| Audit Skills | The prompt asks about the skills directory as a whole — a health check, which skills need work, what is broken | `workflows/audit-skills.md` |
 
 ## Files
 
@@ -42,6 +43,7 @@ Paths below are relative to this skill's own directory — Claude Code announces
 | `templates/SKILL.md` | Frontmatter and section skeleton for a new skill | Authoring a `SKILL.md`, on either route |
 | `references/context-engineering-claude5.md` | The Claude 5 rules for what to put in a skill and what to cut | Deciding what belongs in a skill, or running the subtraction test on a draft |
 | `references/skill-review-rubric.md` | Gradeable pass conditions, one per dimension | Grading a skill — last step of create, first step of improve |
+| `scripts/scan.py` | Mechanical pre-pass over every installed skill: what loads, what has a provable defect | Never — the Audit route executes it |
 | `docs/claude_code_agent_skills.md` | Upstream Claude Code skills guide | A Claude Code-specific format detail is genuinely in question |
 | `docs/claude_code_agent_skills_overview.md` | Upstream architecture doc, including cross-surface limits | A limit, or a surface other than Claude Code, is in question |
 | `docs/blog_equipping_agents_with_skills.md` | Anthropic's Skills launch post | The original progressive-disclosure argument is wanted in its own words |
