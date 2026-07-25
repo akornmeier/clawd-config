@@ -53,7 +53,8 @@ def scan(d, name):
     if not os.path.isfile(md):
         return "broken", ["no SKILL.md"], 0
 
-    text = open(md, encoding="utf-8", errors="replace").read()
+    with open(md, encoding="utf-8", errors="replace") as fh:
+        text = fh.read()
     lines = text.count("\n") + 1
     fm = re.match(r"^---\n(.*?)\n---", text, re.S)
     if not fm:
