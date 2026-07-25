@@ -2,7 +2,14 @@
 
 Health check across every installed skill, ending in a report the user can act on.
 
-1. Scan - Set `SKILL_DIR` to this skill's base directory, then run `python3 "$SKILL_DIR/scripts/scan.py"` (add directory arguments only if the user names specific ones). It returns three groups: BROKEN, FLAGGED, CLEAN. Its flags are evidence, not verdicts.
+1. Scan - Assign `SKILL_DIR` and run the scanner in the same Bash call, both statements in one block. A prefix assignment (`SKILL_DIR=... python3 "$SKILL_DIR/..."`) expands the variable before it is set, and shell state does not persist between calls.
+
+```bash
+SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"
+python3 "$SKILL_DIR/scripts/scan.py"
+```
+
+   Takes directory arguments only if the user names specific ones. Returns three groups — BROKEN, FLAGGED, CLEAN. Its flags are evidence, not verdicts.
 2. Handle BROKEN First - These do not load at all, so no grade applies. Report what each one is — dangling symlink, missing `SKILL.md`, unparseable frontmatter — and confirm repair or removal with the user before touching any of them.
 3. Grade the FLAGGED - One grader per flagged skill, run in parallel. Each reads its skill and `references/skill-review-rubric.md`, and returns the rubric's own output shape: a verdict per dimension plus the specific edit for each failure. Above roughly ten, use a `Workflow` pipeline so grading and reporting overlap rather than waiting on a barrier.
 4. Do Not Grade CLEAN - The mechanical pass only proves the absence of mechanical defects; dimensions 3, 5, and 7 are unproven for them. Say so in the report rather than implying a pass.

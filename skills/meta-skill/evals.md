@@ -51,7 +51,7 @@ the one known weakness in this skill.
   not a miss, and little is lost when the skill loses it.
 - *Rubric*: 0 of 3 firing runs opened `references/skill-review-rubric.md`. Moving the grade to
   step 2 and saying "read it, don't grade from memory" did not change this. On a 45-line
-  target with a one-line ask, a six-dimension grade reads as disproportionate.
+  target with a one-line ask, a seven-dimension grade reads as disproportionate.
 - *Output quality*: every run named the exact edit — both frontmatter defects, the correct
   patch, and why triggering depends on frontmatter alone.
 
