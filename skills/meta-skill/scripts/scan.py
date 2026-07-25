@@ -48,12 +48,12 @@ def referenced(f, text):
 def scan(d, name):
     """-> (state, flags, lines) where state is broken | flagged | clean."""
     md = os.path.join(d, "SKILL.md")
-    if os.path.islink(d) and not os.path.exists(md):
+    if os.path.islink(d) and not os.path.exists(d):
         return "broken", [f"dangling symlink -> {os.readlink(d)}"], 0
     if not os.path.isfile(md):
         return "broken", ["no SKILL.md"], 0
 
-    text = open(md, errors="replace").read()
+    text = open(md, encoding="utf-8", errors="replace").read()
     lines = text.count("\n") + 1
     fm = re.match(r"^---\n(.*?)\n---", text, re.S)
     if not fm:

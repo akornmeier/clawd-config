@@ -778,6 +778,28 @@
         driven from this build. Worth running by hand against the rewritten skill.
       </p>
     </details>
+    <details>
+      <summary>2026-07-25 — Rubric checklist under-enumerates: 6 dimensions listed, 7 shipped</summary>
+      <p>
+        PR review flagged that Phase 1's checklist item for
+        <code>references/skill-review-rubric.md</code> — "Define the dimensions to grade" — names
+        six dimensions (description triggers, forced-context size, progressive disclosure,
+        rule-vs-judgment balance, single source of truth, reachability) and omits a seventh.
+      </p>
+      <p>
+        The delivered <code>skills/meta-skill/references/skill-review-rubric.md</code> defines
+        seven: the six above plus <strong>Scope</strong> — "one skill, one capability" — as
+        dimension 7. The rubric file is correct and is the source of truth; the checklist line
+        above is left as-executed rather than rewritten, per this plan's append-only convention.
+        A reader grading a skill should read the rubric file's table, not recount from the
+        Phase 1 checklist.
+      </p>
+      <p>
+        The same undercount echoes in <code>skills/meta-skill/evals.md</code> ("a six-dimension
+        grade reads as disproportionate") — out of scope for this plan, but worth a look if that
+        file is revisited.
+      </p>
+    </details>
   </section>
 
 </main>
