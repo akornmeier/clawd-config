@@ -28,7 +28,7 @@ def bundled(d):
         dirs[:] = [x for x in dirs if x not in (".git", "node_modules", "__pycache__")]
         for f in files:
             rel = os.path.relpath(os.path.join(root, f), d)
-            if rel == "SKILL.md" or f in SKIP_ORPHAN:  # the skill's own, not nested ones
+            if rel == "SKILL.md" or f in SKIP_ORPHAN:  # skip skill-root SKILL.md and SKIP_ORPHAN names; nested SKILL.md files (e.g. templates/SKILL.md) are NOT skipped
                 continue
             if rel.split(os.sep)[0] == "evals":  # unlinked by convention, same as evals.md
                 continue
