@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan: Rebuild /planf3 for Claude 5 Context Engineering</title>
+<style>
+  /* ===== VISUAL IDENTITY =====
+     Single source of truth for this plan AND every image embedded in it.
+     Inline SVG resolves var() against this page — diagrams reference these
+     roles (never hardcoded hex) so the identity stays synced. */
+  :root {
+    --bg:            #faf8f5;
+    --paper-2:       #ffffff;
+    --ink:           #1b1a18;
+    --muted:         #5f5c56;
+    --soft:          #8d8a83;
+    --rule:          rgba(27, 26, 24, 0.12);
+    --rule-solid:    #e3ded6;
+    --accent:        #b4552f;
+    --accent-tint:   rgba(180, 85, 47, 0.09);
+
+    --sans:  'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono:  'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --serif: ui-serif, 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 4rem 1.5rem 6rem;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  main { max-width: 60rem; margin: 0 auto; }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: 2.5rem;
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0 0 1rem;
+  }
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin: 3.5rem 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  h3 { font-size: 1.0625rem; font-weight: 600; margin: 2rem 0 0.5rem; }
+  h4 {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 1.5rem 0 0.5rem;
+  }
+  p  { margin: 0 0 1rem; max-width: 46rem; }
+  a  { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    background: rgba(27, 26, 24, 0.05);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
+  pre {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  /* --- header + metadata --- */
+  header { margin-bottom: 2.5rem; }
+  header .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--soft);
+    margin: 0 0 0.75rem;
+  }
+  details.meta {
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--paper-2);
+    padding: 0.625rem 1rem;
+    font-size: 0.8125rem;
+  }
+  details.meta summary {
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  details.meta dl {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: 0.25rem 1rem;
+    margin: 0.875rem 0 0.25rem;
+  }
+  details.meta dt {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--soft);
+    padding-top: 0.15rem;
+  }
+  details.meta dd { margin: 0; color: var(--muted); font-family: var(--mono); font-size: 0.75rem; word-break: break-word; }
+
+  /* --- figures --- */
+  figure {
+    margin: 2rem auto;
+    padding: 0;
+    text-align: center;
+  }
+  figure svg { display: block; width: 100%; height: auto; margin: 0 auto; }
+  figcaption {
+    margin-top: 0.875rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--soft);
+    max-width: 40rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* --- tables --- */
+  table { border-collapse: collapse; width: 100%; font-size: 0.875rem; margin: 0 0 1rem; }
+  th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--soft);
+    font-weight: 500;
+  }
+  td code { white-space: nowrap; }
+
+  /* --- relevant files --- */
+  .files ul { list-style: none; padding: 0; margin: 0 0 1rem; }
+  .files li { padding: 0.375rem 0; border-bottom: 1px solid var(--rule); font-size: 0.9375rem; }
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    padding: 0.1rem 0.35rem;
+    margin-right: 0.4rem;
+    border: 1px solid;
+  }
+  .tag.existing { color: var(--muted); border-color: var(--rule-solid); }
+  .tag.new      { color: var(--accent); border-color: var(--accent); background: var(--accent-tint); }
+
+  /* --- phases --- */
+  .phase {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .phase h3 { margin-top: 0.25rem; }
+  ul.checklist { list-style: none; padding: 0; margin: 0 0 1rem; }
+  ul.checklist li { padding: 0.25rem 0 0.25rem 0; font-size: 0.9375rem; line-height: 1.55; }
+  code.status {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--soft);
+    background: none;
+    padding: 0;
+    margin-right: 0.4rem;
+  }
+  .loop {
+    border-left: 2px solid var(--accent);
+    background: var(--accent-tint);
+    border-radius: 0 4px 4px 0;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  .loop strong { color: var(--ink); }
+
+  /* --- notes / amendments --- */
+  #notes details, #amendments details, #questionables details {
+    border-bottom: 1px solid var(--rule);
+    padding: 0.625rem 0;
+  }
+  #notes summary, #amendments summary, #questionables summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+  .qa-answer, #amendments details p { margin: 0.5rem 0 0; color: var(--muted); font-size: 0.9375rem; }
+  .empty { color: var(--soft); font-family: var(--mono); font-size: 0.8125rem; }
+  .refs { list-style: none; padding: 0; font-size: 0.875rem; }
+  .refs li { padding: 0.25rem 0; }
+</style>
+</head>
+<body>
+<main>
+
+  <!-- ===== HEADER + UPDATABLE METADATA ===== -->
+  <header>
+    <p class="eyebrow">Implementation Plan · Claude Code Skill</p>
+    <h1>Plan: Rebuild <code>/planf3</code> for Claude 5 Context Engineering</h1>
+    <details class="meta">
+      <summary>Metadata</summary>
+      <dl>
+        <dt>created</dt>      <dd>2026-07-25T01:34:06Z</dd>
+        <dt>modified</dt>     <dd>2026-07-25T01:34:06Z, 2026-07-25T02:32:18Z</dd>
+        <dt>commits</dt>      <dd>6d4115d</dd>
+        <dt>agent name</dt>   <dd>claude-opus-5 (planf3 · create-plan), claude-opus-5 (planf3 · build-plan)</dd>
+        <dt>session id</dt>   <dd>26f90d07-b0da-450f-8748-2b8504bea869, 058d2b4b-c477-443b-a0ff-cbd393ba35b5</dd>
+        <dt>back refs</dt>    <dd>specs/skill-audit-and-improvement.md (prior skill-quality program), specs/skill-assessment-local.md (local skill audit — does not cover planf3)</dd>
+        <dt>forward refs</dt> <dd>none yet</dd>
+      </dl>
+    </details>
+  </header>
+
+  <figure>
+    <svg viewBox="0 0 1000 400" role="img" aria-label="Target architecture: a lean SKILL.md routes to workflow files and an HTML template that load only on demand">
+      <rect width="100%" height="100%" fill="var(--bg)"/>
+      <defs>
+        <marker id="h-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="var(--muted)"/>
+        </marker>
+        <marker id="h-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="var(--accent)"/>
+        </marker>
+      </defs>
+
+      <!-- arrows first (z-order behind boxes) -->
+      <path d="M184 200 H240" stroke="var(--muted)" stroke-width="1" fill="none" marker-end="url(#h-arrow)"/>
+      <path d="M440 200 H480 V140 H512" stroke="var(--muted)" stroke-width="1" fill="none" marker-end="url(#h-arrow)"/>
+      <path d="M440 200 H480 V244 H512" stroke="var(--accent)" stroke-width="1" fill="none" marker-end="url(#h-arrow-accent)"/>
+      <path d="M736 140 H776 V196 H800" stroke="var(--muted)" stroke-width="1" fill="none" marker-end="url(#h-arrow)"/>
+      <path d="M736 244 H776 V204 H800" stroke="var(--accent)" stroke-width="1" fill="none" marker-end="url(#h-arrow-accent)"/>
+
+      <!-- on-demand boundary -->
+      <rect x="496" y="72" width="256" height="248" rx="6" fill="none"
+            stroke="var(--soft)" stroke-width="1" stroke-dasharray="4,4"/>
+      <rect x="524" y="64" width="164" height="16" fill="var(--bg)"/>
+      <text x="532" y="76" fill="var(--soft)" font-size="8" font-family="var(--mono)"
+            letter-spacing="0.14em">READ ONLY WHEN NEEDED</text>
+
+      <!-- N1 invocation -->
+      <rect x="32" y="164" width="152" height="72" rx="6" fill="var(--bg)"/>
+      <rect x="32" y="164" width="152" height="72" rx="6"
+            fill="rgba(27,26,24,0.04)" stroke="var(--soft)" stroke-width="1"/>
+      <text x="108" y="196" fill="var(--ink)" font-size="12" font-weight="600"
+            font-family="var(--sans)" text-anchor="middle">Request</text>
+      <text x="108" y="216" fill="var(--muted)" font-size="9"
+            font-family="var(--mono)" text-anchor="middle">/planf3 or "spec this"</text>
+
+      <!-- N2 SKILL.md (focal) -->
+      <rect x="248" y="148" width="192" height="104" rx="6" fill="var(--bg)"/>
+      <rect x="248" y="148" width="192" height="104" rx="6"
+            fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+      <rect x="260" y="160" width="44" height="12" rx="2" fill="none"
+            stroke="var(--accent)" stroke-opacity="0.4" stroke-width="0.8"/>
+      <text x="282" y="169" fill="var(--accent)" font-size="7" font-family="var(--mono)"
+            text-anchor="middle" letter-spacing="0.08em">ROUTER</text>
+      <text x="344" y="204" fill="var(--ink)" font-size="12" font-weight="600"
+            font-family="var(--sans)" text-anchor="middle">SKILL.md</text>
+      <text x="344" y="224" fill="var(--muted)" font-size="9"
+            font-family="var(--mono)" text-anchor="middle">≤80 lines · name + when</text>
+
+      <!-- N3 workflows -->
+      <rect x="520" y="104" width="216" height="72" rx="6" fill="var(--bg)"/>
+      <rect x="520" y="104" width="216" height="72" rx="6"
+            fill="var(--paper-2)" stroke="var(--ink)" stroke-width="1"/>
+      <text x="628" y="136" fill="var(--ink)" font-size="12" font-weight="600"
+            font-family="var(--sans)" text-anchor="middle">Workflows</text>
+      <text x="628" y="156" fill="var(--muted)" font-size="9"
+            font-family="var(--mono)" text-anchor="middle">workflows/*.md · 5 files</text>
+
+      <!-- N4 template (focal) -->
+      <rect x="520" y="208" width="216" height="72" rx="6" fill="var(--bg)"/>
+      <rect x="520" y="208" width="216" height="72" rx="6"
+            fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+      <text x="628" y="240" fill="var(--ink)" font-size="12" font-weight="600"
+            font-family="var(--sans)" text-anchor="middle">HTML Template</text>
+      <text x="628" y="260" fill="var(--muted)" font-size="9"
+            font-family="var(--mono)" text-anchor="middle">templates/plan.html</text>
+
+      <!-- N5 output -->
+      <rect x="800" y="160" width="168" height="80" rx="6" fill="var(--bg)"/>
+      <rect x="800" y="160" width="168" height="80" rx="6"
+            fill="rgba(27,26,24,0.05)" stroke="var(--muted)" stroke-width="1"/>
+      <text x="884" y="194" fill="var(--ink)" font-size="12" font-weight="600"
+            font-family="var(--sans)" text-anchor="middle">Plan</text>
+      <text x="884" y="214" fill="var(--muted)" font-size="9"
+            font-family="var(--mono)" text-anchor="middle">specs/&lt;name&gt;.html</text>
+
+      <!-- legend -->
+      <line x1="32" y1="344" x2="968" y2="344" stroke="var(--rule)" stroke-width="0.8"/>
+      <text x="32" y="364" fill="var(--soft)" font-size="8" font-family="var(--mono)"
+            letter-spacing="0.14em">LEGEND</text>
+      <rect x="112" y="354" width="12" height="12" rx="2" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+      <text x="132" y="364" fill="var(--muted)" font-size="9" font-family="var(--mono)">changed by this plan</text>
+      <rect x="312" y="354" width="12" height="12" rx="2" fill="var(--paper-2)" stroke="var(--ink)" stroke-width="1"/>
+      <text x="332" y="364" fill="var(--muted)" font-size="9" font-family="var(--mono)">existing file</text>
+      <line x1="484" y1="360" x2="508" y2="360" stroke="var(--soft)" stroke-width="1" stroke-dasharray="4,4"/>
+      <text x="516" y="364" fill="var(--muted)" font-size="9" font-family="var(--mono)">progressive disclosure boundary</text>
+    </svg>
+    <figcaption>Target shape: SKILL.md becomes a router that names what exists and when to read it. Everything else stays on disk until a specific run needs it.</figcaption>
+  </figure>
+
+  <!-- ===== PURPOSE / PROBLEM / SOLUTION ===== -->
+  <section id="purpose">
+    <h2>Purpose</h2>
+    <p>
+      Rewrite the <code>planf3</code> skill so it matches how Anthropic now says to write context for Claude&nbsp;5
+      generation models: a lean, discoverable <code>SKILL.md</code>; real progressive disclosure instead of one
+      monolithic file; judgment-level guidance instead of prescriptive rules; a rich HTML reference instead of a
+      fenced code block; and evaluations so future changes to the skill can be measured rather than guessed at.
+    </p>
+    <p>
+      The skill's behaviour does not change. Its four workflows, its HTML-first output, its append-only metadata
+      and its image sub-workflow all survive. What changes is <em>where the bytes live</em> and <em>when they load</em>.
+    </p>
+  </section>
+
+  <section id="problem">
+    <h2>Problem</h2>
+    <p>
+      <code>skills/planf3/SKILL.md</code> is 241 lines, and 175 of them (73%) are an inline HTML plan template that
+      only two of the four workflows ever use. Because it lives inside <code>SKILL.md</code>, it loads on
+      <em>every</em> trigger — including <code>Build Plan</code> and <code>Update References</code> runs that never
+      touch it. That is the exact pattern the Claude&nbsp;5 guidance calls out: information delivered up front instead
+      of at the moment it is needed.
+    </p>
+
+    <figure>
+      <svg viewBox="0 0 1000 400" role="img" aria-label="Bar showing 175 of 241 lines of SKILL.md are the plan template, loaded on every run regardless of workflow">
+        <rect width="100%" height="100%" fill="var(--bg)"/>
+        <defs>
+          <marker id="p-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="var(--muted)"/>
+          </marker>
+          <marker id="p-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="var(--accent)"/>
+          </marker>
+        </defs>
+
+        <!-- arrows first -->
+        <path d="M472 152 H560" stroke="var(--muted)" stroke-width="1" fill="none" marker-end="url(#p-arrow)"/>
+        <path d="M472 264 H560" stroke="var(--accent)" stroke-width="1" fill="none" marker-end="url(#p-arrow-accent)"/>
+
+        <text x="120" y="44" fill="var(--soft)" font-size="8" font-family="var(--mono)"
+              letter-spacing="0.14em">SKILL.MD · 241 LINES · LOADED WHOLE</text>
+
+        <!-- stacked file segments -->
+        <rect x="120" y="56"  width="200" height="12"  fill="var(--paper-2)" stroke="var(--muted)" stroke-width="1"/>
+        <rect x="120" y="68"  width="200" height="16"  fill="var(--paper-2)" stroke="var(--muted)" stroke-width="1"/>
+        <rect x="120" y="84"  width="200" height="24"  fill="var(--paper-2)" stroke="var(--muted)" stroke-width="1"/>
+        <rect x="120" y="108" width="200" height="24"  fill="var(--paper-2)" stroke="var(--muted)" stroke-width="1"/>
+        <rect x="120" y="132" width="200" height="204" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+
+        <text x="332" y="66"  fill="var(--muted)" font-size="9" font-family="var(--mono)">frontmatter + purpose</text>
+        <text x="332" y="80"  fill="var(--muted)" font-size="9" font-family="var(--mono)">variables</text>
+        <text x="332" y="100" fill="var(--muted)" font-size="9" font-family="var(--mono)">instructions ×18</text>
+        <text x="332" y="124" fill="var(--muted)" font-size="9" font-family="var(--mono)">workflow routing</text>
+        <text x="332" y="236" fill="var(--accent)" font-size="12" font-weight="600" font-family="var(--sans)">plan template</text>
+        <text x="332" y="256" fill="var(--muted)" font-size="9" font-family="var(--mono)">175 lines · 73% of the file</text>
+
+        <!-- consumers -->
+        <rect x="560" y="116" width="360" height="72" rx="6" fill="var(--bg)"/>
+        <rect x="560" y="116" width="360" height="72" rx="6"
+              fill="var(--paper-2)" stroke="var(--ink)" stroke-width="1"/>
+        <text x="740" y="148" fill="var(--ink)" font-size="12" font-weight="600"
+              font-family="var(--sans)" text-anchor="middle">Create · Update</text>
+        <text x="740" y="168" fill="var(--muted)" font-size="9"
+              font-family="var(--mono)" text-anchor="middle">uses the template</text>
+
+        <rect x="560" y="228" width="360" height="72" rx="6" fill="var(--bg)"/>
+        <rect x="560" y="228" width="360" height="72" rx="6"
+              fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="740" y="260" fill="var(--ink)" font-size="12" font-weight="600"
+              font-family="var(--sans)" text-anchor="middle">Build · Update References</text>
+        <text x="740" y="280" fill="var(--accent)" font-size="9"
+              font-family="var(--mono)" text-anchor="middle">pays for it, never reads it</text>
+
+        <!-- legend -->
+        <line x1="120" y1="352" x2="920" y2="352" stroke="var(--rule)" stroke-width="0.8"/>
+        <text x="120" y="372" fill="var(--soft)" font-size="8" font-family="var(--mono)"
+              letter-spacing="0.14em">LEGEND</text>
+        <rect x="200" y="362" width="12" height="12" rx="2" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="220" y="372" fill="var(--muted)" font-size="9" font-family="var(--mono)">the waste</text>
+        <rect x="336" y="362" width="12" height="12" rx="2" fill="var(--paper-2)" stroke="var(--muted)" stroke-width="1"/>
+        <text x="356" y="372" fill="var(--muted)" font-size="9" font-family="var(--mono)">the rest of the skill</text>
+      </svg>
+      <figcaption>Half the skill's triggers pay full price for a template they never open. Line counts verified against the current <code>SKILL.md</code>.</figcaption>
+    </figure>
+
+    <p>Eight findings, each traceable to a line in the current skill:</p>
+
+    <table>
+      <thead>
+        <tr><th>#</th><th>Finding</th><th>Where</th><th>Guidance it violates</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>175 of 241 lines are the inline plan template; all four workflows load it.</td>
+          <td><code>SKILL.md:66–241</code></td>
+          <td>SKILL.md is a table of contents; split content into files loaded on demand.</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>The template promises a <code>&lt;style&gt;</code> block and <code>:root</code> custom properties that
+              do not exist anywhere in the skill. Every run reinvents the CSS, so no two plans look alike — and the
+              <code>diagram-design</code> image backend is documented against variables the template never declares.</td>
+          <td><code>SKILL.md:35–36</code>, <code>workflows/image-generation.md:11–13</code></td>
+          <td>Broken internal reference; identity contract with no implementation.</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>The <code>description</code> covers only one of four workflows, omits when to use the skill, and
+              omits its own key terms (HTML, spec, update, build, images).</td>
+          <td><code>SKILL.md:3</code></td>
+          <td>Description drives selection among 100+ skills; state what it does <em>and</em> when to use it.</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>Thinking is instructed three separate times (<code>ultrathink</code>, two × <code>THINK HARD</code>)
+              on a model where thinking is on by default.</td>
+          <td><code>SKILL.md:30</code>, <code>create-plan.md:3</code>, <code>update-plan.md:2</code></td>
+          <td>Don't repeat yourself; remove instructions the model already follows.</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>Generic rules Claude 5 applies on its own: "consider edge cases, error handling, and scalability",
+              "include code examples where appropriate", "ensure the plan is detailed enough".</td>
+          <td><code>SKILL.md:42–44</code></td>
+          <td>Give judgment, not rules.</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>Dead configuration: <code>IDE</code> is referenced by no workflow; <code>AI_DOCS/</code> and
+              <code>APP_DOCS/</code> do not exist here yet <code>create-plan.md</code> orders them read unconditionally.</td>
+          <td><code>SKILL.md:21–23</code>, <code>create-plan.md:4</code></td>
+          <td>No unjustified constants; don't send the agent after files that aren't there.</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>Image scripts are invoked at <code>scripts/…</code>, relative to the working directory rather than the
+              skill directory — the call fails whenever the plan isn't being written from inside the skill folder.</td>
+          <td><code>workflows/image-generation.md:23–24</code></td>
+          <td>File paths must resolve from where the agent actually stands.</td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td>No evaluations exist, and nothing calibrates plan length on a model that writes long documents by default.</td>
+          <td>skill-wide</td>
+          <td>Build evals first (≥3); add explicit length calibration for written deliverables.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="solution">
+    <h2>Solution</h2>
+    <p>
+      Five moves, in dependency order. The template comes out first because everything else in <code>SKILL.md</code>
+      is written around it; the rest is subtraction.
+    </p>
+    <ol>
+      <li><strong>Extract the template</strong> to <code>templates/plan.html</code> and give it the
+          <code>&lt;style&gt;</code> block it always assumed. This removes 175 lines from the always-loaded path and
+          upgrades the template from a fenced code block to a real HTML artifact — the format the guidance says
+          produces better results than a description.</li>
+      <li><strong>Rewrite the description</strong> with what it does, when to use it, and its trigger terms, in third
+          person, so the skill fires on all four of its workflows rather than one.</li>
+      <li><strong>Cut the instructions</strong> from eighteen bullets to the handful Claude cannot derive: the output
+          contract, the identity contract, append-only metadata, length calibration, scope discipline.</li>
+      <li><strong>Fix the workflow files</strong>: skill-relative script paths, conditional doc reads, no duplicated
+          thinking instructions.</li>
+      <li><strong>Add three evaluations</strong> so the next edit to this skill can be measured against a baseline.</li>
+    </ol>
+
+    <figure>
+      <svg viewBox="0 0 1000 432" role="img" aria-label="Layer stack of the five context levels, from always-loaded description down to scripts that are executed but never read">
+        <rect width="100%" height="100%" fill="var(--bg)"/>
+        <defs>
+          <marker id="s-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="var(--soft)"/>
+          </marker>
+        </defs>
+
+        <text x="200" y="44" fill="var(--soft)" font-size="8" font-family="var(--mono)"
+              letter-spacing="0.14em">WHAT LOADS, AND WHEN</text>
+
+        <!-- direction indicator -->
+        <path d="M144 96 V352" stroke="var(--soft)" stroke-width="1" fill="none" marker-end="url(#s-arrow)"/>
+        <rect x="108" y="196" width="72" height="48" fill="var(--bg)"/>
+        <text x="144" y="216" fill="var(--soft)" font-size="8" font-family="var(--mono)"
+              text-anchor="middle" letter-spacing="0.08em">LOADED</text>
+        <text x="144" y="232" fill="var(--soft)" font-size="8" font-family="var(--mono)"
+              text-anchor="middle" letter-spacing="0.08em">LATER</text>
+
+        <!-- L1 -->
+        <rect x="200" y="64" width="640" height="64" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="216" y="100" fill="var(--soft)" font-size="9" font-family="var(--mono)" letter-spacing="0.08em">L1</text>
+        <text x="288" y="94" fill="var(--ink)" font-size="14" font-weight="600" font-family="var(--sans)">description</text>
+        <text x="288" y="112" fill="var(--muted)" font-size="9" font-family="var(--mono)">frontmatter · what + when + triggers</text>
+        <text x="824" y="100" fill="var(--muted)" font-size="10" font-family="var(--mono)" text-anchor="end">always in context</text>
+
+        <!-- L2 focal -->
+        <rect x="200" y="128" width="640" height="64" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="216" y="164" fill="var(--accent)" font-size="9" font-family="var(--mono)" letter-spacing="0.08em">L2</text>
+        <text x="288" y="158" fill="var(--ink)" font-size="14" font-weight="600" font-family="var(--sans)">SKILL.md body</text>
+        <text x="288" y="176" fill="var(--muted)" font-size="9" font-family="var(--mono)">241 lines → ≤80 · the layer this plan shrinks</text>
+        <text x="824" y="164" fill="var(--accent)" font-size="10" font-family="var(--mono)" text-anchor="end">on trigger</text>
+
+        <!-- L3 -->
+        <rect x="200" y="192" width="640" height="64" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="216" y="228" fill="var(--soft)" font-size="9" font-family="var(--mono)" letter-spacing="0.08em">L3</text>
+        <text x="288" y="222" fill="var(--ink)" font-size="14" font-weight="600" font-family="var(--sans)">one workflow file</text>
+        <text x="288" y="240" fill="var(--muted)" font-size="9" font-family="var(--mono)">workflows/create-plan.md · 8–16 lines each</text>
+        <text x="824" y="228" fill="var(--muted)" font-size="10" font-family="var(--mono)" text-anchor="end">on route</text>
+
+        <!-- L4 -->
+        <rect x="200" y="256" width="640" height="64" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="216" y="292" fill="var(--soft)" font-size="9" font-family="var(--mono)" letter-spacing="0.08em">L4</text>
+        <text x="288" y="286" fill="var(--ink)" font-size="14" font-weight="600" font-family="var(--sans)">templates/plan.html</text>
+        <text x="288" y="304" fill="var(--muted)" font-size="9" font-family="var(--mono)">the artifact · identity + placeholders</text>
+        <text x="824" y="292" fill="var(--muted)" font-size="10" font-family="var(--mono)" text-anchor="end">create + update only</text>
+
+        <!-- L5 -->
+        <rect x="200" y="320" width="640" height="64" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="216" y="356" fill="var(--soft)" font-size="9" font-family="var(--mono)" letter-spacing="0.08em">L5</text>
+        <text x="288" y="350" fill="var(--ink)" font-size="14" font-weight="600" font-family="var(--sans)">scripts/*.py</text>
+        <text x="288" y="368" fill="var(--muted)" font-size="9" font-family="var(--mono)">image generation · output only</text>
+        <text x="824" y="356" fill="var(--muted)" font-size="10" font-family="var(--mono)" text-anchor="end">executed, never read</text>
+
+        <rect x="200" y="64" width="640" height="320" fill="none" stroke="var(--ink)" stroke-width="1"/>
+      </svg>
+      <figcaption>Progressive disclosure as a budget: L1 is paid on every session, L2 on every trigger, L3–L5 only when a specific run reaches for them. Today L4 is stuck inside L2.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== RELEVANT FILES ===== -->
+  <section id="files" class="files">
+    <h2>Relevant Files</h2>
+
+    <h3>Existing Files</h3>
+    <ul>
+      <li><span class="tag existing">existing</span> <code>skills/planf3/SKILL.md</code> — the rewrite target: frontmatter, variables, instructions, routing, and the 175-line template that leaves.</li>
+      <li><span class="tag existing">existing</span> <code>skills/planf3/workflows/create-plan.md</code> — must point at the extracted template, stop reading non-existent doc directories, and drop its duplicate thinking instruction.</li>
+      <li><span class="tag existing">existing</span> <code>skills/planf3/workflows/update-plan.md</code> — drops its duplicate thinking instruction; the "surgical edit" guidance stays.</li>
+      <li><span class="tag existing">existing</span> <code>skills/planf3/workflows/image-generation.md</code> — script paths must resolve from the skill directory; its <code>:root</code> variable contract becomes real once the template ships.</li>
+      <li><span class="tag existing">existing</span> <code>skills/planf3/workflows/build-plan.md</code> — reviewed and largely kept: its run-until-green validation is a genuine feedback loop, not redundant self-verification.</li>
+      <li><span class="tag existing">existing</span> <code>skills/planf3/workflows/update-references.md</code> — verified unchanged; included so the routing table stays accurate.</li>
+      <li><span class="tag existing">existing</span> <code>skills/planf3/scripts/generate_gpt_image.py</code>, <code>scripts/edit_gpt_image.py</code> — unchanged; only the way they are invoked changes.</li>
+    </ul>
+
+    <h3>New Files</h3>
+    <ul>
+      <li><span class="tag new">new</span> <code>skills/planf3/templates/plan.html</code> — the plan template as a real, self-contained HTML artifact, including the <code>:root</code> identity block the skill has always referenced but never defined.</li>
+      <li><span class="tag new">new</span> <code>skills/planf3/evals.md</code> — three scenarios (create, update, build) with expected behaviours. Deliberately not linked from <code>SKILL.md</code>, so it costs nothing at runtime.</li>
+    </ul>
+  </section>
+
+  <!-- ===== IMPLEMENTATION PHASES ===== -->
+  <section id="phases">
+    <h2>Implementation Phases</h2>
+    <p><strong>IMPORTANT:</strong> Execute every phase and task step by step, in order, top to bottom.</p>
+    <p>Status markers: <code>[]</code> idle · <code>[wip]</code> in progress · <code>[x]</code> complete · <code>[f]</code> failed. All start as <code>[]</code>; the Build Plan workflow updates them as it works.</p>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 1: Extract the template into a real artifact</h3>
+      <p>
+        Move the plan template out of <code>SKILL.md</code> and into <code>templates/plan.html</code>, then give it the
+        <code>&lt;style&gt;</code> block and <code>:root</code> palette that the skill's instructions and the image
+        sub-workflow already assume exist. Nothing else may change: every <code>{{PLACEHOLDER}}</code> and
+        <code>&lt;!-- repeat --&gt;</code> marker survives verbatim, because the Create workflow's contract is
+        "replace every token".
+      </p>
+
+      <h4>1. Create the template file</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Create <code>skills/planf3/templates/</code> and copy the HTML block from <code>SKILL.md:68–241</code> into <code>templates/plan.html</code>, unmodified.</li>
+        <li><code class="status">[x]</code> Add a leading HTML comment stating the file is a template: the <code>{{...}}</code> tokens are filled by the Create Plan workflow and none may survive into a written plan.</li>
+        <li><code class="status">[x]</code> Verify every placeholder made the trip: the token list in the new file matches the token list in the old block exactly.</li>
+      </ul>
+
+      <h4>2. Add the identity block</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Add a single <code>&lt;style&gt;</code> block in <code>&lt;head&gt;</code> with <code>:root</code> declaring at minimum <code>--bg</code>, <code>--paper-2</code>, <code>--ink</code>, <code>--muted</code>, <code>--soft</code>, <code>--rule</code>, <code>--accent</code>, <code>--accent-tint</code> — the exact set <code>workflows/image-generation.md</code> requires for the <code>diagram-design</code> backend.</li>
+        <li><code class="status">[x]</code> Declare font stacks as variables with system fallbacks (<code>'Geist', ui-sans-serif, system-ui</code> / <code>'Geist Mono', ui-monospace</code>). No <code>&lt;link&gt;</code>, no external stylesheet — the plan must stay self-contained.</li>
+        <li><code class="status">[x]</code> Style every class the template already references and nothing more: <code>.meta</code>, <code>.files</code>, <code>.tag.existing</code>, <code>.tag.new</code>, <code>.phase</code>, <code>.checklist</code>, <code>.status</code>, <code>.loop</code>, <code>figure</code>/<code>figcaption</code>, <code>#questionables details</code>, <code>#amendments details</code>.</li>
+        <li><code class="status">[x]</code> Comment the <code>:root</code> block to say it is the source of truth for embedded images, so the sync rule lives next to the values instead of three files away.</li>
+        <li><code class="status">[x]</code> Leave the palette values themselves as a starting point the Create workflow may re-tune per plan — the structure is fixed, the hues are not.</li>
+      </ul>
+
+      <h4>3. Testing Strategy</h4>
+      <p>
+        No test framework applies to a markdown skill, so validation is shell assertions over the files plus one
+        human render. Edge case to check explicitly: an undeclared custom property renders as no fill in inline SVG,
+        which fails silently — so assert the presence of all six image-contract variables, not just that a
+        <code>:root</code> exists.
+      </p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>test -f skills/planf3/templates/plan.html</code> — the artifact exists.</li>
+        <li><code class="status">[x]</code> <code>grep -c '&lt;style&gt;' skills/planf3/templates/plan.html</code> — returns <code>1</code>; exactly one style block, per the self-contained rule.</li>
+        <li><code class="status">[x]</code> <code>for v in bg ink muted soft accent accent-tint; do grep -q -- "--$v:" skills/planf3/templates/plan.html || echo "MISSING $v"; done</code> — prints nothing; the image contract is satisfiable.</li>
+        <li><code class="status">[x]</code> <code>grep -c 'link rel="stylesheet"\|fonts.googleapis' skills/planf3/templates/plan.html</code> — returns <code>0</code>; no external dependencies.</li>
+        <li><code class="status">[x]</code> <code>diff &lt;(grep -o '{{[A-Z_]*' skills/planf3/templates/plan.html | sort -u) &lt;(git show HEAD:skills/planf3/SKILL.md | sed -n '69,241p' | grep -o '{{[A-Z_]*' | sort -u)</code> — no output; no placeholder was lost in the move. Scoped to the fenced template block: <code>SKILL.md</code>'s <em>prose</em> also mentions <code>{{PLACEHOLDER}}</code>, so an unscoped diff reports two false positives.</li>
+        <li><code class="status">[x]</code> <code>open -a "Google Chrome" skills/planf3/templates/plan.html</code> — renders as a styled page, not raw text.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 2: Rewrite SKILL.md as a router</h3>
+      <p>
+        With the template gone, <code>SKILL.md</code> should read like a table of contents: who this skill is for,
+        which workflow handles which request, and the few contracts that cannot be derived from the files themselves.
+        Target: 80 lines or fewer, down from 241.
+      </p>
+
+      <h4>1. Rewrite the frontmatter description</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Replace the description so it names all four workflows, states when to use the skill, and carries its trigger terms — third person, under 1,024 characters. Working draft: <em>"Creates, updates, and executes HTML implementation plans saved to specs/. Use when the user asks to plan, spec, or design work before building it; to revise or re-reference an existing plan; or to implement a plan that already exists. Handles embedded diagrams and append-only plan metadata. Triggers on /planf3, 'write a plan', 'spec this out', 'update the plan', 'build the plan'."</em></li>
+        <li><code class="status">[x]</code> Keep <code>name: planf3</code> unchanged — the slash command is the user's entry point and renaming breaks every existing invocation.</li>
+        <li><code class="status">[x]</code> Keep <code>argument-hint</code> as-is; it already documents <code>--questionable</code>.</li>
+      </ul>
+
+      <h4>2. Prune the variables</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Delete <code>IDE</code> — no workflow file references it.</li>
+        <li><code class="status">[x]</code> Mark <code>AI_DOCS</code> and <code>APP_DOCS</code> as read only if the directories exist.</li>
+        <li><code class="status">[x]</code> Add <code>TEMPLATE: templates/plan.html</code> so the Create and Update workflows have a named handle for it.</li>
+        <li><code class="status">[x]</code> Leave <code>PLAN_OUTPUT_DIRECTORY</code>, <code>PLAN_FILE</code>, <code>IMAGES_OUTPUT_DIR</code>, <code>BROWSER</code> and the <code>QUESTIONABLE</code> flag intact — all are used.</li>
+      </ul>
+
+      <h4>3. Cut the instructions to judgment level</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Delete the rules Claude 5 applies without being told: "think deeply (ultrathink)", "consider edge cases, error handling, and scalability concerns", "include code examples where appropriate", "ensure the plan is detailed enough that another developer could follow it".</li>
+        <li><code class="status">[x]</code> Delete the two image-composition bullets — <code>workflows/image-generation.md</code> already owns them, and stating them twice forces the model to reconcile two copies.</li>
+        <li><code class="status">[x]</code> Keep, in compressed form, the contracts that are genuinely non-obvious: read <code>TEMPLATE</code> and leave no <code>{{...}}</code> token behind; the template's <code>:root</code> is the identity source of truth for both CSS and images; metadata fields other than <code>created</code> are append-only lists; omit the Questionables section unless <code>QUESTIONABLE</code> is true; stop and ask if <code>USER_PROMPT</code> is empty.</li>
+        <li><code class="status">[x]</code> Add one length-calibration line — plans match the size of the work, no padded sections, no restated summaries — because this model writes longer files to disk by default.</li>
+        <li><code class="status">[x]</code> Add one scope line: plan what was asked at the scope asked; note a concern in a sentence and continue rather than silently widening the plan.</li>
+      </ul>
+
+      <h4>4. Repoint the routing tables</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Delete the entire <code>## Plan Template</code> section and its fenced HTML.</li>
+        <li><code class="status">[x]</code> Add <code>templates/plan.html</code> to the file-routing table so it sits exactly one level from <code>SKILL.md</code> — nested references get skimmed rather than read.</li>
+        <li><code class="status">[x]</code> Confirm the workflow and subworkflow tables still name all five workflow files.</li>
+      </ul>
+
+      <h4>5. Testing Strategy</h4>
+      <p>
+        Assertions over the rewritten file, plus a live trigger test — the description is the one thing shell
+        commands cannot validate, since discovery only shows up in a fresh session where the skill has to fire on
+        its own.
+      </p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>wc -l &lt; skills/planf3/SKILL.md</code> — 80 or fewer.</li>
+        <li><code class="status">[x]</code> <code>grep -c '{{' skills/planf3/SKILL.md</code> — returns <code>0</code>; the template is fully gone.</li>
+        <li><code class="status">[x]</code> <code>awk '/^description:/{print length($0)}' skills/planf3/SKILL.md</code> — under 1,024.</li>
+        <li><code class="status">[x]</code> <code>grep -niE 'ultrathink|think hard|think deeply' skills/planf3/</code> — no matches.</li>
+        <li><code class="status">[x]</code> <code>grep -c 'templates/plan.html' skills/planf3/SKILL.md</code> — at least <code>1</code>; the artifact is reachable in one hop.</li>
+        <li><code class="status">[x]</code> <code>grep -c 'IDE:' skills/planf3/SKILL.md</code> — returns <code>0</code>.</li>
+        <li><code class="status">[f]</code> In a fresh session, type <em>"spec out a plan for adding retry logic to the uploader"</em> without <code>/planf3</code> — the skill triggers from the description alone.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 3: Tighten the workflow files</h3>
+      <p>
+        The workflow files are already the strongest part of the skill — short, sequential, routed. They need four
+        corrections and one deliberate non-change.
+      </p>
+
+      <h4>1. create-plan.md</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Step 1: drop "THINK HARD"; keep the instruction to parse the prompt for the core problem and desired outcome.</li>
+        <li><code class="status">[x]</code> Step 2: make the <code>AI_DOCS</code>/<code>APP_DOCS</code> read conditional on the directories existing.</li>
+        <li><code class="status">[x]</code> Step 4: point at <code>TEMPLATE</code> (<code>templates/plan.html</code>) instead of "the <code>## Plan Template</code>" section that no longer exists.</li>
+        <li><code class="status">[x]</code> Leave step 5's image sub-workflow call and the parallelisation note alone; leave steps 6–9 alone.</li>
+      </ul>
+
+      <h4>2. update-plan.md</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Step 2: drop "THINK HARD"; keep "keep the edit surgical and touch only the affected sections" — that is real, non-derivable guidance.</li>
+      </ul>
+
+      <h4>3. image-generation.md</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> State that the script paths are relative to the skill's base directory, which is announced when the skill loads, and show the invocation with that prefix rather than a bare <code>scripts/…</code>.</li>
+        <li><code class="status">[x]</code> Note that the <code>:root</code> variables the <code>diagram-design</code> path requires now ship in <code>templates/plan.html</code>, so the "add any missing ones" step is a check rather than authoring work.</li>
+        <li><code class="status">[x]</code> Scope the "under 10 words" rule to the <code>gpt-image</code> backend — inline SVG diagrams carry labelled nodes by design, and applying a text-to-image constraint to them produces unreadable diagrams.</li>
+      </ul>
+
+      <h4>4. build-plan.md and update-references.md</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Read <code>build-plan.md</code> and confirm no change is needed: its per-phase loop runs real commands whose failure is observable. Guidance to strip self-verification targets prompt scaffolding like "double-check your answer", not machine-checked feedback loops — those are explicitly endorsed.</li>
+        <li><code class="status">[x]</code> Read <code>update-references.md</code> and confirm it needs no change.</li>
+        <li><code class="status">[x]</code> Record both non-changes in the commit message so the next reader doesn't re-litigate them.</li>
+      </ul>
+
+      <h4>5. Testing Strategy</h4>
+      <p>Grep assertions, plus one live image run to prove the path fix actually resolves.</p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>grep -rniE 'think hard|ultrathink' skills/planf3/workflows/</code> — no matches.</li>
+        <li><code class="status">[x]</code> <code>grep -n 'AI_DOCS' skills/planf3/workflows/create-plan.md</code> — the line reads as conditional.</li>
+        <li><code class="status">[x]</code> <code>grep -n 'uv run' skills/planf3/workflows/image-generation.md</code> — every invocation carries the skill-directory prefix.</li>
+        <li><code class="status">[x]</code> <code>grep -c 'Plan Template' skills/planf3/workflows/create-plan.md</code> — returns <code>0</code>; no dangling pointer to the deleted section.</li>
+        <li><code class="status">[x]</code> <code>git diff --stat skills/planf3/workflows/build-plan.md skills/planf3/workflows/update-references.md</code> — empty; the deliberate non-changes held.</li>
+        <li><code class="status">[x]</code> Run the Image Generation sub-workflow against a throwaway plan from any directory other than the skill folder — the backend check picks <code>diagram-design</code> (no <code>OPENAI_API_KEY</code> on this machine) and the SVGs inherit the plan's colours.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 4: Evaluations and an end-to-end run</h3>
+      <p>
+        The guidance is to build evaluations before writing documentation; this skill exists already, so the
+        equivalent is to write them now and treat the current behaviour as the baseline. Three scenarios, one per
+        distinct load path, kept out of the skill's reference graph so they cost nothing at runtime.
+      </p>
+
+      <h4>1. Write the evaluations</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Create <code>skills/planf3/evals.md</code> with three scenarios, each stating the query, the files involved, and the expected behaviour.</li>
+        <li><code class="status">[x]</code> Scenario A — <em>create</em>: "write a plan for adding rate limiting to the API". Expects: skill triggers without <code>/planf3</code>; reads <code>create-plan.md</code> and <code>templates/plan.html</code>; writes one kebab-case <code>.html</code> to <code>specs/</code> with zero <code>{{</code> tokens and a populated metadata header.</li>
+        <li><code class="status">[x]</code> Scenario B — <em>update</em>: "add a rollback phase to that plan". Expects: reads <code>update-plan.md</code>; edits only the phases section; appends to <code>modified</code> rather than overwriting; appends an Amendments entry.</li>
+        <li><code class="status">[x]</code> Scenario C — <em>build</em>: "build the rate limiting plan". Expects: reads <code>build-plan.md</code>; does <strong>not</strong> read <code>templates/plan.html</code>; flips status markers as it goes; appends commit SHA and session id on completion.</li>
+        <li><code class="status">[x]</code> Add a one-line baseline note per scenario recording current behaviour, so the next change to this skill has something to regress against.</li>
+        <li><code class="status">[x]</code> Do not link <code>evals.md</code> from <code>SKILL.md</code> — it is for the human, and an unreferenced file consumes no context.</li>
+      </ul>
+
+      <h4>2. Run them</h4>
+      <ul class="checklist">
+        <li><code class="status">[f]</code> Execute scenarios A, B, and C in fresh sessions, in order — B depends on A's output and C on B's.</li>
+        <li><code class="status">[f]</code> For scenario C, confirm from the transcript that <code>templates/plan.html</code> was never read: that read not happening is the whole point of the refactor.</li>
+        <li><code class="status">[f]</code> Record each result against the baseline note; where behaviour is worse than baseline, fix the skill rather than the eval.</li>
+      </ul>
+
+      <h4>3. Testing Strategy</h4>
+      <p>
+        The evals are themselves the test. These assertions confirm the artefacts they produce, including the failure
+        mode that matters most: an unfilled placeholder shipping into a saved plan.
+      </p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>test -f skills/planf3/evals.md &amp;&amp; grep -c '^## Scenario' skills/planf3/evals.md</code> — returns <code>3</code>.</li>
+        <li><code class="status">[x]</code> <code>grep -c 'evals.md' skills/planf3/SKILL.md</code> — returns <code>0</code>; still off the loaded path.</li>
+        <li><code class="status">[f]</code> <code>grep -c '{{' specs/&lt;scenario-a-plan&gt;.html</code> — returns <code>0</code>.</li>
+        <li><code class="status">[f]</code> <code>grep -A2 '&lt;dt&gt;modified&lt;/dt&gt;' specs/&lt;scenario-a-plan&gt;.html</code> — after scenario B, shows two timestamps, not one.</li>
+        <li><code class="status">[f]</code> <code>open -a "Google Chrome" specs/&lt;scenario-a-plan&gt;.html</code> — renders with the template's identity intact and images centred.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GLOBAL VALIDATION ===== -->
+  <section id="validation">
+    <h2>Validation Commands</h2>
+    <p>Execute these commands from <code>/Users/tk/.claude</code> to validate the entire plan is complete:</p>
+    <ul class="checklist">
+      <li><code class="status">[x]</code> <code>wc -l skills/planf3/SKILL.md skills/planf3/templates/plan.html skills/planf3/evals.md</code> — SKILL.md ≤80 lines and both new files exist.</li>
+      <li><code class="status">[x]</code> <code>grep -rc '{{' skills/planf3/SKILL.md</code> — returns <code>0</code>; the template lives in exactly one place.</li>
+      <li><code class="status">[x]</code> <code>for v in bg ink muted soft accent accent-tint; do grep -q -- "--$v:" skills/planf3/templates/plan.html || echo "MISSING $v"; done</code> — prints nothing.</li>
+      <li><code class="status">[x]</code> <code>grep -rniE 'ultrathink|think hard|think deeply' skills/planf3/</code> — no matches anywhere in the skill.</li>
+      <li><code class="status">[x]</code> <code>grep -rn 'Plan Template' skills/planf3/</code> — no dangling references to the deleted section.</li>
+      <li><code class="status">[x]</code> <code>git diff --stat skills/planf3/</code> — the changed-file list matches the Relevant Files section exactly; nothing extra was touched.</li>
+      <li><code class="status">[f]</code> All three eval scenarios pass at or above baseline, with scenario C confirmed never to load the template.</li>
+      <li><code class="status">[f]</code> A generated plan opens in Chrome with correct styling, centred images, and no <code>{{</code> tokens.</li>
+    </ul>
+    <div class="loop">
+      🔁 <strong>The plan is not complete until every box is checked and every command passes. If for some reason a step is not possible to complete, mark it with [f] and move on if possible.</strong>
+    </div>
+  </section>
+
+  <!-- ===== NOTES ===== -->
+  <section id="notes">
+    <h2>Notes</h2>
+
+    <h3>What the research actually says</h3>
+    <p>
+      The Claude 5 context-engineering post is a subtraction argument: Anthropic removed over 80% of Claude Code's
+      system prompt for these models with no measurable loss on coding evaluations. Four of its five "then vs now"
+      pairs land directly on this skill.
+    </p>
+    <table>
+      <thead><tr><th>Then</th><th>Now</th><th>What it costs planf3 today</th></tr></thead>
+      <tbody>
+        <tr><td>Give Claude rules</td><td>Let Claude use judgment</td><td>Four instruction bullets that restate general engineering competence.</td></tr>
+        <tr><td>Give Claude examples</td><td>Design interfaces</td><td>Mostly fine — the workflow routing table <em>is</em> an interface. The template is the exception, and it stays: it is an output contract, not an example.</td></tr>
+        <tr><td>Put it all upfront</td><td>Use progressive disclosure</td><td>175 lines loaded on every trigger. The headline finding.</td></tr>
+        <tr><td>Repeat yourself</td><td>Say it once, where it's used</td><td>Thinking instructed three times; image rules stated in two files.</td></tr>
+      </tbody>
+    </table>
+    <p>
+      The fifth pair — <em>use rich references</em> — is the one this plan leans into hardest. "HTML mockups of a
+      design will generally produce better results than a description" is precisely the argument for moving the
+      template out of a markdown fence and into a file that renders.
+    </p>
+
+    <h3>Verification is not over-verification</h3>
+    <p>
+      The Opus 5 prompting guide says to <em>remove</em> explicit verification instructions, because the model
+      already verifies and the instruction compounds into wasted tokens. That applies to prompt scaffolding
+      ("double-check your answer", "use a subagent to verify"). It does not apply to
+      <code>build-plan.md</code>'s loop, where a command runs and its exit status is observable — the skill-authoring
+      guidance explicitly endorses validator loops of exactly that shape. This distinction is why Phase 3 changes
+      nothing in <code>build-plan.md</code>, and why that non-change is worth writing down.
+    </p>
+
+    <h3>Rejected approaches</h3>
+    <details>
+      <summary>Rename the skill to gerund form (<code>planning-implementations</code>)</summary>
+      <p class="qa-answer">
+        Authoring guidance prefers gerunds, and <code>planf3</code> is exactly the kind of opaque name it warns about.
+        Rejected anyway: <code>/planf3</code> is the user's daily entry point, and a rename breaks every existing
+        invocation and reference for a benefit the <code>description</code> field delivers on its own. Discoverability
+        is a description problem here, not a name problem.
+      </p>
+    </details>
+    <details>
+      <summary>Split the template into per-section partials</summary>
+      <p class="qa-answer">
+        Considered, since progressive disclosure is the theme. Rejected: Create consumes the template whole, so
+        splitting saves nothing and pushes references two levels deep from <code>SKILL.md</code> — which the guidance
+        specifically warns causes partial reads. One file, one hop.
+      </p>
+    </details>
+    <details>
+      <summary>Delete the <code>gpt-image</code> scripts</summary>
+      <p class="qa-answer">
+        They are inert on this machine — <code>OPENAI_API_KEY</code> is unset, so the backend check always routes to
+        <code>diagram-design</code>. Kept anyway: they are the documented alternative backend, they sit at L5 where
+        they are executed rather than read, and unreferenced files on disk cost nothing in context.
+      </p>
+    </details>
+    <details>
+      <summary>Auto-memory instead of explicit metadata</summary>
+      <p class="qa-answer">
+        The post recommends leaning on auto-memory rather than manually maintained context files. The plan metadata
+        header stays manual regardless: it is a durable artifact read by humans and by future agents from the file
+        itself, not a recall aid for one session. Different mechanism, different job.
+      </p>
+    </details>
+
+    <h3>Risks</h3>
+    <ul>
+      <li><strong>Description regression.</strong> A broader description can over-trigger — firing on any mention of
+          "plan". Scenario A's fresh-session test is the check; if it fires on unrelated prompts, tighten the trigger
+          list rather than the whole description.</li>
+      <li><strong>Placeholder leakage.</strong> Once the template is a separate file, a run that skims it instead of
+          reading it fully could ship a <code>{{TOKEN}}</code> into a saved plan. The <code>grep -c '{{'</code>
+          assertion on generated plans is the guard, in both Phase 4 and global validation.</li>
+      <li><strong>Existing specs are markdown.</strong> The five plans already in <code>specs/</code> predate the
+          HTML format. No migration is planned or needed — the skill only reads the plan it is pointed at.</li>
+    </ul>
+
+    <h3>Dependencies</h3>
+    <p>
+      None added. The image scripts already declare their own dependencies inline via
+      <code>uv run</code> script metadata (<code>openai</code>, <code>python-dotenv</code>), and this plan does not
+      touch them. Everything else is markdown, HTML, and shell.
+    </p>
+
+    <h3>References</h3>
+    <ul class="refs">
+      <li><a href="https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models">The new rules of context engineering for Claude 5 generation models</a> — the "then vs now" pairs and the skills guidance.</li>
+      <li><a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices">Skill authoring best practices</a> — description rules, the 500-line budget, one-level-deep references, degrees of freedom, feedback loops, evaluation-driven development.</li>
+      <li><a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills">Equipping agents for the real world with Agent Skills</a> — the three progressive-disclosure levels.</li>
+      <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5">Prompting Claude Opus 5</a> — written-deliverable length calibration, over-verification, scope constraint.</li>
+    </ul>
+  </section>
+
+  <!-- ===== AMENDMENTS ===== -->
+  <section id="amendments">
+    <h2>Amendments</h2>
+    <p class="empty">No amendments yet — appended by the Update Plan and Update References workflows.</p>
+  </section>
+
+</main>
+</body>
+</html>

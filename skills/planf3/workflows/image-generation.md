@@ -9,7 +9,7 @@ Run `[ -n "$OPENAI_API_KEY" ] && echo gpt-image || echo diagram-design`.
 - `gpt-image` → follow this file as written (scripts below).
 - `diagram-design` → the `diagram-design` skill is the backend instead. Invoke it via the Skill tool, ask it for one diagram per `{{...IMAGE` slot using that slot's subject, and inline the resulting SVG directly into the slot's `<figure>` (replace the `<!-- {{...IMAGE: ...}} -->` comment with the `<svg>` element; keep the `<figcaption>`). No PNGs, no `IMAGES_OUTPUT_DIR`. Skip the rest of this file except the shared rules, which still apply, plus these three:
   - **Colors come from the plan, not the skin.** Have the SVG reference the plan's own custom properties — `fill="var(--accent)"`, `stroke="var(--ink)"` — never diagram-design's hardcoded hexes. Inline SVG resolves `var()` against the page, so this is what keeps the synced visual identity.
-  - **Define the roles it needs in `:root`.** diagram-design assumes `--bg`, `--ink`, `--muted`, `--soft`, `--accent`, `--accent-tint`. An undeclared var silently renders as no fill. Add any missing ones to the plan's `:root` before embedding.
+  - **Confirm the roles it needs are in `:root`.** diagram-design assumes `--bg`, `--ink`, `--muted`, `--soft`, `--accent`, `--accent-tint`. All six ship in `templates/plan.html`, so this is a check, not authoring work — but check it, because an undeclared var silently renders as no fill. Add any that did not survive into this plan.
   - **No font `<link>`.** The plan must stay self-contained, so diagram-design's Google Fonts line is out. Use fallback stacks: `'Geist', ui-sans-serif, system-ui, sans-serif` and `'Geist Mono', ui-monospace, monospace`.
 
 Pick the sub-workflow based on the incoming `USER_PROMPT`:
@@ -19,15 +19,25 @@ Pick the sub-workflow based on the incoming `USER_PROMPT`:
 | Create | The prompt asks to generate, fill, or add the plan's images from scratch (empty `{{...IMAGE` slots) |
 | Update | The prompt asks to change, refine, regenerate, or replace images that already exist in the plan |
 
-Scripts (run with `uv run`, needs `OPENAI_API_KEY`):
-- Create image: `uv run scripts/generate_gpt_image.py "<prompt>" <output.png> --size 1536x1024 --quality high`
-- Edit image: `uv run scripts/edit_gpt_image.py "<instruction>" <output.png> <input.png> --size 1536x1024 --quality high`
+Scripts (run with `uv run`, needs `OPENAI_API_KEY`). The Bash working directory is the
+project root, not the skill directory, and shell state does not persist between Bash calls —
+so set the anchor inline in the same command as the script it resolves:
+
+```bash
+SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"
+
+# Create image
+uv run "$SKILL_DIR/scripts/generate_gpt_image.py" "<prompt>" <output.png> --size 1536x1024 --quality high
+
+# Edit image
+uv run "$SKILL_DIR/scripts/edit_gpt_image.py" "<instruction>" <output.png> <input.png> --size 1536x1024 --quality high
+```
 
 Shared rules for every image prompt:
 - always generate in wide format (`--size 1536x1024`) at high quality (`--quality high`)
 - convey the one or two core ideas of that section for a professional software engineer
 - match the plan's synced visual identity (professional, focused, minimal)
-- keep total words shown in the image under 10
+- `gpt-image` only: keep total words shown in the image under 10. Inline SVG diagrams label their nodes by design, so this does not apply to the `diagram-design` backend — applying it there produces unreadable diagrams.
 - save images to `IMAGES_OUTPUT_DIR` (create it if missing)
 
 ## Create
