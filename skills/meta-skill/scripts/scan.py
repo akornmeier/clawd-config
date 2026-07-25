@@ -27,8 +27,11 @@ def bundled(d):
         dirs[:] = [x for x in dirs if x not in (".git", "node_modules", "__pycache__")]
         for f in files:
             rel = os.path.relpath(os.path.join(root, f), d)
-            if rel != "SKILL.md" and f not in SKIP_ORPHAN:  # the skill's own, not nested ones
-                yield rel
+            if rel == "SKILL.md" or f in SKIP_ORPHAN:  # the skill's own, not nested ones
+                continue
+            if rel.split(os.sep)[0] == "evals":  # unlinked by convention, same as evals.md
+                continue
+            yield rel
 
 
 def scan(d, name):
@@ -56,11 +59,16 @@ def scan(d, name):
         flags.append("no name")
     elif declared != name:
         flags.append(f"name '{declared}' != dir '{name}'")
+    # This flag hides the skill from the model entirely, which makes every
+    # description check moot — report the cause, not the symptom.
+    no_autofire = re.search(r"^disable-model-invocation:\s*true", front, re.M | re.I)
+    if no_autofire:
+        flags.append("disable-model-invocation: true — can never fire from its description")
     if not desc:
         flags.append("no description")
-    elif not TRIGGER.search(desc):
+    elif not no_autofire and not TRIGGER.search(desc):
         flags.append("description states what, not when")
-    elif len(desc) < 80:
+    elif not no_autofire and len(desc) < 80:
         flags.append(f"description {len(desc)} chars — thin trigger surface")
     if lines > 500:
         flags.append(f"{lines} lines > 500")
