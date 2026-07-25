@@ -7,7 +7,7 @@ allowed-tools: Agent, Read, Edit, Write, Bash
 
 # Resolve PR Review Feedback
 
-Evaluate and fix PR review feedback, then reply and resolve threads. Spawns parallel agents for each thread.
+Evaluate and fix PR review feedback, then reply and resolve threads. Clusters related threads and spawns one agent per cluster.
 
 > **Default to fixing. Don't churn on what isn't real.**
 > Most review feedback -- nitpicks included -- is correct and worth fixing; work the list and fix. Judge every item on its merits regardless of source (human or bot) or form (inline thread, formal review body, or top-level comment). Diverting from a fix takes a concrete signal, not unease -- `sl-pr-comment-resolver` owns the divert conditions and assigns the verdict.

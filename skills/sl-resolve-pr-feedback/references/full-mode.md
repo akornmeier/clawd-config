@@ -2,7 +2,7 @@
 
 Read this reference when Mode Detection (in SKILL.md) routes to **Full Mode** — no argument given, or a PR number was provided. Full mode processes all unresolved threads on the PR.
 
-**Bundled script paths.** The Bash tool's working directory is the user's project root, not this skill's directory, and shell state does not persist between Bash calls. Every fenced block below therefore sets `SKILL_DIR` in the same command as the script it resolves — copy the block whole. Substitute the absolute skill directory Claude Code announces as "Base directory for this skill" when the skill loads.
+**Bundled script paths.** The Bash tool's working directory is the user's project root, not this skill's directory, and shell state does not persist between Bash calls. Every fenced block below therefore sets `SKILL_DIR` in the same Bash call as the script it resolves — copy the block whole. Substitute the absolute skill directory Claude Code announces as "Base directory for this skill" when the skill loads.
 
 ## 1. Fetch Unresolved Threads
 

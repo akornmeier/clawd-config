@@ -11,9 +11,11 @@ set -e
 
 if [ $# -lt 2 ]; then
     echo "Usage: wait-for-bot-review PR_NUMBER HEAD_SHA [OWNER/REPO] [TIMEOUT_SECONDS]"
+    echo "       wait-for-bot-review PR_NUMBER HEAD_SHA [TIMEOUT_SECONDS]   # OWNER/REPO auto-detected"
     echo "Example: wait-for-bot-review 123 a1b2c3d"
     echo "Example: wait-for-bot-review 123 a1b2c3d EveryInc/cora"
     echo "Example: wait-for-bot-review 123 a1b2c3d EveryInc/cora 60   # short settle window"
+    echo "Example: wait-for-bot-review 123 a1b2c3d 60                # same, OWNER/REPO auto-detected"
     exit 1
 fi
 
@@ -30,19 +32,30 @@ KNOWN_BOTS=(
     "greptile-apps[bot]"
 )
 
-# Per-wait timeout (seconds), overridable as $4. The gate stops waiting and
-# proceeds after this elapses even if an active bot has not reached HEAD --
-# hanging is the worst failure. The 150s default is tuned to the observed ~3-min
-# Copilot re-review latency. Step 8 passes a shorter value: it now re-fetches
-# before waiting, so by the time it gets here the cheap signal has already come
-# back empty and the wait is a settle window, not the primary check.
-TIMEOUT_SECONDS=${4:-150}
+# $3 is ambiguous between OWNER/REPO and a bare TIMEOUT_SECONDS (3-arg form).
+# Disambiguate on shape: OWNER/REPO always contains a non-digit (the "/" at
+# minimum), so a purely numeric $3 is TIMEOUT_SECONDS instead, and OWNER/REPO
+# falls through to auto-detection below.
+case "$3" in
+    '')         OWNER_REPO_ARG="" ; TIMEOUT_SECONDS_ARG="$4" ;;
+    *[!0-9]*)   OWNER_REPO_ARG="$3" ; TIMEOUT_SECONDS_ARG="$4" ;;
+    *)          OWNER_REPO_ARG="" ; TIMEOUT_SECONDS_ARG="$3" ;;
+esac
+
+# Per-wait timeout (seconds), overridable as $4 (or as $3 when $3 is numeric,
+# see above). The gate stops waiting and proceeds after this elapses even if
+# an active bot has not reached HEAD -- hanging is the worst failure. The 150s
+# default is tuned to the observed ~3-min Copilot re-review latency. Step 8
+# passes a shorter value: it now re-fetches before waiting, so by the time it
+# gets here the cheap signal has already come back empty and the wait is a
+# settle window, not the primary check.
+TIMEOUT_SECONDS=${TIMEOUT_SECONDS_ARG:-150}
 POLL_INTERVAL=10
 MAX_POLL_INTERVAL=30
 
-if [ -n "$3" ]; then
-    OWNER=$(echo "$3" | cut -d/ -f1)
-    REPO=$(echo "$3" | cut -d/ -f2)
+if [ -n "$OWNER_REPO_ARG" ]; then
+    OWNER=$(echo "$OWNER_REPO_ARG" | cut -d/ -f1)
+    REPO=$(echo "$OWNER_REPO_ARG" | cut -d/ -f2)
 else
     # `|| true` is load-bearing: under `set -e`, a failed command substitution
     # in an assignment aborts the script immediately. Run outside a git repo,

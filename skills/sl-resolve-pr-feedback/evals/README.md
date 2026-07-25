@@ -12,7 +12,7 @@ Two suites in one file.
 
 The gate's correctness is almost entirely negative. It must **not** block the push, **not** re-review its own fix, **not** widen scope to files no resolver touched, **not** leak findings into the thread reply/resolve pipeline, and **not** run at all when there is no diff. None of those properties is checkable by `bun test`: the gate is skill prose, and a regression in prose produces no test failure. This suite is how they stay measurable.
 
-Still out of scope: GraphQL mechanics and the step-8 quiescence gate. Both are separate behaviors with their own failure modes.
+Still out of scope: GraphQL mechanics and the step-8 quiescence gate's polling mechanics — bot intersection, timeout, backoff. Both are separate behaviors with their own failure modes. Eval 12 tests only the step-8 routing decision, not the gate itself.
 
 ## Files
 

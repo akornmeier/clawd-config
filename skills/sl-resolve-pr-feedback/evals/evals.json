@@ -1,7 +1,7 @@
 {
   "skill_name": "sl-resolve-pr-feedback",
   "purpose": "Validate two behaviors of the Full-mode flow. (1) The step 5b Codex pre-push review gate: that it engages only when a fix exists, degrades to a skip when the CLI is unavailable, bounds itself to one fix pass over P0/P1 findings in resolver-touched files, never blocks the push, and keeps Codex findings out of the thread reply/resolve pipeline and the verdict tallies. (2) The core loop the skill exists for: that step 2 triage leaves a pending decision alone, drops non-actionable items without narrating them, and that a plausible-but-wrong finding gets evidence rather than a reflexive fix. (3) The process rules that keep a multi-finding round coherent: clustering by root cause so one decision is answered once, verifying a cited premise centrally before fan-out, and re-fetching before waiting in step 8.",
-  "non_purpose": "Not testing GraphQL mechanics or the step-8 quiescence gate. Those are separate behaviors with their own failure modes. Evals 1-6 are scoped to gate behavior; evals 7-9 to triage and verdict selection.",
+  "non_purpose": "Not testing GraphQL mechanics or the step-8 quiescence gate's polling mechanics - bot intersection, timeout, backoff. Eval 12 tests only the routing decision to skip the wait, not the gate itself. Evals 1-6 are scoped to gate behavior; evals 7-9 to triage and verdict selection; evals 10-12 to the process rules.",
   "variance_protocol": {
     "runs_per_eval": 3,
     "stability_metric": "fraction of runs reaching the correct routing decision",
