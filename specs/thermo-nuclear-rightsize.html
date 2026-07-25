@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan: Rightsize thermo-nuclear-code-quality-review</title>
+<style>
+  /* ===== VISUAL IDENTITY =====
+     Source of truth for this page AND every image embedded in it. Inline SVG
+     resolves var() against this page, so diagrams reference these roles
+     (never hardcoded hex) and the identity stays synced. Tuned warm-red here:
+     the subject is a review skill that shouts. */
+  :root {
+    --bg:            #faf7f6;
+    --paper-2:       #ffffff;
+    --ink:           #1c1917;
+    --muted:         #57534e;
+    --soft:          #8a8079;
+    --rule:          rgba(28, 25, 23, 0.12);
+    --rule-solid:    #e4ddd9;
+    --accent:        #b4331f;
+    --accent-tint:   rgba(180, 51, 31, 0.09);
+
+    --sans:  'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono:  'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --serif: ui-serif, 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 4rem 1.5rem 6rem;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  main { max-width: 60rem; margin: 0 auto; }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: 2.5rem;
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0 0 1rem;
+  }
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin: 3.5rem 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  h3 { font-size: 1.0625rem; font-weight: 600; margin: 2rem 0 0.5rem; }
+  h4 {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 1.5rem 0 0.5rem;
+  }
+  p  { margin: 0 0 1rem; max-width: 46rem; }
+  a  { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    background: rgba(28, 25, 23, 0.05);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
+  pre {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  /* --- header + metadata --- */
+  header { margin-bottom: 2.5rem; }
+  details.meta {
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--paper-2);
+    padding: 0.625rem 1rem;
+    font-size: 0.8125rem;
+  }
+  details.meta summary {
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  details.meta dl {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: 0.25rem 1rem;
+    margin: 0.875rem 0 0.25rem;
+  }
+  details.meta dt {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--soft);
+    padding-top: 0.15rem;
+  }
+  details.meta dd { margin: 0; color: var(--muted); font-family: var(--mono); font-size: 0.75rem; word-break: break-word; }
+
+  /* --- figures --- */
+  figure {
+    margin: 2rem auto;
+    padding: 0;
+    text-align: center;
+  }
+  figure svg, figure img { display: block; width: 100%; max-width: 100%; height: auto; margin: 0 auto; }
+  figcaption {
+    margin-top: 0.875rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--soft);
+    max-width: 40rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* --- tables --- */
+  table { border-collapse: collapse; width: 100%; font-size: 0.875rem; margin: 0 0 1rem; }
+  th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--soft);
+    font-weight: 500;
+  }
+  td code { white-space: nowrap; }
+
+  /* --- relevant files --- */
+  .files ul { list-style: none; padding: 0; margin: 0 0 1rem; }
+  .files li { padding: 0.375rem 0; border-bottom: 1px solid var(--rule); font-size: 0.9375rem; }
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    padding: 0.1rem 0.35rem;
+    margin-right: 0.4rem;
+    border: 1px solid;
+  }
+  .tag.existing { color: var(--muted); border-color: var(--rule-solid); }
+  .tag.new      { color: var(--accent); border-color: var(--accent); background: var(--accent-tint); }
+
+  /* --- phases --- */
+  .phase {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .phase h3 { margin-top: 0.25rem; }
+  ul.checklist { list-style: none; padding: 0; margin: 0 0 1rem; }
+  ul.checklist li { padding: 0.25rem 0; font-size: 0.9375rem; line-height: 1.55; }
+  code.status {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--soft);
+    background: none;
+    padding: 0;
+    margin-right: 0.4rem;
+  }
+  .loop {
+    border-left: 2px solid var(--accent);
+    background: var(--accent-tint);
+    border-radius: 0 4px 4px 0;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  .loop strong { color: var(--ink); }
+
+  /* --- notes / amendments --- */
+  #notes details, #amendments details {
+    border-bottom: 1px solid var(--rule);
+    padding: 0.625rem 0;
+  }
+  #notes summary, #amendments summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+  .qa-answer, #amendments details p { margin: 0.5rem 0 0; color: var(--muted); font-size: 0.9375rem; }
+  .empty { color: var(--soft); font-size: 0.9375rem; font-style: italic; }
+  .refs li { margin-bottom: 0.4rem; font-size: 0.9375rem; }
+</style>
+</head>
+<body>
+<main>
+
+  <!-- ===== HEADER + UPDATABLE METADATA ===== -->
+  <header>
+    <h1>Plan: Rightsize <code>thermo-nuclear-code-quality-review</code></h1>
+    <details class="meta">
+      <summary>Metadata</summary>
+      <dl>
+        <dt>created</dt>      <dd>2026-07-25T14:42:41Z</dd>
+        <dt>modified</dt>     <dd>2026-07-25T14:42:41Z</dd>
+        <dt>commits</dt>      <dd>none yet</dd>
+        <dt>agent name</dt>   <dd>claude-opus-5 (planf3 · create-plan)</dd>
+        <dt>session id</dt>   <dd>1db46994-12f4-4c49-bf01-afc8b9886444</dd>
+        <dt>back refs</dt>    <dd>specs/skill-health-2026-07-25.md (the audit that produced this, finding #5), specs/meta-skill-claude5-context-engineering.html (the rubric and subtraction test this plan applies)</dd>
+        <dt>forward refs</dt> <dd>none yet</dd>
+      </dl>
+    </details>
+  </header>
+
+  <figure>
+    <svg viewBox="0 0 1000 340" role="img" aria-label="Seven rules stated once in the standards section, then restated four more times as questions, flags, remedies, and quotable phrases">
+      <rect width="100%" height="100%" fill="var(--bg)"/>
+      <defs>
+        <marker id="t-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+          <polygon points="0 0, 9 3.5, 0 7" fill="var(--accent)"/>
+        </marker>
+      </defs>
+
+      <text x="40" y="38" fill="var(--soft)" font-size="10" font-family="var(--mono)" letter-spacing="0.14em">ONE RULE SET, FIVE VOICES — ALL FORCED, ALL AT ONCE</text>
+
+      <!-- source block -->
+      <rect x="40" y="70" width="200" height="120" rx="6" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+      <text x="60" y="100" fill="var(--ink)" font-size="12" font-weight="600" font-family="var(--mono)">Non-Negotiable</text>
+      <text x="60" y="118" fill="var(--ink)" font-size="12" font-weight="600" font-family="var(--mono)">Standards</text>
+      <text x="60" y="142" fill="var(--muted)" font-size="11">lines 23–70</text>
+      <text x="60" y="160" fill="var(--muted)" font-size="11">standards 0–7</text>
+      <text x="60" y="178" fill="var(--accent)" font-size="11" font-weight="600">the single owner</text>
+
+      <!-- restatements -->
+      <path d="M240 130 H300" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#t-arrow)"/>
+
+      <rect x="320" y="62" width="290" height="34" rx="4" fill="var(--paper-2)" stroke="var(--rule-solid)"/>
+      <text x="336" y="84" fill="var(--ink)" font-size="11" font-family="var(--mono)">Primary Review Questions — 71–88</text>
+
+      <rect x="320" y="104" width="290" height="34" rx="4" fill="var(--paper-2)" stroke="var(--rule-solid)"/>
+      <text x="336" y="126" fill="var(--ink)" font-size="11" font-family="var(--mono)">What to Flag Aggressively — 89–110</text>
+
+      <rect x="320" y="146" width="290" height="34" rx="4" fill="var(--paper-2)" stroke="var(--rule-solid)"/>
+      <text x="336" y="168" fill="var(--ink)" font-size="11" font-family="var(--mono)">Preferred Remedies — 111–134</text>
+
+      <rect x="320" y="188" width="290" height="34" rx="4" fill="var(--paper-2)" stroke="var(--rule-solid)"/>
+      <text x="336" y="210" fill="var(--ink)" font-size="11" font-family="var(--mono)">Review Tone — 135–153</text>
+
+      <rect x="320" y="230" width="290" height="34" rx="4" fill="var(--paper-2)" stroke="var(--rule-solid)"/>
+      <text x="336" y="252" fill="var(--ink)" font-size="11" font-family="var(--mono)">Approval Bar blockers — 183–192</text>
+
+      <text x="640" y="86" fill="var(--muted)" font-size="11">same rules, as questions</text>
+      <text x="640" y="128" fill="var(--muted)" font-size="11">same rules, as flags</text>
+      <text x="640" y="170" fill="var(--muted)" font-size="11">same rules, as fixes</text>
+      <text x="640" y="212" fill="var(--muted)" font-size="11">same rules, as phrasings</text>
+      <text x="640" y="254" fill="var(--muted)" font-size="11">same rules, as blockers</text>
+
+      <line x1="40" y1="290" x2="960" y2="290" stroke="var(--rule)" stroke-width="1"/>
+      <text x="40" y="318" fill="var(--accent)" font-size="12" font-weight="600">192 lines → ~60 by deletion alone. Nothing is added; nothing is lost.</text>
+    </svg>
+    <figcaption>The 1000-line rule alone appears at lines 34, 36, 95, 144 and 186. The fix is subtraction, not restructuring.</figcaption>
+  </figure>
+
+  <!-- ===== PURPOSE / PROBLEM / SOLUTION ===== -->
+  <section id="purpose">
+    <h2>Purpose</h2>
+    <p>
+      Cut <code>thermo-nuclear-code-quality-review</code> from 192 lines to roughly 60 by deleting
+      restatements, and resolve a frontmatter contradiction that makes its four advertised trigger
+      phrases unreachable. The skill's opinions are good and stay exactly as they are — this plan
+      removes the four extra times each one is said.
+    </p>
+  </section>
+
+  <section id="problem">
+    <h2>Problem</h2>
+    <p>
+      The skill states seven review rules once, properly, under <em>Non-Negotiable Additional
+      Standards</em> (lines 23–70). It then restates them as questions (<em>Primary Review
+      Questions</em>, 71–88), as flags (<em>What to Flag Aggressively</em>, 89–110), as fixes
+      (<em>Preferred Remedies</em>, 111–134), as quotable phrasings (<em>Review Tone</em>, 135–153),
+      and once more as presumptive blockers (<em>Approval Bar</em>, 183–192). The 1000-line rule
+      appears at lines 34, 36, 95, 144 and 186. All 12.1 KB is forced — there is exactly one bundled
+      file, so every invocation pays for all five voices.
+    </p>
+    <p>
+      Separately, the frontmatter contradicts itself. The <code>description</code> names four trigger
+      synonyms — "thermo-nuclear code quality review", "thermonuclear review", "deep code quality
+      audit", "especially harsh maintainability review" — while line 4 sets
+      <code>disable-model-invocation: true</code>, which removes the skill from the model's list
+      entirely. Those four phrasings can never match anything. Whichever half is intended, the other
+      is wrong, and a stranger reading the frontmatter is told the opposite of the truth.
+    </p>
+    <p>
+      Standards 3–7 (lines 46–69) are a third problem of a different kind: "prefer direct, boring,
+      maintainable code over hacky or magical code" and "keep logic in the canonical layer and reuse
+      existing helpers" are general engineering competence, not this team's opinion. They fail the
+      subtraction test. Standards 0, 1 and 2 do not — the 1000-line threshold is a real number and
+      the delete-don't-rearrange bias is a real stance.
+    </p>
+  </section>
+
+  <section id="solution">
+    <h2>Solution</h2>
+    <p>
+      Three deletions and one decision. <em>Non-Negotiable Additional Standards</em> becomes the
+      single owner of the rules; the four restating sections and the Approval Bar's blocker list are
+      deleted outright. Standards 3–7 go with them. <em>Output Expectations</em> stays untouched —
+      its ranked output order is a genuine format contract the model would not invent.
+    </p>
+    <p>
+      The frontmatter decision is the user's, not the builder's: either delete
+      <code>disable-model-invocation</code> so the advertised phrases work, or keep manual-only
+      invocation and rewrite the description to say so. Phase 1 asks, then implements the answer.
+      Nothing else in the plan depends on which way it goes.
+    </p>
+    <figure>
+      <svg viewBox="0 0 1000 260" role="img" aria-label="Before: 192 lines with five restatements. After: about 60 lines with standards, output expectations and approval bar only">
+        <rect width="100%" height="100%" fill="var(--bg)"/>
+
+        <text x="40" y="36" fill="var(--soft)" font-size="10" font-family="var(--mono)" letter-spacing="0.14em">BEFORE — 192 LINES / 12.1 KB</text>
+        <rect x="40" y="52" width="920" height="30" rx="3" fill="none" stroke="var(--rule-solid)"/>
+        <rect x="40" y="52" width="110" height="30" rx="3" fill="var(--accent-tint)" stroke="var(--accent)"/>
+        <text x="52" y="72" fill="var(--ink)" font-size="10" font-family="var(--mono)">standards</text>
+        <rect x="150" y="52" width="560" height="30" fill="rgba(180,51,31,0.28)"/>
+        <text x="360" y="72" fill="var(--ink)" font-size="11" font-weight="600">five restatements of those same standards</text>
+        <rect x="710" y="52" width="120" height="30" fill="var(--paper-2)" stroke="var(--rule-solid)"/>
+        <text x="722" y="72" fill="var(--ink)" font-size="10" font-family="var(--mono)">output exp.</text>
+        <rect x="830" y="52" width="130" height="30" fill="var(--paper-2)" stroke="var(--rule-solid)"/>
+        <text x="842" y="72" fill="var(--ink)" font-size="10" font-family="var(--mono)">approval bar</text>
+
+        <text x="40" y="136" fill="var(--soft)" font-size="10" font-family="var(--mono)" letter-spacing="0.14em">AFTER — ~60 LINES / ~3.8 KB</text>
+        <rect x="40" y="152" width="288" height="30" rx="3" fill="none" stroke="var(--rule-solid)"/>
+        <rect x="40" y="152" width="80" height="30" rx="3" fill="var(--accent-tint)" stroke="var(--accent)"/>
+        <text x="50" y="172" fill="var(--ink)" font-size="10" font-family="var(--mono)">std 0–2</text>
+        <rect x="120" y="152" width="104" height="30" fill="var(--paper-2)" stroke="var(--rule-solid)"/>
+        <text x="132" y="172" fill="var(--ink)" font-size="10" font-family="var(--mono)">output exp.</text>
+        <rect x="224" y="152" width="104" height="30" fill="var(--paper-2)" stroke="var(--rule-solid)"/>
+        <text x="236" y="172" fill="var(--ink)" font-size="10" font-family="var(--mono)">approval</text>
+
+        <text x="360" y="172" fill="var(--accent)" font-size="12" font-weight="600">69% deleted · every surviving rule still stated once</text>
+        <text x="40" y="222" fill="var(--muted)" font-size="12">No new files. No restructuring. No progressive disclosure needed — at 60 lines the dimension is moot rather than failed.</text>
+      </svg>
+      <figcaption>The rare case where the fix for a progressive-disclosure failure is to delete, not to split.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== RELEVANT FILES ===== -->
+  <section id="files" class="files">
+    <h2>Relevant Files</h2>
+
+    <h3>Existing Files</h3>
+    <ul>
+      <li><span class="tag existing">existing</span> <code>skills/thermo-nuclear-code-quality-review/SKILL.md</code> — 192 lines, the only bundled file and the whole subject of this plan</li>
+      <li><span class="tag existing">existing</span> <code>skills/meta-skill/references/skill-review-rubric.md</code> — the seven dimensions this is graded against, before and after</li>
+      <li><span class="tag existing">existing</span> <code>skills/meta-skill/references/context-engineering-claude5.md</code> — the subtraction test that condemns standards 3–7</li>
+      <li><span class="tag existing">existing</span> <code>specs/skill-health-2026-07-25.md</code> — audit finding #5, the source of the line numbers below</li>
+    </ul>
+
+    <h3>New Files</h3>
+    <ul>
+      <li><span class="tag new">new</span> <em>none</em> — this plan deletes only. A skill that needs a new file to get smaller has not understood the problem.</li>
+    </ul>
+  </section>
+
+  <!-- ===== IMPLEMENTATION PHASES ===== -->
+  <section id="phases">
+    <h2>Implementation Phases</h2>
+    <p><strong>IMPORTANT:</strong> Execute every phase and task step by step, in order, top to bottom.</p>
+    <p>Status markers: <code>[]</code> idle · <code>[wip]</code> in progress · <code>[x]</code> complete · <code>[f]</code> failed. All start as <code>[]</code>; the Build Plan workflow updates them as it works.</p>
+
+    <div class="phase">
+      <h3><code class="status">[]</code> Phase 1: Resolve the frontmatter contradiction</h3>
+      <p>
+        This is a decision, not an edit, and it belongs to the user. Ask first, implement second.
+        Do it before the deletions so the description rewrite lands in one pass.
+      </p>
+
+      <h4>1. Ask</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Put the choice to the user in one question: keep <code>disable-model-invocation: true</code> and make the description honest about manual-only invocation, or delete the flag so the four advertised phrases actually fire.</li>
+        <li><code class="status">[]</code> State the tradeoff in the question: this is an expensive, deliberately harsh review, so gating it behind explicit invocation is defensible — but if the flag is deleted, the skill will contend with <code>simplify</code> and the built-in code-review on ordinary diffs.</li>
+      </ul>
+
+      <h4>2. Implement the answer</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> If manual-only wins: keep line 4 and replace the description's second sentence with <em>"Manual only: invoke with /thermo-nuclear-code-quality-review."</em> Delete the four trigger synonyms — they are a promise the flag cannot keep.</li>
+        <li><code class="status">[]</code> If auto-fire wins: delete line 4, keep the four synonyms, and add a differentiator so it does not race the general reviewers — <em>"not for routine review; use when a normal review already passed and you want the structure re-litigated."</em></li>
+      </ul>
+
+      <h4>3. Testing Strategy</h4>
+      <p>Frontmatter is checked by reading it back, and by whether the skill appears in a fresh session's skill list. Only the second catches the real failure.</p>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>sed -n '1,6p' skills/thermo-nuclear-code-quality-review/SKILL.md</code> — frontmatter matches the chosen option, with no leftover promise the other option would have kept.</li>
+        <li><code class="status">[]</code> If the flag was deleted: confirm in a fresh session that the skill now appears in the available-skills list. If it was kept: confirm it still does not, and that this is stated in the description.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[]</code> Phase 2: Delete the restatements</h3>
+      <p>
+        Work bottom-up — delete the highest line numbers first — so earlier line numbers stay valid
+        as you go. The numbers below were verified against the file on 2026-07-25; re-confirm each
+        section by its heading before cutting, since a heading is stable and a line number is not.
+      </p>
+
+      <h4>1. Delete the four restating sections</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Delete <code>## Review Tone</code> (135–153) — the rules as quotable phrasings.</li>
+        <li><code class="status">[]</code> Delete <code>## Preferred Remedies</code> (111–134) — "extract a helper", "split a large file", "separate orchestration from business logic" are Claude 5 defaults.</li>
+        <li><code class="status">[]</code> Delete <code>## What to Flag Aggressively</code> (89–110) — the rules as flags.</li>
+        <li><code class="status">[]</code> Delete <code>## Primary Review Questions</code> (71–88) — the rules as questions.</li>
+      </ul>
+
+      <h4>2. Delete the third-statement blocker list</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> In <code>## Approval Bar</code>, delete the block beginning <em>"Treat these as presumptive blockers"</em> (183–192) — six bullets restating standards 0, 1 and 2.</li>
+        <li><code class="status">[]</code> Keep the eight-bullet bar above it and the closing sentence. That list is the approval contract, not a restatement.</li>
+      </ul>
+
+      <h4>3. Delete standards 3–7 and the thoroughness directive</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Delete standards 3 through 7 (46–69): direct-over-hacky, type/boundary cleanliness, canonical layer, sequential orchestration. Each is general engineering competence.</li>
+        <li><code class="status">[]</code> Keep standards 0, 1 and 2 verbatim — structural ambition, the 1000-line threshold, and spaghetti-growth are the skill's actual opinions.</li>
+        <li><code class="status">[]</code> Delete line 21, <em>"Be extremely thorough and rigorous. Measure twice, cut once."</em> — the article names this exact shape as a cut.</li>
+      </ul>
+
+      <h4>4. Testing Strategy</h4>
+      <p>Two things must hold: the file got much smaller, and every surviving rule still appears exactly once. The second is what stops this from being mere truncation.</p>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>wc -l skills/thermo-nuclear-code-quality-review/SKILL.md</code> — 70 or fewer, down from 192.</li>
+        <li><code class="status">[]</code> <code>grep -c "1000\|1k " skills/thermo-nuclear-code-quality-review/SKILL.md</code> — 2 or fewer, down from 5.</li>
+        <li><code class="status">[]</code> <code>grep -n "^## " skills/thermo-nuclear-code-quality-review/SKILL.md</code> — exactly three sections remain: Core Prompt, Non-Negotiable Additional Standards, Output Expectations, Approval Bar.</li>
+        <li><code class="status">[]</code> <code>grep -ciE "be (extremely )?thorough|measure twice" skills/thermo-nuclear-code-quality-review/SKILL.md</code> — returns 0.</li>
+        <li><code class="status">[]</code> Read the surviving file end to end and confirm standards 0–2 and the ranked Output Expectations are intact and unedited.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[]</code> Phase 3: Re-grade and prove the review still bites</h3>
+      <p>
+        The risk of this plan is over-deletion: a review skill that no longer produces harsh reviews.
+        Line counts cannot detect that. One real review against a real diff can.
+      </p>
+
+      <h4>1. Re-grade</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Run <code>python3 skills/meta-skill/scripts/scan.py</code> and confirm the skill is no longer flagged, or is flagged only for the <code>disable-model-invocation</code> line if Phase 1 kept it.</li>
+        <li><code class="status">[]</code> Grade against <code>skills/meta-skill/references/skill-review-rubric.md</code> and record a verdict per dimension. Dimensions 3, 4 and 5 were the failures; all three should now pass.</li>
+      </ul>
+
+      <h4>2. Prove the behaviour survived</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Pick a real diff with a genuine structural problem — a file crossing 1000 lines, or added special-case branching. The repo's own history has candidates.</li>
+        <li><code class="status">[]</code> Run the skill against it and confirm the review still flags the structural issue, still ranks output by severity, and still refuses to approve on correctness alone.</li>
+        <li><code class="status">[]</code> If the review has gone soft, restore the smallest thing that brings the bite back and record what it was — that is evidence a deletion was wrong, and belongs in Amendments.</li>
+      </ul>
+
+      <h4>3. Testing Strategy</h4>
+      <p>The mechanical checks confirm the shape; the live review confirms the substance. Only the second can fail in a way worth catching.</p>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>python3 skills/meta-skill/scripts/scan.py | grep -c thermo-nuclear</code> — the skill appears in CLEAN, not FLAGGED.</li>
+        <li><code class="status">[]</code> The live review names at least one structural finding the old version would also have named.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GLOBAL VALIDATION ===== -->
+  <section id="validation">
+    <h2>Validation Commands</h2>
+    <p>Execute these from <code>/Users/tk/.claude</code> to validate the entire plan is complete:</p>
+    <ul class="checklist">
+      <li><code class="status">[]</code> <code>wc -l skills/thermo-nuclear-code-quality-review/SKILL.md</code> — 70 or fewer, down from 192.</li>
+      <li><code class="status">[]</code> <code>du -h skills/thermo-nuclear-code-quality-review/SKILL.md</code> — roughly 4 KB, down from 12.1 KB.</li>
+      <li><code class="status">[]</code> <code>grep -n "^## " skills/thermo-nuclear-code-quality-review/SKILL.md</code> — Primary Review Questions, What to Flag Aggressively, Preferred Remedies and Review Tone are all absent.</li>
+      <li><code class="status">[]</code> <code>python3 skills/meta-skill/scripts/scan.py</code> — the skill is CLEAN, or flagged only for a deliberately kept <code>disable-model-invocation</code>.</li>
+      <li><code class="status">[]</code> Rubric dimensions 3, 4 and 5 all pass, recorded per dimension.</li>
+      <li><code class="status">[]</code> One live review against a real diff still produces a harsh, ranked, structural finding.</li>
+    </ul>
+    <div class="loop">
+      🔁 <strong>The plan is not complete until every box is checked and every command passes. If for some reason a step is not possible to complete, mark it with [f] and move on if possible.</strong>
+    </div>
+  </section>
+
+  <!-- ===== NOTES ===== -->
+  <section id="notes">
+    <h2>Notes</h2>
+
+    <h3>What each dimension cost, and what fixes it</h3>
+    <table>
+      <thead>
+        <tr><th>Dimension</th><th>Verdict</th><th>What this plan does</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1 · description triggers</td>
+          <td>FAIL — four synonyms that <code>disable-model-invocation</code> guarantees can never match</td>
+          <td>Phase 1. A decision, not an edit — either half is defensible, the pairing is not.</td>
+        </tr>
+        <tr>
+          <td>2 · forced context</td>
+          <td>PASS — 192 lines, single file, nothing read unconditionally</td>
+          <td>No change needed.</td>
+        </tr>
+        <tr>
+          <td>3 · progressive disclosure</td>
+          <td>FAIL — one file, so every task loads 100% of bundled bytes</td>
+          <td>Phase 2, by cutting rather than splitting. At ~60 lines the dimension stops applying.</td>
+        </tr>
+        <tr>
+          <td>4 · judgment over rules</td>
+          <td>FAIL — standards 3–7, Preferred Remedies, and "be extremely thorough"</td>
+          <td>Phase 2, tasks 1 and 3.</td>
+        </tr>
+        <tr>
+          <td>5 · single source of truth</td>
+          <td>FAIL — seven rules stated up to five times each</td>
+          <td>Phase 2. Standards becomes the sole owner.</td>
+        </tr>
+        <tr>
+          <td>6 · reachability</td>
+          <td>PASS — no paths named, no orphans</td>
+          <td>No change needed.</td>
+        </tr>
+        <tr>
+          <td>7 · scope</td>
+          <td>PASS, conditionally — differentiated from <code>simplify</code> only by intensity</td>
+          <td>Costs nothing while the flag is set. Phase 1's auto-fire branch adds the differentiator.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Decisions and rejected alternatives</h3>
+    <details>
+      <summary>Split the skill into <code>SKILL.md</code> plus <code>references/</code></summary>
+      <p class="qa-answer">
+        Rejected. Splitting is the fix when a large file contains distinct material that different
+        tasks need. Here the file contains one set of rules said five ways — splitting would give
+        each restatement its own file and preserve the actual defect behind a nicer structure. The
+        grader's phrasing is right: cut rather than split.
+      </p>
+    </details>
+    <details>
+      <summary>Keep <em>Review Tone</em> as a phrase bank in <code>references/</code></summary>
+      <p class="qa-answer">
+        Considered seriously. The quotable phrasings ("this pushes the file past 1k lines. can we
+        decompose this first?") have some value as house voice. Rejected because every phrase encodes
+        a rule already stated in Standards, so the file would reintroduce dimension 5 one hop away.
+        If the voice turns out to matter after Phase 3's live review, add it back deliberately as
+        <code>references/review-phrasing.md</code> read only when drafting final comments — and record
+        that in Amendments.
+      </p>
+    </details>
+    <details>
+      <summary>Decide the frontmatter question in the plan rather than asking</summary>
+      <p class="qa-answer">
+        Rejected. Both answers are defensible and they lead to genuinely different skills — one that
+        competes for every diff, and one invoked deliberately when a normal review already passed.
+        That is the user's call about how they want to work, not a defect with a correct fix.
+      </p>
+    </details>
+
+    <h3>Risk</h3>
+    <p>
+      <strong>Over-deletion.</strong> The one real risk. Five restatements exist because someone
+      wanted the rules to land, and cutting to a single statement may make the review less insistent
+      even though nothing was removed in substance. Phase 3's live review against a real diff is the
+      only check that can catch it, which is why the plan does not end at <code>wc -l</code>.
+    </p>
+
+    <h3>Dependencies</h3>
+    <p>
+      None. Every change is a deletion from one markdown file; every validation command is
+      <code>grep</code>, <code>wc</code>, <code>sed</code>, or <code>du</code>.
+    </p>
+
+    <h3>References</h3>
+    <ul class="refs">
+      <li><code>specs/skill-health-2026-07-25.md</code> — finding #5, with the line numbers and the duplication census this plan implements.</li>
+      <li><code>skills/meta-skill/references/context-engineering-claude5.md</code> — the subtraction test, and the "keep the validator loop, cut the exhortation" distinction that spares Output Expectations.</li>
+      <li><code>skills/meta-skill/references/skill-review-rubric.md</code> — the seven dimensions and their pass conditions.</li>
+    </ul>
+  </section>
+
+  <!-- ===== AMENDMENTS ===== -->
+  <section id="amendments">
+    <h2>Amendments</h2>
+    <p class="empty">No amendments yet — appended by the Update Plan and Update References workflows.</p>
+  </section>
+
+</main>
+</body>
+</html>

@@ -16,10 +16,10 @@ gitlink. Those are already removed (`19fa9d5`, `d02b7cb`).
 ## Pick what to plan
 
 - [ ] **graphify** — 62 KB forced on every trigger, mostly inline Python duplicating its own shipped CLI
-- [ ] **emil-design-eng** — fully duplicated by `motion-design-skill`; recommend deletion
+- [x] **emil-design-eng** — deleted in `bc7f10a`; `animations.dev` link ported to `motion-design-skill`
 - [ ] **voyage-embeddings** — description cannot return "no"; fires on any embedding question
-- [ ] **diagram-design** — colour tokens forked three ways, so the advertised first-run gate is dead code
-- [ ] **thermo-nuclear-code-quality-review** — seven rules restated up to eight times; cannot auto-fire
+- [x] **diagram-design** — planned: `specs/diagram-design-token-fork.html`
+- [x] **thermo-nuclear-code-quality-review** — planned: `specs/thermo-nuclear-rightsize.html`
 - [ ] **review-animations** — `disable-model-invocation` makes it unreachable from natural language
 - [ ] **motion-design-skill** — compound asks load 74% of the bundle; duplicated recipes across references
 - [ ] **sl-resolve-pr-feedback** — three references sit two hops out; a documented live failure mode
