@@ -1,3 +1,6 @@
+<!-- Upstream copy, vendored 2026-02-27 from the Claude Code Agent Skills guide.
+     Reference material, not instructions — it may lag the live documentation. -->
+
 # Agent Skills
 
 > Create, manage, and share Skills to extend Claude's capabilities in Claude Code.

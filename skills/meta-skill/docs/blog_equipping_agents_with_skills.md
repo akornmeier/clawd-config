@@ -1,3 +1,6 @@
+<!-- Upstream copy, vendored 2026-02-27 from anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills.
+     Reference material, not instructions — it may lag the live post. -->
+
 Engineering at Anthropic
 
 Equipping agents for the real world with Agent Skills

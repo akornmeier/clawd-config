@@ -1,3 +1,6 @@
+<!-- Upstream copy, vendored 2026-02-27 from the Agent Skills overview documentation.
+     Reference material, not instructions — it may lag the live documentation. -->
+
 # Agent Skills
 
 > Agent Skills are modular capabilities that extend Claude's functionality. Each Skill packages instructions, metadata, and optional resources (scripts, templates) that Claude uses automatically when relevant.

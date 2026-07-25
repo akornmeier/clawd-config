@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan: Rebuild meta-skill for Claude 5 Context Engineering</title>
+<style>
+  /* ===== VISUAL IDENTITY =====
+     Source of truth for this page AND every diagram embedded in it. Inline SVG
+     resolves var() against this page, so the figures reference these roles
+     (never hardcoded hex) and the identity stays synced. */
+  :root {
+    --bg:            #f7f7f4;
+    --paper-2:       #ffffff;
+    --ink:           #171c1a;
+    --muted:         #575e5a;
+    --soft:          #878e89;
+    --rule:          rgba(23, 28, 26, 0.12);
+    --rule-solid:    #dfe2dd;
+    --accent:        #1f6f5c;
+    --accent-tint:   rgba(31, 111, 92, 0.09);
+
+    --sans:  'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono:  'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --serif: ui-serif, 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 4rem 1.5rem 6rem;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  main { max-width: 60rem; margin: 0 auto; }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: 2.5rem;
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0 0 1rem;
+  }
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin: 3.5rem 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  h3 { font-size: 1.0625rem; font-weight: 600; margin: 2rem 0 0.5rem; }
+  h4 {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 1.5rem 0 0.5rem;
+  }
+  p  { margin: 0 0 1rem; max-width: 46rem; }
+  a  { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    background: rgba(23, 28, 26, 0.05);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
+  pre {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  /* --- header + metadata --- */
+  header { margin-bottom: 2.5rem; }
+  details.meta {
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--paper-2);
+    padding: 0.625rem 1rem;
+    font-size: 0.8125rem;
+  }
+  details.meta summary {
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  details.meta dl {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: 0.25rem 1rem;
+    margin: 0.875rem 0 0.25rem;
+  }
+  details.meta dt {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--soft);
+    padding-top: 0.15rem;
+  }
+  details.meta dd { margin: 0; color: var(--muted); font-family: var(--mono); font-size: 0.75rem; word-break: break-word; }
+
+  /* --- figures --- */
+  figure {
+    margin: 2rem auto;
+    padding: 0;
+    text-align: center;
+  }
+  figure svg, figure img { display: block; width: 100%; max-width: 100%; height: auto; margin: 0 auto; }
+  figcaption {
+    margin-top: 0.875rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--soft);
+    max-width: 40rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* --- tables --- */
+  table { border-collapse: collapse; width: 100%; font-size: 0.875rem; margin: 0 0 1rem; }
+  th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--soft);
+    font-weight: 500;
+  }
+  td code { white-space: nowrap; }
+
+  /* --- relevant files --- */
+  .files ul { list-style: none; padding: 0; margin: 0 0 1rem; }
+  .files li { padding: 0.375rem 0; border-bottom: 1px solid var(--rule); font-size: 0.9375rem; }
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    padding: 0.1rem 0.35rem;
+    margin-right: 0.4rem;
+    border: 1px solid;
+  }
+  .tag.existing { color: var(--muted); border-color: var(--rule-solid); }
+  .tag.new      { color: var(--accent); border-color: var(--accent); background: var(--accent-tint); }
+
+  /* --- phases --- */
+  .phase {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .phase h3 { margin-top: 0.25rem; }
+  ul.checklist { list-style: none; padding: 0; margin: 0 0 1rem; }
+  ul.checklist li { padding: 0.25rem 0; font-size: 0.9375rem; line-height: 1.55; }
+  code.status {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--soft);
+    background: none;
+    padding: 0;
+    margin-right: 0.4rem;
+  }
+  .loop {
+    border-left: 2px solid var(--accent);
+    background: var(--accent-tint);
+    border-radius: 0 4px 4px 0;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  .loop strong { color: var(--ink); }
+
+  /* --- notes / amendments --- */
+  #notes details, #amendments details {
+    border-bottom: 1px solid var(--rule);
+    padding: 0.625rem 0;
+  }
+  #notes summary, #amendments summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+  #amendments details p { margin: 0.5rem 0 0; color: var(--muted); font-size: 0.9375rem; }
+  .empty { color: var(--soft); font-size: 0.9375rem; font-style: italic; }
+  .refs li { margin-bottom: 0.4rem; font-size: 0.9375rem; }
+</style>
+</head>
+<body>
+<main>
+
+  <!-- ===== HEADER + UPDATABLE METADATA ===== -->
+  <header>
+    <h1>Plan: Rebuild <code>meta-skill</code> for Claude 5 Context Engineering</h1>
+    <details class="meta">
+      <summary>Metadata</summary>
+      <dl>
+        <dt>created</dt>      <dd>2026-07-25T13:45:57Z</dd>
+        <dt>modified</dt>     <dd>2026-07-25T13:45:57Z, 2026-07-25T14:11:13Z</dd>
+        <dt>commits</dt>      <dd>none yet — build landed uncommitted on feat/meta-skill-update</dd>
+        <dt>agent name</dt>   <dd>claude-opus-5 (planf3 · create-plan), claude-opus-5 (planf3 · build-plan)</dd>
+        <dt>session id</dt>   <dd>cde2ff32-236c-4e70-8a41-726b564d1f8b, 1db46994-12f4-4c49-bf01-afc8b9886444</dd>
+        <dt>back refs</dt>    <dd>specs/planf3-claude5-context-engineering.html (the same rewrite, applied to planf3 — proven shape), specs/skill-assessment-local.md (graded meta-skill 4.25, flagged the 437-line length)</dd>
+        <dt>forward refs</dt> <dd>skills/meta-skill/evals.md (measured results for both load paths)</dd>
+      </dl>
+    </details>
+  </header>
+
+  <figure>
+    <svg viewBox="0 0 1000 430" role="img" aria-label="Today the skill forces 56 KB into context before the first decision; after the rebuild only a 4 KB router is forced and everything else loads on demand">
+      <rect width="100%" height="100%" fill="var(--bg)"/>
+      <defs>
+        <marker id="h-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+          <polygon points="0 0, 9 3.5, 0 7" fill="var(--accent)"/>
+        </marker>
+      </defs>
+
+      <!-- column headings -->
+      <text x="40" y="40" fill="var(--soft)" font-size="10" font-family="var(--mono)" letter-spacing="0.14em">TODAY — ALL FORCED</text>
+      <text x="580" y="40" fill="var(--soft)" font-size="10" font-family="var(--mono)" letter-spacing="0.14em">AFTER — ROUTED</text>
+
+      <!-- LEFT: one solid forced block -->
+      <rect x="40" y="60" width="330" height="300" rx="6" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+      <rect x="64" y="86" width="282" height="56" rx="4" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+      <text x="80" y="110" fill="var(--ink)" font-size="12" font-weight="600" font-family="var(--mono)">SKILL.md</text>
+      <text x="80" y="128" fill="var(--muted)" font-size="11">437 lines · 12 KB</text>
+
+      <rect x="64" y="154" width="282" height="46" rx="4" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+      <text x="80" y="174" fill="var(--ink)" font-size="12" font-family="var(--mono)">docs/agent_skills.md</text>
+      <text x="80" y="191" fill="var(--muted)" font-size="11">600 lines · 15 KB</text>
+
+      <rect x="64" y="212" width="282" height="46" rx="4" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+      <text x="80" y="232" fill="var(--ink)" font-size="12" font-family="var(--mono)">docs/…_overview.md</text>
+      <text x="80" y="249" fill="var(--muted)" font-size="11">308 lines · 19 KB</text>
+
+      <rect x="64" y="270" width="282" height="46" rx="4" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+      <text x="80" y="290" fill="var(--ink)" font-size="12" font-family="var(--mono)">docs/blog_…skills.md</text>
+      <text x="80" y="307" fill="var(--muted)" font-size="11">80 lines · 10 KB</text>
+
+      <text x="205" y="342" fill="var(--accent)" font-size="12" font-weight="600" text-anchor="middle">56 KB before the first design decision</text>
+
+      <!-- arrow -->
+      <path d="M400 210 H540" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#h-arrow)"/>
+      <text x="470" y="200" fill="var(--soft)" font-size="10" font-family="var(--mono)" text-anchor="middle">subtract</text>
+
+      <!-- RIGHT: small forced router -->
+      <rect x="580" y="60" width="380" height="72" rx="6" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+      <text x="604" y="88" fill="var(--ink)" font-size="12" font-weight="600" font-family="var(--mono)">SKILL.md — router</text>
+      <text x="604" y="108" fill="var(--muted)" font-size="11">≤ 90 lines · ~4 KB · always loaded</text>
+      <text x="604" y="124" fill="var(--muted)" font-size="11">contracts + routing table + file map</text>
+
+      <!-- on-demand boundary -->
+      <rect x="580" y="156" width="380" height="204" rx="6" fill="none" stroke="var(--soft)" stroke-width="1" stroke-dasharray="4,4"/>
+      <rect x="604" y="148" width="196" height="16" fill="var(--bg)"/>
+      <text x="612" y="160" fill="var(--soft)" font-size="9" font-family="var(--mono)" letter-spacing="0.14em">READ ONLY WHEN NEEDED</text>
+
+      <rect x="604" y="178" width="332" height="38" rx="4" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+      <text x="620" y="202" fill="var(--ink)" font-size="11" font-family="var(--mono)">references/context-engineering-claude5.md</text>
+
+      <rect x="604" y="224" width="332" height="38" rx="4" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+      <text x="620" y="248" fill="var(--ink)" font-size="11" font-family="var(--mono)">references/skill-review-rubric.md</text>
+
+      <rect x="604" y="270" width="332" height="38" rx="4" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+      <text x="620" y="294" fill="var(--ink)" font-size="11" font-family="var(--mono)">workflows/ · templates/</text>
+
+      <rect x="604" y="316" width="332" height="34" rx="4" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="620" y="338" fill="var(--muted)" font-size="11" font-family="var(--mono)">docs/ — upstream copies, rarely opened</text>
+
+      <text x="770" y="392" fill="var(--accent)" font-size="12" font-weight="600" text-anchor="middle">~4 KB forced · the rest earns its way in</text>
+    </svg>
+    <figcaption>The whole plan in one picture: stop paying 56 KB to answer "how do I write a description?"</figcaption>
+  </figure>
+
+  <!-- ===== PURPOSE / PROBLEM / SOLUTION ===== -->
+  <section id="purpose">
+    <h2>Purpose</h2>
+    <p>
+      Bring <code>~/.claude/skills/meta-skill</code> in line with Anthropic's Claude 5-generation context
+      engineering, and give it the one thing it has no copy of: the new rules themselves. The skill that
+      teaches Claude how to write skills is currently the worst-behaved skill in the directory — it violates
+      four of the six rules it should be teaching. Rewriting it fixes the instruction and the example at once.
+    </p>
+  </section>
+
+  <section id="problem">
+    <h2>Problem</h2>
+    <p>
+      <code>SKILL.md</code> is 437 lines / 12 KB, and its very first instruction is a <em>Required Reading</em>
+      block pointing at three bundled docs totalling 43 KB. Creating a skill as trivial as "wrap this one bash
+      command" therefore costs roughly 56 KB — about 14k tokens — before a single design decision gets made.
+      That is Anthropic's rule 3 run backwards: upfront information where progressive disclosure belongs.
+    </p>
+    <p>
+      The rest compounds it. The same material — progressive disclosure, frontmatter requirements, description
+      writing — is stated in <code>SKILL.md</code> <em>and</em> in all three docs, so the model reads three
+      versions of one idea and has to reconcile them (rule 4). Four long worked examples spell out trajectories
+      Claude 5 would pick on its own (rule 2). Steps 7 and 8 prescribe <code>ls -la</code> to confirm a
+      directory exists, <code>head -10</code> to confirm YAML parses, and a <code>git add / commit / push</code>
+      sequence — procedure the model applies unprompted. And the frontmatter reads
+      <code>name: Create New Skills</code>, which is neither the lowercase-hyphen identifier format nor the
+      <code>meta-skill</code> the directory is actually called.
+    </p>
+    <p>
+      Nothing in the skill encodes Claude 5 guidance at all: the newest bundled document is the October 2025
+      Skills launch post. The prior local audit already caught the symptom — <code>meta-skill</code> scored
+      4.25 with the note <em>"length (437 lines) could benefit from more progressive disclosure"</em> — but
+      diagnosed it as verbosity rather than as a context-engineering defect.
+    </p>
+    <figure>
+      <svg viewBox="0 0 1000 300" role="img" aria-label="For a simple skill, roughly two percent of the forced context is actually used; the remaining fifty-five kilobytes is unread ballast">
+        <rect width="100%" height="100%" fill="var(--bg)"/>
+
+        <text x="40" y="44" fill="var(--soft)" font-size="10" font-family="var(--mono)" letter-spacing="0.14em">CONTEXT PAID vs CONTEXT USED — ONE SIMPLE SKILL</text>
+
+        <!-- paid bar -->
+        <text x="40" y="98" fill="var(--muted)" font-size="12" font-family="var(--mono)">paid</text>
+        <rect x="150" y="78" width="800" height="30" rx="3" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="550" y="99" fill="var(--ink)" font-size="12" font-weight="600" text-anchor="middle">56 KB — SKILL.md + three docs, all mandatory</text>
+
+        <!-- used bar -->
+        <text x="40" y="158" fill="var(--muted)" font-size="12" font-family="var(--mono)">used</text>
+        <rect x="150" y="138" width="800" height="30" rx="3" fill="none" stroke="var(--rule-solid)" stroke-width="1"/>
+        <rect x="150" y="138" width="70" height="30" rx="3" fill="var(--accent)"/>
+        <text x="240" y="159" fill="var(--muted)" font-size="12">frontmatter rules + one workflow — the rest is never referenced again</text>
+
+        <!-- rule violations -->
+        <line x1="40" y1="204" x2="960" y2="204" stroke="var(--rule)" stroke-width="1"/>
+        <text x="40" y="236" fill="var(--soft)" font-size="10" font-family="var(--mono)" letter-spacing="0.14em">RULES BROKEN BY THE SKILL THAT TEACHES THE RULES</text>
+        <text x="40" y="264" fill="var(--ink)" font-size="12" font-family="var(--mono)">2 · examples over interface</text>
+        <text x="290" y="264" fill="var(--ink)" font-size="12" font-family="var(--mono)">3 · upfront over progressive</text>
+        <text x="570" y="264" fill="var(--ink)" font-size="12" font-family="var(--mono)">4 · repetition</text>
+        <text x="740" y="264" fill="var(--ink)" font-size="12" font-family="var(--mono)">1 · rules over judgment</text>
+      </svg>
+      <figcaption>Every skill authored through meta-skill inherits this tax, and inherits the shape as a worked example of how skills "should" look.</figcaption>
+    </figure>
+  </section>
+
+  <section id="solution">
+    <h2>Solution</h2>
+    <p>
+      Apply the same subtraction that already worked on <code>planf3</code> in this repo
+      (<code>SKILL.md</code> 241 → 72 lines, template extracted, workflows split by load path).
+      <code>meta-skill</code>'s <code>SKILL.md</code> becomes a router of at most 90 lines: frontmatter,
+      three lines on what a skill is, a <strong>Contracts</strong> block holding only the rules that cannot be
+      derived from the files themselves, a routing table with two entries (create / improve), and a file map
+      whose last column is <em>read it when</em>.
+    </p>
+    <p>
+      Everything else moves behind that column. The new
+      <code>references/context-engineering-claude5.md</code> is the deliverable the request names: the article's
+      six then→now pairs and its context-assembly guidance, rewritten as instructions for someone authoring a
+      <code>SKILL.md</code> rather than as a summary of a blog post.
+      <code>references/skill-review-rubric.md</code> replaces the vague "Test the Skill" step with gradeable
+      criteria — the article's own recommendation that rubrics let a verification agent hold a specific
+      standard. The inline YAML skeleton becomes <code>templates/SKILL.md</code>. The three vendored docs stay
+      exactly as they are but stop being mandatory: they are demoted to one line each in the file map, opened
+      only when a format detail is actually in question.
+    </p>
+    <figure>
+      <svg viewBox="0 0 1000 400" role="img" aria-label="Target file tree: a lean SKILL.md router pointing at two workflows, two references, a template, and the demoted docs directory">
+        <rect width="100%" height="100%" fill="var(--bg)"/>
+        <defs>
+          <marker id="s-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="var(--muted)"/>
+          </marker>
+          <marker id="s-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="var(--accent)"/>
+          </marker>
+        </defs>
+
+        <!-- connectors behind boxes -->
+        <path d="M300 200 H344 V96 H392" stroke="var(--muted)" stroke-width="1" fill="none" marker-end="url(#s-arrow)"/>
+        <path d="M300 200 H344 V172 H392" stroke="var(--muted)" stroke-width="1" fill="none" marker-end="url(#s-arrow)"/>
+        <path d="M300 200 H344 V248 H392" stroke="var(--accent)" stroke-width="1" fill="none" marker-end="url(#s-arrow-accent)"/>
+        <path d="M300 200 H344 V324 H392" stroke="var(--soft)" stroke-width="1" stroke-dasharray="3,3" fill="none" marker-end="url(#s-arrow)"/>
+        <path d="M640 96 H684 V236 H728" stroke="var(--accent)" stroke-width="1" fill="none" marker-end="url(#s-arrow-accent)"/>
+        <path d="M640 172 H684 V236" stroke="var(--accent)" stroke-width="1" fill="none"/>
+
+        <!-- router -->
+        <rect x="40" y="152" width="260" height="96" rx="6" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="64" y="184" fill="var(--ink)" font-size="13" font-weight="600" font-family="var(--mono)">SKILL.md</text>
+        <text x="64" y="206" fill="var(--muted)" font-size="11">contracts · routing · file map</text>
+        <text x="64" y="226" fill="var(--muted)" font-size="11">≤ 90 lines — the only forced read</text>
+
+        <!-- workflows -->
+        <rect x="392" y="68" width="248" height="56" rx="6" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="412" y="92" fill="var(--ink)" font-size="12" font-family="var(--mono)">workflows/create-skill.md</text>
+        <text x="412" y="110" fill="var(--muted)" font-size="11">author a new skill</text>
+
+        <rect x="392" y="144" width="248" height="56" rx="6" fill="var(--paper-2)" stroke="var(--rule-solid)" stroke-width="1"/>
+        <text x="412" y="168" fill="var(--ink)" font-size="12" font-family="var(--mono)">workflows/improve-skill.md</text>
+        <text x="412" y="186" fill="var(--muted)" font-size="11">rightsize one that exists</text>
+
+        <!-- references -->
+        <rect x="392" y="220" width="248" height="56" rx="6" fill="var(--paper-2)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="412" y="244" fill="var(--accent)" font-size="12" font-family="var(--mono)">templates/SKILL.md</text>
+        <text x="412" y="262" fill="var(--muted)" font-size="11">skeleton to fill in</text>
+
+        <!-- docs demoted -->
+        <rect x="392" y="296" width="248" height="56" rx="6" fill="none" stroke="var(--soft)" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="412" y="320" fill="var(--muted)" font-size="12" font-family="var(--mono)">docs/ ×3</text>
+        <text x="412" y="338" fill="var(--soft)" font-size="11">upstream — open on format doubt</text>
+
+        <!-- shared references -->
+        <rect x="728" y="180" width="232" height="112" rx="6" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="748" y="206" fill="var(--ink)" font-size="12" font-weight="600" font-family="var(--mono)">references/</text>
+        <text x="748" y="230" fill="var(--muted)" font-size="11">context-engineering-claude5.md</text>
+        <text x="748" y="250" fill="var(--muted)" font-size="11">skill-review-rubric.md</text>
+        <text x="748" y="276" fill="var(--soft)" font-size="10" font-family="var(--mono)">shared by both routes</text>
+
+        <text x="40" y="380" fill="var(--soft)" font-size="10" font-family="var(--mono)" letter-spacing="0.14em">SOLID = LOADED ON THIS ROUTE · DASHED = ONLY ON DEMAND</text>
+      </svg>
+      <figcaption>Two routes, two shared references, one skeleton. No path loads more than it needs, and no idea is stated in two places.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== RELEVANT FILES ===== -->
+  <section id="files" class="files">
+    <h2>Relevant Files</h2>
+
+    <h3>Existing Files</h3>
+    <ul>
+      <li><span class="tag existing">existing</span> <code>skills/meta-skill/SKILL.md</code> — 437 lines, rewritten to a router of ≤ 90; the whole point of the plan</li>
+      <li><span class="tag existing">existing</span> <code>skills/meta-skill/docs/claude_code_agent_skills.md</code> — upstream Claude Code Skills guide; kept verbatim, demoted from required reading</li>
+      <li><span class="tag existing">existing</span> <code>skills/meta-skill/docs/claude_code_agent_skills_overview.md</code> — upstream architecture doc; same treatment</li>
+      <li><span class="tag existing">existing</span> <code>skills/meta-skill/docs/blog_equipping_agents_with_skills.md</code> — Oct 2025 Skills launch post; same treatment</li>
+      <li><span class="tag existing">existing</span> <code>skills/planf3/SKILL.md</code> — 72-line router; the shape to copy, not to invent</li>
+      <li><span class="tag existing">existing</span> <code>skills/planf3/evals.md</code> — per-load-path eval format to mirror</li>
+      <li><span class="tag existing">existing</span> <code>specs/planf3-claude5-context-engineering.html</code> — the precedent rewrite, including which subtractions held up</li>
+      <li><span class="tag existing">existing</span> <code>specs/skill-assessment-local.md</code> — prior audit; its meta-skill entry is the before-score to beat</li>
+    </ul>
+
+    <h3>New Files</h3>
+    <ul>
+      <li><span class="tag new">new</span> <code>skills/meta-skill/references/context-engineering-claude5.md</code> — the requested reference: the article's rules restated as skill-authoring instructions</li>
+      <li><span class="tag new">new</span> <code>skills/meta-skill/references/skill-review-rubric.md</code> — gradeable criteria; replaces the hand-wave "Test the Skill" step</li>
+      <li><span class="tag new">new</span> <code>skills/meta-skill/templates/SKILL.md</code> — frontmatter + section skeleton, extracted from the inline YAML block</li>
+      <li><span class="tag new">new</span> <code>skills/meta-skill/workflows/create-skill.md</code> — the author-a-new-skill route</li>
+      <li><span class="tag new">new</span> <code>skills/meta-skill/workflows/improve-skill.md</code> — the rightsize-an-existing-skill route</li>
+      <li><span class="tag new">new</span> <code>skills/meta-skill/evals.md</code> — one scenario per load path; deliberately unlinked from SKILL.md</li>
+    </ul>
+  </section>
+
+  <!-- ===== IMPLEMENTATION PHASES ===== -->
+  <section id="phases">
+    <h2>Implementation Phases</h2>
+    <p><strong>IMPORTANT:</strong> Execute every phase and task step by step, in order, top to bottom.</p>
+    <p>Status markers: <code>[]</code> idle · <code>[wip]</code> in progress · <code>[x]</code> complete · <code>[f]</code> failed. All start as <code>[]</code>; the Build Plan workflow updates them as it works.</p>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 1: Author the references</h3>
+      <p>
+        Write the knowledge first, so the router has somewhere to point. Both files live in
+        <code>references/</code> and are read only when a route calls for them. Neither may restate the other
+        or the vendored docs — where they overlap, the reference wins and the docs go unmentioned.
+      </p>
+
+      <h4>1. references/context-engineering-claude5.md</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Create <code>skills/meta-skill/references/</code>.</li>
+        <li><code class="status">[x]</code> Open with one line of provenance: title, the <code>claude.com/blog</code> URL, and that it applies to Claude 5-generation models.</li>
+        <li><code class="status">[x]</code> Write the six then→now pairs as a table — rules→judgment, examples→interface design, upfront→progressive disclosure, repetition→single source of truth, manual memory→auto-memory, simple specs→rich references — each with a third column stating what the pair means <em>for a SKILL.md author</em>, not what it meant for Anthropic's system prompt.</li>
+        <li><code class="status">[x]</code> Add the context-assembly guidance: what belongs in a system prompt vs CLAUDE.md vs a skill vs an @-mentioned reference, and why a skill is "a lightweight, opinion-driven guide" rather than a rulebook.</li>
+        <li><code class="status">[x]</code> Add the subtraction test an author runs on their own draft: for each instruction, would Claude 5 do this unprompted? If yes, cut it. Include the concrete cut-list this repo already found — ultrathink directives, "consider edge cases and error handling", "include code examples where appropriate", shell commands that verify a file exists.</li>
+        <li><code class="status">[x]</code> Note <code>/doctor</code> as the automated rightsizing pass, one line, no procedure.</li>
+        <li><code class="status">[x]</code> Keep it under 120 lines. A reference that costs as much as the docs it replaced has failed.</li>
+      </ul>
+
+      <h4>2. references/skill-review-rubric.md</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Define the dimensions to grade: description triggers, forced-context size, progressive disclosure, rule-vs-judgment balance, single source of truth, and whether each referenced file is reachable and used.</li>
+        <li><code class="status">[x]</code> Give each dimension a concrete pass condition, not a 1–5 vibe — e.g. <em>"SKILL.md ≤ 500 lines and every path a task actually takes loads fewer than half of them"</em>.</li>
+        <li><code class="status">[x]</code> State the output shape: per-dimension verdict plus the specific edit that would fix a failure.</li>
+        <li><code class="status">[x]</code> Keep it under 60 lines.</li>
+      </ul>
+
+      <h4>3. Testing Strategy</h4>
+      <p>Verification is textual: the files exist, are within budget, and cover every rule the article names. Grep is the whole test surface — there is no code here to execute.</p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>wc -l skills/meta-skill/references/*.md</code> — both files exist and are within the stated budgets.</li>
+        <li><code class="status">[x]</code> <code>grep -c "→" skills/meta-skill/references/context-engineering-claude5.md</code> — at least six then→now pairs are present.</li>
+        <li><code class="status">[x]</code> <code>grep -i "progressive disclosure\|single source of truth\|judgment" skills/meta-skill/references/context-engineering-claude5.md</code> — the three load-bearing ideas are named, not implied.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 2: Rewrite SKILL.md as a router</h3>
+      <p>
+        The subtraction pass. Everything that survives must be a rule that cannot be derived from the files
+        themselves; everything else either moves to a workflow, moves to the template, or goes away.
+      </p>
+
+      <h4>1. Fix the frontmatter</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Set <code>name: meta-skill</code> — lowercase-hyphen, matching the directory it lives in.</li>
+        <li><code class="status">[x]</code> Rewrite <code>description</code> to carry both halves — what it does <em>and</em> when to fire — covering create, improve, and review of skills, with the trigger phrasing a user actually types ("create a skill", "make a skill for", "improve this skill", "why isn't my skill triggering").</li>
+        <li><code class="status">[x]</code> Leave <code>allowed-tools</code> off: this skill legitimately writes files and runs greps, so a restriction would be theatre.</li>
+      </ul>
+
+      <h4>2. Write the body</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Three lines on what a skill is — directory, <code>SKILL.md</code>, progressive disclosure. Delete the rest of the "Understanding Skills" section; it is in the docs and in the new reference.</li>
+        <li><code class="status">[x]</code> Write a <strong>Contracts</strong> block: frontmatter is required and <code>name</code> must match the directory; personal skills live in <code>~/.claude/skills/</code> and project skills in <code>.claude/skills/</code>; one skill is one capability; a bundled file that no route reads should not exist; grade against the rubric before declaring done.</li>
+        <li><code class="status">[x]</code> Write the routing table — two rows (Create Skill, Improve Skill) with a <em>when to call it</em> column and the workflow file to read.</li>
+        <li><code class="status">[x]</code> Write the Files table — one row per bundled path with a <em>read it when</em> column, including all three <code>docs/</code> files marked as format-detail-only.</li>
+        <li><code class="status">[x]</code> Delete the four worked Examples sections, the "Common Patterns from Existing Skills" section, and the closing Summary.</li>
+        <li><code class="status">[x]</code> Delete the steps Claude 5 performs without being told: <code>ls -la</code> structure verification, <code>head -10</code> YAML checking, <code>chmod +x</code>, and the git add/commit/push sequence.</li>
+      </ul>
+
+      <h4>3. Extract templates/SKILL.md</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Move the inline YAML + section skeleton into <code>skills/meta-skill/templates/SKILL.md</code>, with a leading comment marking it a template rather than a skill.</li>
+        <li><code class="status">[x]</code> Make the skeleton express the target shape — frontmatter, one-paragraph purpose, contracts, routing or steps, file map — so a new skill inherits the router pattern by default.</li>
+      </ul>
+
+      <h4>4. Write the two workflows</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>workflows/create-skill.md</code>: numbered steps from scoping the capability through writing the description, filling the template, adding supporting files only where a path needs them, and grading against the rubric. Match <code>planf3/workflows/create-plan.md</code> for length and register — steps, not essays.</li>
+        <li><code class="status">[x]</code> <code>workflows/improve-skill.md</code>: read the target skill, grade it against the rubric, then apply the subtraction test from the reference; report what was cut and what moved behind progressive disclosure.</li>
+        <li><code class="status">[x]</code> Have both point at <code>references/context-engineering-claude5.md</code> for the authoring philosophy rather than repeating any of it.</li>
+      </ul>
+
+      <h4>5. Testing Strategy</h4>
+      <p>Two things must hold: the router is small, and every path it advertises resolves to a file that exists. Both are mechanically checkable; the judgment call — does it still teach enough — is the eval in Phase 3.</p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>wc -l skills/meta-skill/SKILL.md</code> — 90 or fewer.</li>
+        <li><code class="status">[x]</code> <code>awk 'NR&gt;1 &amp;&amp; /^---$/{exit} /^name:/{print}' skills/meta-skill/SKILL.md</code> — prints <code>name: meta-skill</code>.</li>
+        <li><code class="status">[x]</code> <code>grep -ciE "required reading|chmod \+x|git (add|commit|push)|ls -la" skills/meta-skill/SKILL.md</code> — returns 0.</li>
+        <li><code class="status">[x]</code> <code>grep -oE '`[A-Za-z0-9_./*-]+\.(md|html)`' skills/meta-skill/SKILL.md | tr -d '`' | sort -u | while read f; do ls skills/meta-skill/$f &gt;/dev/null 2&gt;&amp;1 || echo "MISSING $f"; done</code> — prints nothing.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[x]</code> Phase 3: Demote the docs, add evals, verify end to end</h3>
+      <p>
+        The docs stay on disk — they are the only offline copy of the format spec and they are worth having
+        when a frontmatter question turns out to be real. What changes is their status: from mandatory prologue
+        to a row in a table with a condition attached.
+      </p>
+
+      <h4>1. Demote docs/</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Confirm no remaining file instructs an unconditional read of any <code>docs/</code> file.</li>
+        <li><code class="status">[x]</code> Give each doc a one-line "read it when" in the Files table — the Claude Code guide for CLI-specific format questions, the overview for cross-surface limits, the launch post for the original progressive-disclosure argument.</li>
+        <li><code class="status">[x]</code> Add a dated provenance line at the top of each doc noting it is an upstream copy and may lag the live documentation.</li>
+      </ul>
+
+      <h4>2. Write evals.md</h4>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> Mirror <code>skills/planf3/evals.md</code>: one scenario per load path, run in a fresh session, with an expected-behaviour list per scenario.</li>
+        <li><code class="status">[x]</code> Scenario A — create: "make me a skill that runs our smoke tests", typed without a slash command. Fires from the description alone; reads <code>create-skill.md</code> and the template; never opens <code>docs/</code>.</li>
+        <li><code class="status">[x]</code> Scenario B — improve: "this skill never triggers, fix it". Reads <code>improve-skill.md</code> and the rubric; returns per-dimension verdicts and concrete edits.</li>
+        <li><code class="status">[x]</code> Scenario C — the measurement that matters: record which files were actually read on each run. The absence of the <code>docs/</code> reads is the result being measured.</li>
+        <li><code class="status">[x]</code> Record the before numbers as the baseline: 437 lines / 12 KB forced, plus 43 KB of required docs.</li>
+        <li><code class="status">[x]</code> Leave <code>evals.md</code> unreferenced from <code>SKILL.md</code> — an unlinked file costs nothing at runtime.</li>
+      </ul>
+
+      <h4>3. Testing Strategy</h4>
+      <p>
+        The mechanical checks confirm the structure; the fresh-session runs confirm the behaviour. Only the
+        second kind can catch the real failure mode — a router so thin that Claude reconstructs the missing
+        guidance by guessing.
+      </p>
+      <ul class="checklist">
+        <li><code class="status">[x]</code> <code>grep -rn "docs/" skills/meta-skill/SKILL.md skills/meta-skill/workflows/</code> — every hit reads as conditional, none as an instruction to read first.</li>
+        <li><code class="status">[x]</code> Run eval Scenario A in a fresh session — a usable skill directory is produced and no <code>docs/</code> file is read.</li>
+        <li><code class="status">[f]</code> Run eval Scenario B in a fresh session — the rubric is applied and the output names specific edits. <em>Partial: specific edits yes, rubric read no (0/3), and the skill fired on only 2 of 4 runs. See Amendments.</em></li>
+        <li><code class="status">[f]</code> <code>/doctor</code> — run it against the rewritten skill and fold anything it flags into the plan's Amendments rather than silently patching.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GLOBAL VALIDATION ===== -->
+  <section id="validation">
+    <h2>Validation Commands</h2>
+    <p>Execute these commands from <code>/Users/tk/.claude</code> to validate the entire plan is complete:</p>
+    <ul class="checklist">
+      <li><code class="status">[x]</code> <code>wc -l skills/meta-skill/SKILL.md</code> — ≤ 90 lines, down from 437.</li>
+      <li><code class="status">[x]</code> <code>ls skills/meta-skill/references skills/meta-skill/templates skills/meta-skill/workflows</code> — all six new files present.</li>
+      <li><code class="status">[x]</code> <code>grep -ciE "required reading|chmod \+x|git (add|commit|push)|ls -la|head -10" skills/meta-skill/SKILL.md</code> — returns 0.</li>
+      <li><code class="status">[x]</code> <code>grep -oE '`[A-Za-z0-9_./*-]+\.(md|html)`' skills/meta-skill/SKILL.md skills/meta-skill/workflows/*.md | sed 's/.*`\(.*\)`/\1/' | sort -u | while read f; do ls skills/meta-skill/$f &gt;/dev/null 2&gt;&amp;1 || echo "MISSING $f"; done</code> — prints nothing; every referenced path resolves.</li>
+      <li><code class="status">[x]</code> <code>du -sh skills/meta-skill/SKILL.md</code> — forced context is ~4 KB, down from 56 KB including the mandatory docs.</li>
+      <li><code class="status">[f]</code> Fresh-session eval A and B both pass per <code>skills/meta-skill/evals.md</code>, with no <code>docs/</code> read on either.</li>
+    </ul>
+    <div class="loop">
+      🔁 <strong>The plan is not complete until every box is checked and every command passes. If for some reason a step is not possible to complete, mark it with [f] and move on if possible.</strong>
+    </div>
+  </section>
+
+  <!-- ===== NOTES ===== -->
+  <section id="notes">
+    <h2>Notes</h2>
+
+    <h3>The six rules, applied</h3>
+    <p>
+      The article is a subtraction argument — Anthropic removed over 80% of Claude Code's system prompt for
+      advanced models without losing performance. Here is what each pair costs this specific skill.
+    </p>
+    <table>
+      <thead>
+        <tr><th>Then → Now</th><th>What meta-skill does today</th><th>Change</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Rules → judgment</td>
+          <td>Prescribes <code>ls -la</code>, <code>head -10</code>, <code>chmod +x</code>, and a git push sequence as workflow steps</td>
+          <td>Cut. Contracts keep only what cannot be derived from the files.</td>
+        </tr>
+        <tr>
+          <td>Examples → interface design</td>
+          <td>Four long worked examples, ~120 lines, each walking one imaginary skill end to end</td>
+          <td>Cut. A filled-in <code>templates/SKILL.md</code> carries the shape without pinning the trajectory.</td>
+        </tr>
+        <tr>
+          <td>Upfront info → progressive disclosure</td>
+          <td>"Required Reading — read these files in order": 43 KB before step 1</td>
+          <td>Files table with a <em>read it when</em> column. Nothing is mandatory but <code>SKILL.md</code>.</td>
+        </tr>
+        <tr>
+          <td>Repetition → single source of truth</td>
+          <td>Progressive disclosure, frontmatter rules, and description advice each stated 3–4 times across SKILL.md and the docs</td>
+          <td>Stated once, in the reference. The docs are sources, not instructions.</td>
+        </tr>
+        <tr>
+          <td>Manual memory → auto-memory</td>
+          <td>Not applicable — no CLAUDE.md guidance in this skill</td>
+          <td>No change. Noted in the reference for skills that do touch it.</td>
+        </tr>
+        <tr>
+          <td>Simple specs → rich references</td>
+          <td>Three prose documents, no gradeable artifact</td>
+          <td>Adds <code>skill-review-rubric.md</code> — the article's exact recommendation for verification agents.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Decisions and rejected alternatives</h3>
+    <details>
+      <summary>Delete <code>docs/</code> outright</summary>
+      <p>
+        Rejected. They are verbatim upstream copies and the only offline record of the frontmatter contract and
+        the cross-surface limits. The cost was never that they exist — it was that <code>SKILL.md</code> made
+        reading them mandatory. Demotion removes the cost and keeps the artifact.
+      </p>
+    </details>
+    <details>
+      <summary>Condense the three docs into one <code>format.md</code></summary>
+      <p>
+        Rejected. A hand-condensed copy silently drifts from upstream and nobody can tell when. Verbatim copies
+        with a provenance line can be diffed against the live docs; a paraphrase cannot.
+      </p>
+    </details>
+    <details>
+      <summary>Keep the rubric inside <code>improve-skill.md</code> instead of its own file</summary>
+      <p>
+        Rejected, narrowly. Both routes end by grading — create needs it as a final check, improve needs it as
+        the opening move. Inlining it in one workflow means either duplicating it in the other or making create
+        read a file named for improvement. A shared reference is the single source of truth.
+      </p>
+    </details>
+    <details>
+      <summary>Two workflow files rather than one, or none</summary>
+      <p>
+        Create and improve are genuinely different load paths: create needs the template, improve needs the
+        target skill's own files. Folding both into <code>SKILL.md</code> re-inflates the router — the exact
+        failure being fixed. Folding them into each other loads the template on a route that never fills it.
+      </p>
+    </details>
+
+    <h3>Directory name</h3>
+    <p>
+      The request says <code>~/.claude/skills/meta-skills</code>; the directory on disk is
+      <code>skills/meta-skill</code>, singular. This plan targets the singular path — it is the one that
+      exists and the one Claude Code lists. No rename is proposed, since the skill is discovered by directory
+      and a rename would break nothing but gain nothing.
+    </p>
+
+    <h3>Scope held</h3>
+    <p>
+      Two adjacent things this plan deliberately does not do. It does not re-audit the other local skills, even
+      though the same 56 KB pattern almost certainly appears elsewhere — <code>specs/skill-assessment-local.md</code>
+      is the right place to reopen that. And it does not run <code>/doctor</code> across the skills directory;
+      Phase 3 runs it against the rewritten skill only, as a check on this work rather than as a new program.
+    </p>
+
+    <h3>Dependencies</h3>
+    <p>
+      None. Every file added or changed is markdown, and every validation command is <code>grep</code>,
+      <code>wc</code>, <code>ls</code>, or <code>awk</code>. Nothing to install.
+    </p>
+
+    <h3>References</h3>
+    <ul class="refs">
+      <li><a href="https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models">The new rules of context engineering for Claude 5 generation models</a> — the source for the new reference: the six then→now pairs, the context-assembly guidance, and the <code>/doctor</code> recommendation.</li>
+      <li><a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills">Equipping agents for the real world with Agent Skills</a> — the three levels of progressive disclosure; already bundled at <code>docs/blog_equipping_agents_with_skills.md</code>.</li>
+      <li><a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices">Skill authoring best practices</a> — description rules, the line budget, one-level-deep references, evaluation-driven development.</li>
+      <li><code>specs/planf3-claude5-context-engineering.html</code> — the same rewrite applied to <code>planf3</code>, including which subtractions survived contact with real runs.</li>
+    </ul>
+  </section>
+
+  <!-- ===== AMENDMENTS ===== -->
+  <section id="amendments">
+    <h2>Amendments</h2>
+    <details>
+      <summary>2026-07-25 — Improve route: flaky firing, rubric never read</summary>
+      <p>
+        Phase 3's Scenario B was run four times headlessly against a deliberately broken throwaway
+        skill. Two findings, both left open rather than patched away.
+      </p>
+      <p>
+        <strong>Firing is 2 of 4.</strong> On the other two runs the model diagnosed and patched the
+        broken frontmatter directly, without loading <code>meta-skill</code> at all. Adding
+        "this skill never triggers" to the description's trigger list — the phrasing the eval
+        actually uses — did not make it deterministic. A one-line frontmatter repair is inside the
+        model's unaided competence, so the skill is competing with the model doing the job itself.
+        The output was correct either way; this is a tie, not a miss.
+      </p>
+      <p>
+        <strong>The rubric was never opened</strong> — 0 of the 3 firing runs read
+        <code>references/skill-review-rubric.md</code>, despite two attempts to make it
+        unskippable: the grade was moved from step 3 to step 2 of
+        <code>workflows/improve-skill.md</code>, and the step was made explicit that the criteria
+        are to be read rather than recalled. On a 45-line target answering a one-line question, a
+        six-dimension grade reads as disproportionate, and the model skips it. The create route is
+        unaffected — Scenario A read the rubric and graded before reporting.
+      </p>
+      <p>
+        Both are recorded in <code>skills/meta-skill/evals.md</code> with the re-measurement that
+        would settle it: run the improve route against a realistic target (200+ lines, an
+        open-ended "improve this"). If the rubric still goes unread there, the criteria belong
+        inline in the workflow and the separate file should be deleted.
+      </p>
+    </details>
+    <details>
+      <summary>2026-07-25 — <code>/doctor</code> not run</summary>
+      <p>
+        Marked <code>[f]</code>. The <code>claude doctor</code> CLI subcommand checks installation
+        health only; the skill-and-CLAUDE.md rightsizing pass the plan intended is the
+        <code>/doctor</code> slash command, which needs an interactive session and cannot be
+        driven from this build. Worth running by hand against the rewritten skill.
+      </p>
+    </details>
+  </section>
+
+</main>
+</body>
+</html>
