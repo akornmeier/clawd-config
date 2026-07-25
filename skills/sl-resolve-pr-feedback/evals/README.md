@@ -8,6 +8,8 @@ Two suites in one file.
 
 **Evals 7–9 — the core loop**: step 2 triage and verdict selection. These are the paths the skill exists for, and until 2026-07-25 they had no measurement at all.
 
+**Evals 10–12 — the process rules** that keep a multi-finding round coherent: cluster by root cause, verify a cited premise centrally, re-fetch before waiting.
+
 The gate's correctness is almost entirely negative. It must **not** block the push, **not** re-review its own fix, **not** widen scope to files no resolver touched, **not** leak findings into the thread reply/resolve pipeline, and **not** run at all when there is no diff. None of those properties is checkable by `bun test`: the gate is skill prose, and a regression in prose produces no test failure. This suite is how they stay measurable.
 
 Still out of scope: GraphQL mechanics and the step-8 quiescence gate. Both are separate behaviors with their own failure modes.
@@ -16,7 +18,7 @@ Still out of scope: GraphQL mechanics and the step-8 quiescence gate. Both are s
 
 | File | Purpose |
 |------|---------|
-| `evals.json` | Nine scenarios, each with a prompt, expected terms by criticality tier, and an explicit `required_behavior` / `forbidden_behavior` pair |
+| `evals.json` | Twelve scenarios, each with a prompt, expected terms by criticality tier, and an explicit `required_behavior` / `forbidden_behavior` pair |
 | `grader.md` | Two-stage rubric — programmatic term match, then routing-decision grading where `forbidden_behavior` is decisive |
 | `README.md` | This file |
 
@@ -33,6 +35,9 @@ Still out of scope: GraphQL mechanics and the step-8 quiescence gate. Both are s
 | 7 | pending-decision-is-not-reprocessed | Arguing with the PR author |
 | 8 | non-actionable-review-body-is-dropped-silently | Noise in the user-facing count |
 | 9 | plausible-but-wrong-finding-gets-evidence-not-a-fix | Fixing over reading |
+| 10 | cluster-does-not-split-on-a-shared-decision | Two agents, one question, two answers |
+| 11 | verified-premise-overrides-the-reviewers-claim | A confident false convention claim |
+| 12 | no-wait-when-the-refetch-already-returned-threads | Blocking on a signal already received |
 
 ## Design rationale
 
@@ -50,6 +55,12 @@ Still out of scope: GraphQL mechanics and the step-8 quiescence gate. Both are s
 - **8 is the signal-to-noise case.** Review bodies have no resolve mechanism, so they reappear every run. The subtle failure is not replying to the wrapper — it is *narrating* the drop, which is not wrong but trains the user to skim summary lines that never matter.
 - **9 is the counter-pressure case for "default to fixing".** The disposition that makes this skill useful is also the one that, pushed too far, adds a redundant null check next to an existing guard: dead defensive code, plus a reviewer taught that their misreading was right. It is the mirror of eval 2 — there the intuitive answer was too cautious, here it is too eager.
 
+**Why 10, 11 and 12.** These guard the process changes of 2026-07-25, all three of which are prose rules with no runtime signal:
+
+- **10 is the coherence case.** Reviewers file per location, so one mistake in two files arrives as two threads. Independent agents on the same question are free to disagree, and the PR then carries two contradictory replies from the same author in the same round. Nothing errors; the round just becomes incoherent.
+- **11 is the sharpest accuracy case in the suite.** The complaint is right and the prescription is wrong, and the reviewer's citation makes the wrong half look already verified. It is the shape that produced a real defect in this repo. An agent handed one thread sees the assertion, never whether it holds repo-wide.
+- **12 is the inversion case.** The old step 8 waited before it looked, paying the timeout even when the awaited signal had already arrived. The regression to watch is a reflexive "push means wait" that survives the reordering.
+
 **Why `forbidden_behavior` is decisive rather than weighted.** Every safety property here is negative. A grader that weighed positives against negatives would pass a response that routes correctly and also, say, posts a GitHub reply for a Codex finding. The rubric therefore fails any run exhibiting a forbidden behavior even when everything else is right.
 
 **Why an intermittent violation fails the eval.** `forbidden_rate > 0` fails regardless of `correct_rate`. This skill runs unattended inside `lfg`; the one run in three that violates is the run nobody is watching.
@@ -64,7 +75,7 @@ Plugin skill content caches at session start, so a run dispatched from the sessi
 
 **Workspace:** `/tmp/super-looper/sl-resolve-pr-feedback/evals/iteration-<N>/` per the repo's scratch conventions.
 
-With `runs_per_eval: 3` and nine evals, that is 27 dispatches per pass. Each subagent receives the eval prompt, invokes the skill, and writes its response verbatim to `<workspace>/eval-<ID>-<name>/run-<R>/response.txt`. A grader subagent then applies `grader.md` and writes `grading.json` per run, aggregated to `summary.json` per eval.
+With `runs_per_eval: 3` and twelve evals, that is 36 dispatches per pass. Each subagent receives the eval prompt, invokes the skill, and writes its response verbatim to `<workspace>/eval-<ID>-<name>/run-<R>/response.txt`. A grader subagent then applies `grader.md` and writes `grading.json` per run, aggregated to `summary.json` per eval.
 
 **Baselines are not useful here.** A without-skill agent has no step numbering, no gate, and no routing table to follow, so it fails every case trivially. The signal comes from grading against `required_behavior`, not from a with/without delta.
 
@@ -72,7 +83,7 @@ With `runs_per_eval: 3` and nine evals, that is 27 dispatches per pass. Each sub
 
 | Outcome | Interpretation | Action |
 |---------|----------------|--------|
-| All nine pass | Gate and core loop behave as specified. | Ship. |
+| All twelve pass | Gate, core loop, and process rules behave as specified. | Ship. |
 | Eval 1 fails | The gate reads as a hard dependency. | Strengthen the skip rows in the step 5b routing table. Highest priority — this breaks the skill for every user without Codex. |
 | Eval 2 fails | The gate can trap the loop. | Move the never-blocks rule above the fix instructions in `codex-gate.md`. Ship-blocking. |
 | Eval 3 fails on the touched file | Path normalization is being missed; the gate is decorative. | Make the absolute-path note prominent in the triage table, not a trailing remark. |
@@ -82,4 +93,7 @@ With `runs_per_eval: 3` and nine evals, that is 27 dispatches per pass. Each sub
 | Eval 7 fails | Triage re-processes handled threads. | Strengthen the pending-decision paragraph in `full-mode.md` step 2. |
 | Eval 8 fails | Non-actionable items reach the summary. | The Silent drop paragraph is being read as "drop but mention". State the no-narration rule in the step 9 summary section too. |
 | Eval 9 fails | "Default to fixing" is overriding the evidence. | The tripwires in the agent rubric are subordinate to the disposition above them. Raise the finding-does-not-hold case. |
+| Eval 10 fails | Dispatch is still per thread. | The cluster rule in `full-mode.md` step 3 reads as advisory. State the agent count as an outcome, not a suggestion. |
+| Eval 11 fails | The central premise check is being skipped or ignored downstream. | Check both ends: step 3's premise paragraph and the verified-premise paragraph in the agent that tells it to trust the parent over the reviewer. |
+| Eval 12 fails | "Pushed a fix" still triggers a reflexive wait. | The step 8 routing table's first row is not landing. Put the re-fetch-first rule above the table, not only inside it. |
 | High variance, no forbidden behaviors | Routing is right but justification wanders. | Acceptable. Grade on the decision, not the prose. |

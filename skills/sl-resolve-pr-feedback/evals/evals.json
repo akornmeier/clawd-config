@@ -1,11 +1,11 @@
 {
   "skill_name": "sl-resolve-pr-feedback",
-  "purpose": "Validate two behaviors of the Full-mode flow. (1) The step 5b Codex pre-push review gate: that it engages only when a fix exists, degrades to a skip when the CLI is unavailable, bounds itself to one fix pass over P0/P1 findings in resolver-touched files, never blocks the push, and keeps Codex findings out of the thread reply/resolve pipeline and the verdict tallies. (2) The core loop the skill exists for: that step 2 triage leaves a pending decision alone, drops non-actionable items without narrating them, and that a plausible-but-wrong finding gets evidence rather than a reflexive fix.",
+  "purpose": "Validate two behaviors of the Full-mode flow. (1) The step 5b Codex pre-push review gate: that it engages only when a fix exists, degrades to a skip when the CLI is unavailable, bounds itself to one fix pass over P0/P1 findings in resolver-touched files, never blocks the push, and keeps Codex findings out of the thread reply/resolve pipeline and the verdict tallies. (2) The core loop the skill exists for: that step 2 triage leaves a pending decision alone, drops non-actionable items without narrating them, and that a plausible-but-wrong finding gets evidence rather than a reflexive fix. (3) The process rules that keep a multi-finding round coherent: clustering by root cause so one decision is answered once, verifying a cited premise centrally before fan-out, and re-fetching before waiting in step 8.",
   "non_purpose": "Not testing GraphQL mechanics or the step-8 quiescence gate. Those are separate behaviors with their own failure modes. Evals 1-6 are scoped to gate behavior; evals 7-9 to triage and verdict selection.",
   "variance_protocol": {
     "runs_per_eval": 3,
     "stability_metric": "fraction of runs reaching the correct routing decision",
-    "pass_threshold": "correct routing in 3/3 runs for the four cases whose failure is unrecoverable or corrupts the PR conversation (2, 5, 7, 9); >= 2/3 for the rest"
+    "pass_threshold": "correct routing in 3/3 runs for the cases whose failure is unrecoverable, corrupts the PR conversation, or ships a wrong fix (2, 5, 7, 9, 10, 11); >= 2/3 for the rest"
   },
   "grading_pipeline": {
     "stage_1": "Programmatic substring match over expected_terms. Cheaply catches the case where the agent never reached the gate at all, or invented a mechanism the skill does not describe (e.g. calling /codex:review).",
@@ -279,6 +279,94 @@
         "introduced": "2026-07-25"
       },
       "notes": "The counter-pressure case for 'default to fixing'. Adding the redundant check satisfies the reviewer and is quietly wrong: it is dead defensive code, and it teaches the reviewer their reading was right."
+    },
+    {
+      "id": 10,
+      "name": "cluster-does-not-split-on-a-shared-decision",
+      "tests_risk": "two_agents_answering_one_question_differently",
+      "prompt": "You are running /sl-resolve-pr-feedback in Full mode on PR #318. get-pr-comments returns three unresolved review threads from copilot-pull-request-reviewer. Two of them say the same thing in different files -- \"`<skill-dir>` is not defined here; use the established `${SKILL_ROOT}` name instead\" on docs/a.md:24 and docs/b.md:11. The third is an unrelated wording nit on docs/c.md:6. Describe how you group these and how many agents you dispatch.",
+      "expected_terms": [
+        {
+          "term": "cluster",
+          "tier": "must"
+        },
+        {
+          "term": "same decision",
+          "tier": "should"
+        },
+        {
+          "term": "two",
+          "tier": "should"
+        },
+        {
+          "term": "step 3",
+          "tier": "may"
+        }
+      ],
+      "required_behavior": "Groups the two `${SKILL_ROOT}` threads into one cluster because they turn on the same decision despite living in different files, leaves the wording nit as its own cluster, and dispatches two agents -- not three. Both `${SKILL_ROOT}` threads end up with the same call on the shared question.",
+      "forbidden_behavior": "Dispatching one agent per thread (three agents), or producing replies that reach different conclusions on the `${SKILL_ROOT}` question across the two threads.",
+      "ground_truth": {
+        "reference": "references/full-mode.md step 3, Cluster by root cause",
+        "source_pr": null,
+        "introduced": "2026-07-25"
+      },
+      "notes": "Reviewers file per location, so one mistake in two files is two threads. Independent agents on the same question are free to disagree, and the PR then carries two contradictory replies from the same author in the same round."
+    },
+    {
+      "id": 11,
+      "name": "verified-premise-overrides-the-reviewers-claim",
+      "tests_risk": "adopting_a_confident_false_convention_claim",
+      "prompt": "You are running /sl-resolve-pr-feedback in Full mode on PR #318. A bot thread on skills/x/workflow.md:24 reads: \"`<skill-dir>` is not defined anywhere, so this command is not executable. The repo already uses `${PLATFORM_VAR}` as the stable way to reference a skill directory (see skills/y/ref.md:20).\" Before dispatching, you check that claim: `${PLATFORM_VAR}` appears only under skills/y/, it expands to empty in the Bash tool, and the repo's own conventions doc says to avoid it because it is empty on non-Claude hosts. Describe what you pass to the resolver and what verdict you expect back.",
+      "expected_terms": [
+        {
+          "term": "premise",
+          "tier": "must"
+        },
+        {
+          "term": "fixed-differently",
+          "tier": "should"
+        },
+        {
+          "term": "evidence",
+          "tier": "should"
+        }
+      ],
+      "required_behavior": "Verifies the cited claim once in step 3, before dispatch, and passes the result to the cluster: the claim does not hold, with the evidence. The resolver fixes the real complaint (the undefined placeholder) without adopting the false prescription, returns fixed-differently, and the reply cites the evidence for rejecting `${PLATFORM_VAR}`.",
+      "forbidden_behavior": "Adopting `${PLATFORM_VAR}` because the reviewer asserted the repo uses it, or dispatching the thread without checking the claim first and leaving the resolver to take the assertion at face value.",
+      "ground_truth": {
+        "reference": "references/full-mode.md step 3 Check cited premises once; agents/sl-pr-comment-resolver.md verified-premise paragraph",
+        "source_pr": null,
+        "introduced": "2026-07-25"
+      },
+      "notes": "The complaint is right and the prescription is wrong -- the hardest shape to get right, because the citation makes the wrong half look verified. An agent handed one thread sees the assertion, never whether it holds repo-wide. This is the case the central check exists for."
+    },
+    {
+      "id": 12,
+      "name": "no-wait-when-the-refetch-already-returned-threads",
+      "tests_risk": "blocking_on_a_signal_already_received",
+      "prompt": "You are running /sl-resolve-pr-feedback in Full mode on PR #300. Step 6 pushed a fix. You are now at step 8: you re-fetch with get-pr-comments and it returns two new unresolved review threads from the review bot. Describe exactly what you do next.",
+      "expected_terms": [
+        {
+          "term": "step 2",
+          "tier": "must"
+        },
+        {
+          "term": "loop",
+          "tier": "should"
+        },
+        {
+          "term": "settle window",
+          "tier": "may"
+        }
+      ],
+      "required_behavior": "Loops immediately from step 2 to process the two new threads, without any wait. Recognizes that the reviewer has already responded, so the settle window would buy nothing.",
+      "forbidden_behavior": "Invoking wait-for-bot-review, or reading references/verify-gate.md to run the settle window, before looping. Naming them as skipped is fine; running them is not.",
+      "ground_truth": {
+        "reference": "references/full-mode.md step 8 routing table, first row",
+        "source_pr": null,
+        "introduced": "2026-07-25"
+      },
+      "notes": "The old flow waited before it looked, so it paid the timeout even here, where the awaited signal had already arrived. Cheap check first is the whole point of the inversion."
     }
   ]
 }
