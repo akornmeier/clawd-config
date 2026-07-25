@@ -130,8 +130,6 @@ Resolvers run only targeted tests on their own changes. This step runs the proje
 
 Record the validation outcome (command run, pass/fail counts, any pre-existing failures noted) for the step 9 summary.
 
-Also record whether the output was **identical** to the same command's output before this round's fixes. A round whose fixes leave validation byte-identical changed comments, wording, or style but nothing the project's own checks can observe. Step 8 uses this to tell defect-finding from polishing.
-
 ## 5b. Codex Pre-Push Review Gate
 
 The test suite is the only correctness signal between a resolver's edit and a public PR commit. Anything it does not encode -- a fix that satisfies the reviewer's letter but not their intent, a regression in an untested branch -- is caught by the PR's review bots on the *next* round, costing a ~5-minute quiescence wait and one of only three permitted fix-verify cycles. This gate gives the combined diff a second-model read while fixing it is still free.
@@ -238,33 +236,29 @@ Route on what comes back:
 
 | Re-fetch result | Action |
 |-----------------|--------|
-| New threads present | Loop from step 2. The reviewer already responded — no wait was needed at all. |
+| New threads present | Check the stop condition below, then loop from step 2 if it allows. The reviewer already responded — no wait was needed at all. |
 | Empty, and this round **pushed a fix** | One short settle window, then re-fetch once more. Read `references/verify-gate.md`. |
 | Empty, and **nothing was pushed** | Conclude. There is no new commit for a bot to re-review. |
 
 `review_threads` should be empty apart from `needs-human` items. PR comments and review bodies have no resolve mechanism, so they still appear in the output; confirm they were replied to by checking the PR conversation.
 
-**If new threads remain**, check two stop conditions before looping. Both count across the **whole PR**, not the current invocation — a fresh `/sl-resolve-pr-feedback` call must not reset them. Three invocations of one round each is three rounds, and the reviewer cannot tell the difference.
+**If new threads remain**, check the stop condition before looping. It counts across the **whole PR**, not the current invocation — a fresh `/sl-resolve-pr-feedback` call must not reset it. Three invocations of one round each is three rounds, and the reviewer cannot tell the difference.
 
-### Stop condition 1 — round count
+### Stop condition — round count
 
-Read it off the branch rather than from memory, since memory ends when the invocation does. Every fix round leaves a commit from step 6:
+Read it off the PR rather than from memory, since memory ends when the invocation does. Every fix round leaves a commit from step 6, so counting those commits counts the rounds:
 
 ```bash
-BASE=$(gh pr view PR_NUMBER --json baseRefName -q .baseRefName)
-git log --oneline "origin/$BASE..HEAD" --grep="Address PR review feedback (#PR_NUMBER)" | wc -l
+gh pr view PR_NUMBER --json commits \
+  -q '[.commits[].messageHeadline | select(startswith("Address PR review feedback (#PR_NUMBER)"))] | length'
 ```
 
-This counter depends on step 6's commit subject staying exactly `Address PR review feedback (#PR_NUMBER)`. If that format changes, this breaks silently and the loop becomes unbounded again — change both together.
+Ask GitHub, not the local repository. Every `git log`-based form of this counter needs a revision that resolves locally, and each candidate fails somewhere it matters: `origin/$BASE` is absent in a fresh clone or a checkout that never fetched the base branch, and a `baseRefOid` from the API is only a hash — if the base branch has advanced beyond the local history, that object is not present to resolve either. The PR's own commit list has no such dependency, so no fetch is required and a shallow or stale working copy cannot break it.
+
+This counter depends on step 6's commit subject staying exactly `Address PR review feedback (#PR_NUMBER)`. If that format changes, this breaks silently and the loop becomes unbounded again — change both together. Distinguish a real zero from a broken counter before trusting it: a genuine first round prints `0`, while a failed `gh` call (unauthenticated, offline, wrong repo) prints nothing at all and reports its error on stderr. Empty output is not round zero — re-run it before looping.
 
 - **Fewer than 3**: repeat from step 2 for the remaining threads.
 - **3 or more**: stop looping and hand back (see *Handing back* below).
-
-### Stop condition 2 — zero-delta plateau
-
-Using the identical-output flag recorded in step 5: when **two consecutive rounds** are zero-delta, the reviewer has moved from finding defects to polishing. Stop looping and hand back, even if the round count is under 3.
-
-The cost is what justifies this, not the findings' quality. A one-line, zero-delta change still pays a full fetch, cluster, dispatch, validation, Codex gate, push, reply, resolve and settle window. The fixes stay cheap; the loop around them does not.
 
 ### Handing back
 
