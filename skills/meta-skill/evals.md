@@ -1,7 +1,7 @@
 # meta-skill evaluations
 
 Two scenarios, one per load path, plus the measurement that both feed. Run each in a
-**fresh session** from `/Users/tk/.claude` — description-driven discovery only shows up
+**fresh session** from `~/.claude` — description-driven discovery only shows up
 when the skill has to fire on its own.
 
 Deliberately not linked from `SKILL.md`: an unreferenced file costs nothing at runtime.

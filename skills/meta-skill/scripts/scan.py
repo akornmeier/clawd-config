@@ -19,7 +19,8 @@ UNPROMPTED = re.compile(
 TRIGGER = re.compile(
     r"use\s+(this\s+|it\s+)?when(ever)?|when(ever)? the (user|prompt)|triggers?\s+on", re.I
 )
-SKIP_ORPHAN = {"evals.md", ".DS_Store"}  # deliberately unlinked by convention
+SKIP_ORPHAN = {"evals.md", ".DS_Store", "README.md"}  # deliberately unlinked by convention:
+# repo-facing docs for humans browsing GitHub, not a route SKILL.md is expected to link
 
 
 def bundled(d):
@@ -32,6 +33,16 @@ def bundled(d):
             if rel.split(os.sep)[0] == "evals":  # unlinked by convention, same as evals.md
                 continue
             yield rel
+
+
+def referenced(f, text):
+    """A bundled file counts as referenced if SKILL.md mentions its basename,
+    its relative path, or its containing directory (only when it has one —
+    top-level files have dirname '' and must match on basename/path alone)."""
+    if os.path.basename(f) in text or f in text:
+        return True
+    d = os.path.dirname(f)
+    return bool(d) and (d + "/") in text
 
 
 def scan(d, name):
@@ -77,12 +88,7 @@ def scan(d, name):
         flags.append(f"{n} step(s) Claude does unprompted")
 
     files = list(bundled(d))
-    orphans = [
-        f for f in files
-        if os.path.basename(f) not in text
-        and f not in text
-        and (os.path.dirname(f) + "/") not in text
-    ]
+    orphans = [f for f in files if not referenced(f, text)]
     if orphans:
         flags.append(f"{len(orphans)}/{len(files)} bundled files unreferenced")
 

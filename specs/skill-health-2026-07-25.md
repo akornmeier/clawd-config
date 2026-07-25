@@ -4,11 +4,17 @@ Run via `meta-skill` → `workflows/audit-skills.md`. Mechanical scan by
 `scripts/scan.py`, then one grader per flagged skill against
 `references/skill-review-rubric.md`.
 
-**Coverage.** 21 skills scanned, 0 broken, **8 graded**, 13 scanned only. The 13
-are not a clean bill of health — the scan proves only the absence of *mechanical*
-defects. Rubric dimensions 3 (progressive disclosure), 5 (single source of truth)
-and 7 (scope) are unproven for them, and this run's own results show those are
-exactly the dimensions that fail most often.
+**Coverage.** 21 skills scanned, 0 broken, **8 graded**, 13 scanned only. Scanned
+root: `~/.claude/skills` (`./.claude/skills` does not exist in this repo, so
+nothing outside `~/.claude/skills` was in scope). 9 of the 21 entries are
+symlinks, two of which (`diagram-design`, `motion-design-skill`) resolve outside
+this repo entirely, into `~/code/diagram-design` and `~/Code/motion-design-skill`
+— so "0 broken" describes this machine's local symlink targets on this date, not
+a repository-wide guarantee. The 13 are not a clean bill of health — the scan
+proves only the absence of *mechanical* defects. Rubric dimensions 3 (progressive
+disclosure), 5 (single source of truth) and 7 (scope) are unproven for them, and
+this run's own results show those are exactly the dimensions that fail most
+often.
 
 Baseline before this run: 68 directory entries, 46 dangling symlinks, 1 orphaned
 gitlink. Those are already removed (`19fa9d5`, `d02b7cb`).
@@ -157,9 +163,11 @@ Recorded because the audit is only as good as its first tier.
 1. **Second-hop and glob references are missed.** The scan claimed 40 of 61 `diagram-design` files were unreferenced; the true number is 0. All are linked from second-hop `type-*.md` files or matched by a documented `example-<type>.html` glob. Same error on `motion-design-skill` (27 claimed).
 2. **Gitignored directories are walked.** `motion-design-skill/logs/` (1.5 MB) counted as 23 orphans. The scan should respect `.gitignore`.
 3. **Fixed during this run:** `disable-model-invocation` now reported directly; nested `templates/SKILL.md` no longer excluded from bundled counts; `evals/` directories skipped like `evals.md`; the trigger regex now matches "Use this whenever".
+4. **Fixed after this run:** top-level bundled files were never flagged as orphans. `os.path.dirname(f)` is `''` for a file with no containing directory, so the directory-match term reduced to `'/' in text` — true for nearly every `SKILL.md`. This hid a real orphan this run's numbers above don't reflect: `graphify/.graphify_version` (see finding #1). The check now only matches on a containing directory when the file actually has one. Fixing it also surfaced a false positive the same way — top-level `README.md` (repo-facing docs for humans browsing the repo, not a route `SKILL.md` links) — so `README.md` joined `evals.md` in the deliberately-unlinked exclusion list rather than being counted as bundled at all.
 
-Net effect of 1 and 2: the orphan check is the weakest signal the scanner
-produces. Treat it as a prompt to look, never as a finding.
+Net effect of 1, 2 and 4: the orphan check was the weakest signal the scanner
+produced, and remains so for second-hop/glob references and gitignored trees —
+treat it as a prompt to look, never as a finding.
 
 ## Not graded (13)
 
