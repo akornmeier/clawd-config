@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan: Repair diagram-design's token fork and dead style gate</title>
+<style>
+  /* ===== VISUAL IDENTITY =====
+     Source of truth for this page AND every image embedded in it. Inline SVG
+     resolves var() against this page, so diagrams reference these roles
+     (never hardcoded hex) and the identity stays synced. Tuned to the subject's
+     own brand palette — atomic-tangerine on jet-black — since this plan is about
+     that palette forking. */
+  :root {
+    --bg:            #f7f7f6;
+    --paper-2:       #ffffff;
+    --ink:           #2d3142;
+    --muted:         #4f5d75;
+    --soft:          #8d93a1;
+    --rule:          rgba(45, 49, 66, 0.12);
+    --rule-solid:    #dfe1e6;
+    --accent:        #d95a24;
+    --accent-tint:   rgba(217, 90, 36, 0.09);
+
+    --sans:  'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono:  'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --serif: ui-serif, 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 4rem 1.5rem 6rem;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  main { max-width: 60rem; margin: 0 auto; }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: 2.5rem;
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0 0 1rem;
+  }
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin: 3.5rem 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  h3 { font-size: 1.0625rem; font-weight: 600; margin: 2rem 0 0.5rem; }
+  h4 {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 1.5rem 0 0.5rem;
+  }
+  p  { margin: 0 0 1rem; max-width: 46rem; }
+  a  { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    background: rgba(45, 49, 66, 0.06);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
+  pre {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  /* --- header + metadata --- */
+  header { margin-bottom: 2.5rem; }
+  details.meta {
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--paper-2);
+    padding: 0.625rem 1rem;
+    font-size: 0.8125rem;
+  }
+  details.meta summary {
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  details.meta dl {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: 0.25rem 1rem;
+    margin: 0.875rem 0 0.25rem;
+  }
+  details.meta dt {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--soft);
+    padding-top: 0.15rem;
+  }
+  details.meta dd { margin: 0; color: var(--muted); font-family: var(--mono); font-size: 0.75rem; word-break: break-word; }
+
+  /* --- figures --- */
+  figure {
+    margin: 2rem auto;
+    padding: 0;
+    text-align: center;
+  }
+  figure svg, figure img { display: block; width: 100%; max-width: 100%; height: auto; margin: 0 auto; }
+  figcaption {
+    margin-top: 0.875rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--soft);
+    max-width: 40rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* --- tables --- */
+  table { border-collapse: collapse; width: 100%; font-size: 0.875rem; margin: 0 0 1rem; }
+  th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--soft);
+    font-weight: 500;
+  }
+  td code { white-space: nowrap; }
+
+  /* --- relevant files --- */
+  .files ul { list-style: none; padding: 0; margin: 0 0 1rem; }
+  .files li { padding: 0.375rem 0; border-bottom: 1px solid var(--rule); font-size: 0.9375rem; }
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    padding: 0.1rem 0.35rem;
+    margin-right: 0.4rem;
+    border: 1px solid;
+  }
+  .tag.existing { color: var(--muted); border-color: var(--rule-solid); }
+  .tag.new      { color: var(--accent); border-color: var(--accent); background: var(--accent-tint); }
+
+  /* --- phases --- */
+  .phase {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .phase h3 { margin-top: 0.25rem; }
+  ul.checklist { list-style: none; padding: 0; margin: 0 0 1rem; }
+  ul.checklist li { padding: 0.25rem 0; font-size: 0.9375rem; line-height: 1.55; }
+  code.status {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--soft);
+    background: none;
+    padding: 0;
+    margin-right: 0.4rem;
+  }
+  .loop {
+    border-left: 2px solid var(--accent);
+    background: var(--accent-tint);
+    border-radius: 0 4px 4px 0;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  .loop strong { color: var(--ink); }
+
+  /* --- notes / amendments --- */
+  #notes details, #amendments details {
+    border-bottom: 1px solid var(--rule);
+    padding: 0.625rem 0;
+  }
+  #notes summary, #amendments summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+  .qa-answer, #amendments details p { margin: 0.5rem 0 0; color: var(--muted); font-size: 0.9375rem; }
+  .empty { color: var(--soft); font-size: 0.9375rem; font-style: italic; }
+  .refs li { margin-bottom: 0.4rem; font-size: 0.9375rem; }
+  .callout {
+    border-left: 2px solid var(--accent);
+    background: var(--accent-tint);
+    border-radius: 0 4px 4px 0;
+    padding: 0.75rem 1rem;
+    margin: 1.5rem 0;
+    font-size: 0.9375rem;
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <!-- ===== HEADER + UPDATABLE METADATA ===== -->
+  <header>
+    <h1>Plan: Repair <code>diagram-design</code>'s token fork and dead style gate</h1>
+    <details class="meta">
+      <summary>Metadata</summary>
+      <dl>
+        <dt>created</dt>      <dd>2026-07-25T14:42:41Z</dd>
+        <dt>modified</dt>     <dd>2026-07-25T14:42:41Z</dd>
+        <dt>commits</dt>      <dd>none yet</dd>
+        <dt>agent name</dt>   <dd>claude-opus-5 (planf3 · create-plan)</dd>
+        <dt>session id</dt>   <dd>1db46994-12f4-4c49-bf01-afc8b9886444</dd>
+        <dt>back refs</dt>    <dd>specs/skill-health-2026-07-25.md (the audit that produced this, finding #4), specs/meta-skill-claude5-context-engineering.html (the rubric this plan grades against)</dd>
+        <dt>forward refs</dt> <dd>none yet</dd>
+      </dl>
+    </details>
+  </header>
+
+  <div class="callout">
+    <strong>This skill does not live in <code>~/.claude</code>.</strong>
+    <code>skills/diagram-design</code> is a symlink to
+    <code>/Users/tk/code/diagram-design/skills/diagram-design</code> — a separate git repository,
+    currently on <code>main</code>. Every edit in this plan lands in <em>that</em> repo, and any
+    commit belongs there, not in <code>clawd-config</code>. Confirm the branch before editing.
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 1000 380" role="img" aria-label="The gate compares the accent token against a sentinel that no file contains, so the comparison is always true and the gate never fires">
+      <rect width="100%" height="100%" fill="var(--bg)"/>
+      <defs>
+        <marker id="d-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+          <polygon points="0 0, 9 3.5, 0 7" fill="var(--accent)"/>
+        </marker>
+      </defs>
+
+      <text x="40" y="38" fill="var(--soft)" font-size="10" font-family="var(--mono)" letter-spacing="0.14em">THE FIRST-RUN GATE, AS WRITTEN</text>
+
+      <!-- the test -->
+      <rect x="40" y="64" width="410" height="118" rx="6" fill="var(--paper-2)" stroke="var(--rule-solid)"/>
+      <text x="60" y="90" fill="var(--muted)" font-size="10" font-family="var(--mono)">SKILL.md line 30 — the test</text>
+      <text x="60" y="118" fill="var(--ink)" font-size="12" font-family="var(--mono)">if accent != #b5523a</text>
+      <text x="60" y="140" fill="var(--ink)" font-size="12" font-family="var(--mono)">then assume customized,</text>
+      <text x="60" y="162" fill="var(--ink)" font-size="12" font-family="var(--mono)">skip the gate</text>
+
+      <!-- the reality -->
+      <rect x="550" y="64" width="410" height="118" rx="6" fill="var(--accent-tint)" stroke="var(--accent)"/>
+      <text x="570" y="90" fill="var(--muted)" font-size="10" font-family="var(--mono)">style-guide.md line 26 — the reality</text>
+      <text x="570" y="118" fill="var(--ink)" font-size="12" font-family="var(--mono)">accent = #eb6c36</text>
+      <text x="570" y="146" fill="var(--accent)" font-size="12" font-weight="600">≠ #b5523a, always</text>
+      <text x="570" y="168" fill="var(--muted)" font-size="11">so the test passes on a virgin install</text>
+
+      <path d="M450 123 H540" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#d-arrow)"/>
+
+      <!-- consequence -->
+      <rect x="40" y="216" width="920" height="60" rx="6" fill="var(--paper-2)" stroke="var(--accent)" stroke-width="1"/>
+      <text x="60" y="242" fill="var(--ink)" font-size="13" font-weight="600">Consequence: the gate the description advertises has never fired, for anyone, once.</text>
+      <text x="60" y="264" fill="var(--muted)" font-size="12">Every run reads "already customized" and skips straight past the branding question.</text>
+
+      <text x="40" y="316" fill="var(--soft)" font-size="10" font-family="var(--mono)" letter-spacing="0.14em">THE THREE FORKED SKINS</text>
+      <text x="40" y="344" fill="var(--ink)" font-size="11" font-family="var(--mono)">SKILL.md §0 sentinel</text>
+      <text x="250" y="344" fill="var(--muted)" font-size="11" font-family="var(--mono)">#b5523a · #faf7f2 · #1c1917</text>
+      <text x="560" y="344" fill="var(--ink)" font-size="11" font-family="var(--mono)">style-guide.md real</text>
+      <text x="740" y="344" fill="var(--accent)" font-size="11" font-family="var(--mono)">#eb6c36 · #f5f5f5 · #2d3142</text>
+      <text x="40" y="366" fill="var(--ink)" font-size="11" font-family="var(--mono)">style-guide.md :36</text>
+      <text x="250" y="366" fill="var(--muted)" font-size="11" font-family="var(--mono)">rgba(28,25,23) — a third ink, stale</text>
+    </svg>
+    <figcaption>One wrong constant in a comparison, and a documented feature quietly stops existing.</figcaption>
+  </figure>
+
+  <!-- ===== PURPOSE / PROBLEM / SOLUTION ===== -->
+  <section id="purpose">
+    <h2>Purpose</h2>
+    <p>
+      Make <code>diagram-design</code>'s first-run branding gate actually fire, collapse the colour
+      tokens back to one owner, and fix two references that point at things which do not exist. The
+      skill's craft content is strong and stays; what is broken is bookkeeping that has quietly
+      disabled a documented feature.
+    </p>
+  </section>
+
+  <section id="problem">
+    <h2>Problem</h2>
+    <p>
+      <code>SKILL.md</code> §0 tells the agent to open <code>references/style-guide.md</code> and, if
+      the tokens are still the shipped defaults, pause and ask the user about branding. It names those
+      defaults as paper <code>#faf7f2</code>, ink <code>#1c1917</code>, accent <code>#b5523a</code>.
+      None of those three values appears anywhere in <code>style-guide.md</code>, whose actual
+      defaults are <code>#f5f5f5</code>, <code>#2d3142</code> and <code>#eb6c36</code>. Line 30 then
+      says: <em>"if the accent value differs from <code>#b5523a</code>, assume custom."</em> It always
+      differs. The gate has never fired.
+    </p>
+    <p>
+      The same fork explains a second failure. <code>style-guide.md</code> claims sole ownership of
+      colour in two places — line 3 and line 15, <em>"SKILL.md say <code>accent</code>, not a hex"</em>
+      — while <code>SKILL.md</code> inlines 20 hex literals and reproduces four of its blocks verbatim:
+      semantic roles, node-type treatments, typography, and the Google Fonts link. A third skin lurks
+      in <code>style-guide.md</code> line 36, whose inversion rule is keyed to
+      <code>rgba(28, 25, 23, X)</code> — an ink value nothing else uses.
+    </p>
+    <p>
+      Two named paths resolve to nothing: <code>SKILL.md</code> line 40 quotes
+      <code>.impeccable.md</code>, which exists nowhere in the repository, and line 57 routes quick
+      unicode diagrams to a <strong>wiretext</strong> skill that is not installed. The
+      <code>description</code> is a third, smaller problem — it lists all thirteen diagram types and
+      the implementation details, but carries no <em>use when</em> clause and no phrasing a user would
+      type, so "diagram this auth flow" has nothing to match against.
+    </p>
+    <p>
+      Forced context is 507 lines: <code>SKILL.md</code>'s 400 plus <code>style-guide.md</code>'s 107,
+      which §0 and §5 both compel unconditionally.
+    </p>
+  </section>
+
+  <section id="solution">
+    <h2>Solution</h2>
+    <p>
+      Replace the value comparison with something that cannot rot. A hex sentinel is a duplicated
+      constant by construction — it has to be kept in sync with a file whose whole job is to change.
+      A <code>references/.skin-customized</code> marker file answers the same question by existing or
+      not, needs no read, and cannot disagree with the palette.
+    </p>
+    <p>
+      Then give the tokens one owner. <code>style-guide.md</code> already claims it; make it true by
+      deleting the four duplicated blocks from <code>SKILL.md</code> §5 and leaving the focal rule
+      plus a pointer. Delete the stale <code>rgba(28, 25, 23, X)</code> inversion rule. Fix the two
+      dangling references — inline the <code>.impeccable.md</code> quote unattributed, and replace the
+      wiretext route with plain instruction. Finally, add a <em>use when</em> clause with real user
+      phrasing and drop the sentences about gates and variants that do not help routing.
+    </p>
+    <figure>
+      <svg viewBox="0 0 1000 300" role="img" aria-label="Before: three skins across two files with a hex sentinel. After: one owner, a marker file, and a pointer">
+        <rect width="100%" height="100%" fill="var(--bg)"/>
+
+        <text x="40" y="36" fill="var(--soft)" font-size="10" font-family="var(--mono)" letter-spacing="0.14em">BEFORE — COLOUR STATED IN THREE PLACES</text>
+        <rect x="40" y="54" width="270" height="76" rx="6" fill="var(--paper-2)" stroke="var(--rule-solid)"/>
+        <text x="58" y="78" fill="var(--ink)" font-size="11" font-family="var(--mono)">SKILL.md §0</text>
+        <text x="58" y="98" fill="var(--muted)" font-size="11">sentinel hexes ×3</text>
+        <text x="58" y="118" fill="var(--muted)" font-size="11">gate test, always true</text>
+
+        <rect x="330" y="54" width="270" height="76" rx="6" fill="var(--paper-2)" stroke="var(--rule-solid)"/>
+        <text x="348" y="78" fill="var(--ink)" font-size="11" font-family="var(--mono)">SKILL.md §5</text>
+        <text x="348" y="98" fill="var(--muted)" font-size="11">20 inline hexes</text>
+        <text x="348" y="118" fill="var(--muted)" font-size="11">4 blocks copied verbatim</text>
+
+        <rect x="620" y="54" width="270" height="76" rx="6" fill="var(--accent-tint)" stroke="var(--accent)"/>
+        <text x="638" y="78" fill="var(--ink)" font-size="11" font-family="var(--mono)">style-guide.md</text>
+        <text x="638" y="98" fill="var(--muted)" font-size="11">the real tokens</text>
+        <text x="638" y="118" fill="var(--muted)" font-size="11">+ a stale third ink</text>
+
+        <text x="40" y="188" fill="var(--soft)" font-size="10" font-family="var(--mono)" letter-spacing="0.14em">AFTER — ONE OWNER, ONE MARKER</text>
+        <rect x="40" y="206" width="270" height="66" rx="6" fill="var(--paper-2)" stroke="var(--rule-solid)"/>
+        <text x="58" y="230" fill="var(--ink)" font-size="11" font-family="var(--mono)">SKILL.md §0</text>
+        <text x="58" y="252" fill="var(--muted)" font-size="11">does .skin-customized exist?</text>
+
+        <rect x="330" y="206" width="270" height="66" rx="6" fill="var(--paper-2)" stroke="var(--rule-solid)"/>
+        <text x="348" y="230" fill="var(--ink)" font-size="11" font-family="var(--mono)">SKILL.md §5</text>
+        <text x="348" y="252" fill="var(--muted)" font-size="11">focal rule + one pointer</text>
+
+        <rect x="620" y="206" width="270" height="66" rx="6" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1.5"/>
+        <text x="638" y="230" fill="var(--ink)" font-size="11" font-family="var(--mono)">style-guide.md</text>
+        <text x="638" y="252" fill="var(--accent)" font-size="11" font-weight="600">sole owner of every hex</text>
+      </svg>
+      <figcaption>The gate stops asking what colour something is and starts asking whether a decision has been made.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== RELEVANT FILES ===== -->
+  <section id="files" class="files">
+    <h2>Relevant Files</h2>
+
+    <h3>Existing Files</h3>
+    <ul>
+      <li><span class="tag existing">existing</span> <code>~/code/diagram-design/skills/diagram-design/SKILL.md</code> — 400 lines; §0 gate, §5 token duplication, and both dangling references live here</li>
+      <li><span class="tag existing">existing</span> <code>~/code/diagram-design/skills/diagram-design/references/style-guide.md</code> — 107 lines; the real token tables and the stale inversion rule at line 36</li>
+      <li><span class="tag existing">existing</span> <code>~/code/diagram-design/skills/diagram-design/references/onboarding.md</code> — already owns the reskin flow; receives the customization prose moved out of style-guide.md</li>
+      <li><span class="tag existing">existing</span> <code>~/code/diagram-design/skills/diagram-design/assets/*.html</code> — 44 rendered examples; verified consistent with the real palette, so they are <em>not</em> in scope</li>
+      <li><span class="tag existing">existing</span> <code>specs/skill-health-2026-07-25.md</code> — audit finding #4, the source of these line numbers</li>
+    </ul>
+
+    <h3>New Files</h3>
+    <ul>
+      <li><span class="tag new">new</span> <code>references/.skin-customized</code> — a zero-byte marker written when the branding question is answered; replaces the hex-comparison sentinel</li>
+    </ul>
+  </section>
+
+  <!-- ===== IMPLEMENTATION PHASES ===== -->
+  <section id="phases">
+    <h2>Implementation Phases</h2>
+    <p><strong>IMPORTANT:</strong> Execute every phase and task step by step, in order, top to bottom.</p>
+    <p>Status markers: <code>[]</code> idle · <code>[wip]</code> in progress · <code>[x]</code> complete · <code>[f]</code> failed. All start as <code>[]</code>; the Build Plan workflow updates them as it works.</p>
+
+    <div class="phase">
+      <h3><code class="status">[]</code> Phase 1: Make the gate fire</h3>
+      <p>
+        The headline defect. Do this first and in isolation, because it is the one change whose
+        success is observable from outside the file — the gate either asks the branding question on a
+        fresh install or it does not.
+      </p>
+
+      <h4>1. Replace the sentinel with a marker</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> In <code>SKILL.md</code> §0, replace the customization test at line 30 with a file check: the skin is customized if <code>references/.skin-customized</code> exists. No read, no hex, nothing to keep in sync.</li>
+        <li><code class="status">[]</code> Add the corresponding write: when the user answers the branding question — including when they explicitly choose the shipped defaults — create <code>references/.skin-customized</code>. Choosing the default is an answer, and the gate must not ask twice.</li>
+        <li><code class="status">[]</code> Correct the three sentinel values quoted at line 21 to the real defaults (<code>#f5f5f5</code>, <code>#2d3142</code>, <code>#eb6c36</code>) so the prose describing what "shipped defaults" look like is true, even though nothing now branches on it.</li>
+      </ul>
+
+      <h4>2. Testing Strategy</h4>
+      <p>The gate's behaviour is the test. Both branches need exercising, because the bug was that one branch was unreachable.</p>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>grep -n "b5523a\|faf7f2\|1c1917" SKILL.md</code> — returns nothing.</li>
+        <li><code class="status">[]</code> With no <code>.skin-customized</code> present, ask for a diagram in a fresh session and confirm the branding question is asked.</li>
+        <li><code class="status">[]</code> Answer it, confirm <code>references/.skin-customized</code> is created, then ask for a second diagram and confirm the gate is skipped.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[]</code> Phase 2: Give the tokens one owner</h3>
+      <p>
+        <code>style-guide.md</code> already claims sole ownership of colour in two places. This phase
+        makes the claim true rather than aspirational.
+      </p>
+
+      <h4>1. Strip the duplicates from SKILL.md §5</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Delete the four blocks reproduced verbatim from <code>style-guide.md</code>: semantic roles, node type → treatment, typography, and the Google Fonts <code>&lt;link&gt;</code>.</li>
+        <li><code class="status">[]</code> Leave the focal rule (one to two accents per diagram) in <code>SKILL.md</code> — it is a composition rule, not a token — plus a one-line pointer to <code>references/style-guide.md</code> for every value.</li>
+        <li><code class="status">[]</code> Leave the hexes inside the SVG code examples alone for now; they are illustrative markup rather than token definitions. Note them for a follow-up if they drift.</li>
+      </ul>
+
+      <h4>2. Clean style-guide.md</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Delete the inversion rule keyed to <code>rgba(28, 25, 23, X)</code> at line 36 — it refers to an ink value no longer used anywhere.</li>
+        <li><code class="status">[]</code> Move <em>Customizing the skin</em> and <em>Constraints</em> into <code>references/onboarding.md</code>, which already owns the reskin flow, leaving <code>style-guide.md</code> as the two token tables plus the brand-palette note.</li>
+      </ul>
+
+      <h4>3. Testing Strategy</h4>
+      <p>Success is one number appearing in exactly one file, and the forced-context total dropping.</p>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>grep -c "#" SKILL.md</code> — materially lower than 20, with survivors only inside SVG examples.</li>
+        <li><code class="status">[]</code> <code>wc -l SKILL.md references/style-guide.md</code> — combined total below 435, down from 507.</li>
+        <li><code class="status">[]</code> <code>grep -n "rgba(28, 25, 23" references/style-guide.md</code> — returns nothing.</li>
+        <li><code class="status">[]</code> Generate one diagram of each of three types and confirm the rendered colours still match the brand palette exactly.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+
+    <div class="phase">
+      <h3><code class="status">[]</code> Phase 3: Fix the dangling references and the description</h3>
+      <p>
+        Three small repairs that share a cause: text describing a world that no longer exists.
+      </p>
+
+      <h4>1. The two dead paths</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Line 40 cites <code>.impeccable.md</code>, which is in no repository on this machine. Inline the quote unattributed — the words are good, the citation is not.</li>
+        <li><code class="status">[]</code> Line 57 routes quick unicode diagrams to a <strong>wiretext</strong> skill that is not installed. Replace with a plain instruction: write it as ASCII in a code fence.</li>
+      </ul>
+
+      <h4>2. The description</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Add a <em>use when</em> clause with phrasing a user types: "draw a diagram", "make an architecture diagram", "diagram this flow", "sequence diagram", "flowchart", "ER diagram", or a request to visualize a system, process, or data model.</li>
+        <li><code class="status">[]</code> Add a not-for clause — not for ASCII sketches, not for data charts (that is <code>dataviz</code>).</li>
+        <li><code class="status">[]</code> Delete the sentences about the first-run gate, the sketchy variant, and the annotation primitive. They describe the implementation and do nothing for routing.</li>
+      </ul>
+
+      <h4>3. Testing Strategy</h4>
+      <p>Path checks are mechanical; the description is only proven by whether it fires in a session that has not been told to use it.</p>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>grep -n "impeccable\|wiretext" SKILL.md</code> — returns nothing.</li>
+        <li><code class="status">[]</code> In a fresh session, type "diagram this auth flow" with no slash command and confirm the skill fires.</li>
+        <li><code class="status">[]</code> In a fresh session, ask for a bar chart of monthly revenue and confirm the skill does <em>not</em> fire.</li>
+      </ul>
+      <div class="loop">
+        🔁 <strong>Do not exit this phase until every box above is checked.</strong>
+        If any command fails, fix the cause and re-run — loop until all pass.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GLOBAL VALIDATION ===== -->
+  <section id="validation">
+    <h2>Validation Commands</h2>
+    <p>Execute these from <code>~/code/diagram-design/skills/diagram-design</code> unless noted:</p>
+    <ul class="checklist">
+      <li><code class="status">[]</code> <code>grep -rn "b5523a\|faf7f2\|1c1917\|rgba(28, 25, 23" .</code> — returns nothing; the third skin is gone.</li>
+      <li><code class="status">[]</code> <code>wc -l SKILL.md references/style-guide.md</code> — combined below 435, down from 507.</li>
+      <li><code class="status">[]</code> <code>grep -n "impeccable\|wiretext" SKILL.md</code> — returns nothing.</li>
+      <li><code class="status">[]</code> Fresh-session trigger test passes both ways: fires on "diagram this auth flow", stays silent on a revenue bar chart.</li>
+      <li><code class="status">[]</code> Gate test passes both ways: asks on a virgin install, silent once <code>references/.skin-customized</code> exists.</li>
+      <li><code class="status">[]</code> From <code>~/.claude</code>: <code>python3 skills/meta-skill/scripts/scan.py</code> — <code>diagram-design</code> is CLEAN.</li>
+      <li><code class="status">[]</code> Rubric dimensions 1, 2, 5 and 6 all pass, recorded per dimension.</li>
+    </ul>
+    <div class="loop">
+      🔁 <strong>The plan is not complete until every box is checked and every command passes. If for some reason a step is not possible to complete, mark it with [f] and move on if possible.</strong>
+    </div>
+  </section>
+
+  <!-- ===== NOTES ===== -->
+  <section id="notes">
+    <h2>Notes</h2>
+
+    <h3>Two audit claims this plan corrects</h3>
+    <p>
+      The health check produced this plan, but two of its numbers did not survive checking, and the
+      plan is scoped to the corrected ones.
+    </p>
+    <table>
+      <thead>
+        <tr><th>Claim</th><th>Status</th><th>Effect on scope</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>"40 of 61 bundled files unreferenced"</td>
+          <td>Refuted by the grader itself — the true number is 0. The scanner missed second-hop links from <code>type-*.md</code> and the documented <code>example-&lt;type&gt;.html</code> glob.</td>
+          <td>No reachability work beyond the two genuinely dead paths.</td>
+        </tr>
+        <tr>
+          <td>"40 stale example assets need regeneration" (the grader's basis for medium effort)</td>
+          <td>Refuted here. All 44 assets use only <code>#2d3142</code>, <code>#f5f5f5</code> and <code>#eb6c36</code> — the real palette — with zero occurrences of the sentinel hexes.</td>
+          <td>Assets are out of scope entirely. Effort drops from medium to small.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      The assets being consistent is also the strongest evidence for the diagnosis: everything that
+      renders agrees with <code>style-guide.md</code>. Only the prose in <code>SKILL.md</code> §0
+      believes in a palette that was never shipped.
+    </p>
+
+    <h3>Decisions and rejected alternatives</h3>
+    <details>
+      <summary>Just correct the sentinel hex to <code>#eb6c36</code></summary>
+      <p class="qa-answer">
+        The one-character-cheaper fix, and rejected. It restores the gate but keeps the mechanism that
+        broke it: a constant in <code>SKILL.md</code> that must track a file whose entire purpose is
+        to be edited by users. The next reskin re-breaks it, silently, in exactly the same way. A
+        marker file cannot drift because it encodes the decision rather than the value.
+      </p>
+    </details>
+    <details>
+      <summary>Move the token tables into <code>SKILL.md</code> and delete <code>style-guide.md</code></summary>
+      <p class="qa-answer">
+        Rejected. It resolves the duplication in the wrong direction — <code>style-guide.md</code> is
+        the file users edit to reskin, so it must stay the editable surface. Folding it into
+        <code>SKILL.md</code> would make every reskin an edit to the skill's own instructions.
+      </p>
+    </details>
+    <details>
+      <summary>Replace the inline SVG hexes in the code examples with <code>var()</code> roles</summary>
+      <p class="qa-answer">
+        Deferred, not rejected. Consistent with the direction, but the examples are illustrative
+        markup a reader copies and adapts, and <code>var()</code> without a surrounding
+        <code>:root</code> renders as no fill — a silent failure of exactly the kind this plan is
+        removing. Phase 2 notes them for follow-up if they drift.
+      </p>
+    </details>
+
+    <h3>Risks</h3>
+    <ul>
+      <li><strong>The gate becomes annoying.</strong> It has effectively never fired, so nobody has experienced it. Once live it asks a branding question on first use in every repo. If that grates, the marker file makes the fix obvious — ship one, or scope it per project.</li>
+      <li><strong>Description over-correction.</strong> Adding trigger phrasing risks firing on any mention of "diagram". The revenue-bar-chart check in Phase 3 is the guard; if it over-fires, tighten the not-for clause rather than gutting the triggers.</li>
+      <li><strong>Wrong repository.</strong> The most likely mechanical error in this plan is editing <code>~/.claude/skills/diagram-design</code> as though it were a real directory and committing to <code>clawd-config</code>. It is a symlink; the work belongs in <code>~/code/diagram-design</code> on <code>main</code>.</li>
+    </ul>
+
+    <h3>Dependencies</h3>
+    <p>
+      None. Markdown edits plus one empty marker file. Every validation command is <code>grep</code>,
+      <code>wc</code>, or a fresh-session behavioural check.
+    </p>
+
+    <h3>References</h3>
+    <ul class="refs">
+      <li><code>specs/skill-health-2026-07-25.md</code> — finding #4, and the scanner-limitation section explaining the refuted orphan count.</li>
+      <li><code>skills/meta-skill/references/skill-review-rubric.md</code> — the seven dimensions; this plan targets 1, 2, 5 and 6.</li>
+      <li><code>~/code/diagram-design/skills/diagram-design/references/onboarding.md</code> — existing owner of the reskin flow, and destination for the prose moved out of <code>style-guide.md</code>.</li>
+    </ul>
+  </section>
+
+  <!-- ===== AMENDMENTS ===== -->
+  <section id="amendments">
+    <h2>Amendments</h2>
+    <p class="empty">No amendments yet — appended by the Update Plan and Update References workflows.</p>
+  </section>
+
+</main>
+</body>
+</html>

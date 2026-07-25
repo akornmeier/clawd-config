@@ -1,7 +1,7 @@
 # planf3 evaluations
 
 Three scenarios, one per distinct load path through the skill. Run each in a **fresh
-session** from `/Users/tk/.claude`, in order — B depends on A's output, C on B's. A fresh
+session** from `~/.claude`, in order — B depends on A's output, C on B's. A fresh
 session is required because description-driven discovery only shows up when the skill has
 to fire on its own.
 
