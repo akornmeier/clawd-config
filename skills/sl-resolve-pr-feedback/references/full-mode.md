@@ -53,15 +53,34 @@ If there are no new items across all feedback types, skip steps 3-8 and go strai
 
 Create a task list of all **new** unresolved items (`TaskCreate`) -- one entry per thread or comment to resolve.
 
+### Cluster by root cause
+
+Reviewers file one thread per *location*; the same mistake in three files is three threads. Dispatching per thread then asks the same question three times, in three contexts that cannot see each other, and lets them answer differently on the same PR.
+
+Group the new items into clusters. Two items share a cluster when either holds:
+
+- **Same file** -- parallel edits to one file collide.
+- **Same decision** -- they name the same symbol, convention, or suggested replacement, so answering one answers the other. Two comments saying "use `X` instead of `Y`" in different files are one decision, not two.
+
+One cluster, one agent. This subsumes the old conflict-avoidance rule: files never overlap across clusters, so every cluster dispatches in parallel with no serialization.
+
+### Check cited premises once
+
+Some findings assert a fact about the repo to justify themselves: "we already use `X`", "the convention here is `Y`", "this is handled in `Z`". That claim is what makes the finding persuasive, and it is the part most likely to be wrong -- a reviewer, especially a bot, generalizes from the few files it read.
+
+**Verify each distinct claim once, before dispatch, and pass the result to the cluster that rests on it.** Usually one `grep`, one file read, or one command settles it. Items that assert nothing about the repo skip this entirely.
+
+This is one pass over the *claims*, not over the items -- two findings citing the same convention share one check. Doing it here rather than inside each agent is the point: an agent handed a single thread sees only the assertion, not whether it holds repo-wide.
+
 ## 4. Implement (PARALLEL)
 
 Process all three feedback types. Review threads are the primary type; PR comments and review bodies are secondary but should not be ignored.
 
 ### Dispatch
 
-**For review threads** (`review_threads`): Spawn a `sl-pr-comment-resolver` agent for each new thread.
+**For review threads** (`review_threads`): Spawn one `sl-pr-comment-resolver` agent per cluster from step 3, not per thread. A cluster is usually one thread; when it is several, the agent resolves them together and returns one summary per thread.
 
-Each agent receives:
+Each agent receives, for every thread in its cluster:
 - The thread ID
 - The file path and location fields: `line`, `originalLine`, `startLine`, `originalStartLine` (any can be null; outdated and file-level threads often have `line == null` and must fall back to `originalLine`)
 - The full comment text (all comments in the thread)
@@ -69,11 +88,13 @@ Each agent receives:
 - The feedback type (`review_thread`)
 - The `isOutdated` flag from the thread node (tells the agent the reported line may have drifted)
 
-**For PR comments and review bodies** (`pr_comments`, `review_bodies`): These lack file/line context. Spawn a `sl-pr-comment-resolver` agent for each actionable item. The agent receives the comment ID, body text, PR number, and feedback type (`pr_comment` or `review_body`). The agent must identify the relevant files from the comment text and the PR diff.
+Plus, when step 3 found one, the **verified premise** for its cluster: the claim the findings rest on and whether it actually holds, with the evidence. An agent told "the repo does not in fact use `X` -- `grep` returns 0 hits outside these two files" reaches a different verdict than one left to take the reviewer's word.
+
+**For PR comments and review bodies** (`pr_comments`, `review_bodies`): These lack file/line context. Cluster and dispatch them the same way. The agent receives the comment ID, body text, PR number, and feedback type (`pr_comment` or `review_body`), and must identify the relevant files from the comment text and the PR diff.
 
 ### Agent return format
 
-Each agent returns a short summary:
+Each agent returns one short summary **per item it handled** -- a single-thread cluster returns one, a three-thread cluster returns three, each with its own `feedback_id` and `reply_text`. Aggregate across all agents before step 5.
 - **verdict**: `fixed`, `fixed-differently`, `replied`, `not-addressing`, `declined`, or `needs-human`
 - **feedback_id**: the thread ID or comment ID it handled
 - **feedback_type**: `review_thread`, `pr_comment`, or `review_body`
@@ -87,15 +108,11 @@ Verdicts are defined and assigned in `sl-pr-comment-resolver`. The parent only r
 - `needs-human` gets its reply posted and its thread left **open**.
 - `replied` / `not-addressing` / `declined` change nothing. A round of only these is a reply-only round.
 
-### Batching and conflict avoidance
+### Batching
 
-**Batching**: If there are 1-4 items total, dispatch all in parallel. For 5+ items, batch in groups of 4.
+Clusters are independent by construction, so they all dispatch in parallel -- no serialization, no file-overlap check. Batch in groups of 4 above 4 clusters. Platforms without parallel dispatch run them sequentially.
 
-**Conflict avoidance**: No two agents that touch the same file should run in parallel. Before dispatching, check for file overlaps across items. If two items reference the same file, serialize them -- dispatch one, wait for it to complete, then dispatch the next. Non-overlapping items run in parallel. When one agent handles multiple threads on the same file, it addresses them sequentially.
-
-**Sequential fallback**: Platforms that do not support parallel dispatch should run agents sequentially.
-
-Fixes can occasionally expand beyond their referenced file (e.g., renaming a method updates callers elsewhere). This is rare but can cause parallel agents to collide. Step 5 (combined validation) catches test breakage; step 8 (verify) catches unresolved threads. If either surfaces inconsistent changes from parallel fixes, re-run the affected agents sequentially.
+Fixes can occasionally expand beyond their cluster (e.g. renaming a method updates callers elsewhere). This is rare but can cause parallel agents to collide. Step 5 (combined validation) catches test breakage; step 8 (verify) catches unresolved threads. If either surfaces inconsistent changes, re-cluster the affected items together and re-run them as one agent.
 
 ## 5. Validate Combined State
 
@@ -208,30 +225,28 @@ Include enough quoted context in the reply so the reader can follow which commen
 
 ## 8. Verify
 
-### Reviewer-quiescence gate
-
-**Engage the gate only when this round pushed a fix** -- i.e., step 5's aggregated `files_changed` was non-empty and step 6 ran. A reply-only round (all verdicts `replied` / `not-addressing` / `declined` / `needs-human`, nothing pushed) **skips the wait** and proceeds straight to the re-fetch below: there is no new commit for a bot to re-review.
-
-When a fix was pushed, read `references/verify-gate.md` and follow it -- the wait command, the bots-only rule, the ~5-minute timeout and the settle-window fallback live there. On timeout, proceed anyway and note it in the step 9 summary, since the result then does not imply full quiescence. Every path returns here.
-
-### Re-fetch and loop
-
-Runs on every round, pushed or not. Re-fetch feedback to confirm resolution:
+**Re-fetch first, wait second.** A re-fetch is one GraphQL call; a wait is minutes. The reverse order pays the full timeout even when the reviewer already responded, and pays it again when the reviewer never will.
 
 ```bash
 SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>"
 bash "$SKILL_DIR/scripts/get-pr-comments" PR_NUMBER
 ```
 
-The `review_threads` array should be empty (except `needs-human` items).
+Route on what comes back:
+
+| Re-fetch result | Action |
+|-----------------|--------|
+| New threads present | Loop from step 2. The reviewer already responded — no wait was needed at all. |
+| Empty, and this round **pushed a fix** | One short settle window, then re-fetch once more. Read `references/verify-gate.md`. |
+| Empty, and **nothing was pushed** | Conclude. There is no new commit for a bot to re-review. |
+
+`review_threads` should be empty apart from `needs-human` items. PR comments and review bodies have no resolve mechanism, so they still appear in the output; confirm they were replied to by checking the PR conversation.
 
 **If new threads remain**, check the fix-round count for this run:
 
 - **First, second, or third fix-verify cycle**: Repeat from step 2 for the remaining threads.
 
 - **After the third fix-verify cycle** (4th pass would begin): Stop looping. Surface remaining issues to the user with context about the recurring pattern: "Multiple rounds of feedback on [area/theme] suggest a deeper issue. Here's what we've fixed so far and what keeps appearing." Use the same `needs-human` escalation pattern -- leave threads open and present the pattern for the user to decide.
-
-PR comments and review bodies have no resolve mechanism, so they will still appear in the output. Verify they were replied to by checking the PR conversation.
 
 ## 9. Summary
 

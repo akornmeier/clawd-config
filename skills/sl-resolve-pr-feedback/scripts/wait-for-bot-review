@@ -10,9 +10,10 @@
 set -e
 
 if [ $# -lt 2 ]; then
-    echo "Usage: wait-for-bot-review PR_NUMBER HEAD_SHA [OWNER/REPO]"
+    echo "Usage: wait-for-bot-review PR_NUMBER HEAD_SHA [OWNER/REPO] [TIMEOUT_SECONDS]"
     echo "Example: wait-for-bot-review 123 a1b2c3d"
     echo "Example: wait-for-bot-review 123 a1b2c3d EveryInc/cora"
+    echo "Example: wait-for-bot-review 123 a1b2c3d EveryInc/cora 60   # short settle window"
     exit 1
 fi
 
@@ -29,11 +30,13 @@ KNOWN_BOTS=(
     "greptile-apps[bot]"
 )
 
-# Per-wait timeout (seconds). The gate stops waiting and proceeds after this
-# elapses even if an active bot has not reached HEAD -- hanging is the worst
-# failure. Tuned to the observed ~3-min Copilot re-review latency; this is the
-# single tunable if real-world latency runs higher.
-TIMEOUT_SECONDS=150
+# Per-wait timeout (seconds), overridable as $4. The gate stops waiting and
+# proceeds after this elapses even if an active bot has not reached HEAD --
+# hanging is the worst failure. The 150s default is tuned to the observed ~3-min
+# Copilot re-review latency. Step 8 passes a shorter value: it now re-fetches
+# before waiting, so by the time it gets here the cheap signal has already come
+# back empty and the wait is a settle window, not the primary check.
+TIMEOUT_SECONDS=${4:-150}
 POLL_INTERVAL=10
 MAX_POLL_INTERVAL=30
 

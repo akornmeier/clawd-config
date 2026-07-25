@@ -915,7 +915,43 @@
   <!-- ===== AMENDMENTS ===== -->
   <section id="amendments">
     <h2>Amendments</h2>
-    <p class="empty">No amendments yet — appended by the Update Plan and Update References workflows.</p>
+    <details>
+      <summary>2026-07-25 — Three process changes beyond this plan's scope: cluster-before-dispatch, central premise check, re-fetch-before-wait</summary>
+      <p>
+        This plan was scoped to context engineering — where bytes live and when they load. Reviewing the skill's
+        <em>process</em> afterwards surfaced three accuracy problems the plan did not address, and the user asked for
+        all three.
+      </p>
+      <p>
+        <strong>1. Dispatch is now per cluster, not per thread.</strong> Reviewers file one thread per location, so
+        one mistake in three files arrives as three threads. Fanning out per thread asked the same question three
+        times in three contexts that could not see each other — they could answer differently on the same PR. Step 3
+        now groups items sharing a file <em>or</em> a decision; step 4 dispatches one agent per cluster. This
+        subsumes the old file-overlap serialization rule, so two rules became one and all clusters run in parallel.
+      </p>
+      <p>
+        <strong>2. Cited premises are verified once, centrally, before fan-out.</strong> Findings that justify
+        themselves with a claim about the repo ("we already use <code>X</code>") are persuasive precisely because of
+        the claim, and the claim is the part most often wrong. An agent handed one thread sees the assertion but not
+        whether it holds repo-wide. Step 3 now checks each distinct claim once and passes the verdict to the cluster
+        that rests on it. This is the step that would have caught the <code>${CLAUDE_SKILL_DIR}</code> defect without
+        needing a human to think of checking.
+      </p>
+      <p>
+        <strong>3. Step 8 re-fetches before it waits.</strong> The old order blocked on bot re-review and only then
+        looked, paying the full timeout even when the reviewer had already responded — and paying it again when the
+        reviewer never would. A re-fetch is one GraphQL call. Now: re-fetch first; new threads mean loop with no wait
+        at all; empty-and-pushed gets a 60s settle window; empty-and-nothing-pushed concludes. The
+        <code>quiescence gate</code> is renamed <code>settle window</code> throughout, and
+        <code>wait-for-bot-review</code> gained an optional fourth argument so the window can be bounded per call
+        (verified: 150s default → 11s with the override).
+      </p>
+      <p>
+        <strong>Not covered by evals.</strong> All three are prose behavioural rules — the class this skill's own
+        eval README says nothing but the suite catches. No scenario tests them yet; the existing nine were checked
+        and none regressed.
+      </p>
+    </details>
   </section>
 
 </main>

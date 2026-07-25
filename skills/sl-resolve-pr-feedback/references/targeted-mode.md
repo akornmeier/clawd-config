@@ -27,6 +27,6 @@ This fetches thread IDs and their first comment IDs (minimal fields, no bodies) 
 
 Spawn a single `sl-pr-comment-resolver` agent for the thread. Pass the same fields full mode does, including `isOutdated` and the location fields (`line`, `originalLine`, `startLine`, `originalStartLine`) -- targeted threads can be outdated too and need the same relocation handling. Then follow the same validate -> commit -> push -> reply -> resolve flow as Full Mode steps 5-7 (in `references/full-mode.md`).
 
-**No quiescence wait.** The bot-reviewer-quiescence gate (Full Mode step 8) is Full-mode-only and does not apply here -- targeted mode addresses one named thread and does not wait for a full re-review of the PR.
+**No settle window.** The bot-reviewer settle window (Full Mode step 8, `references/verify-gate.md`) is Full-mode-only and does not apply here -- targeted mode addresses one named thread and does not wait for a full re-review of the PR.
 
 **No Codex gate.** The pre-push review gate (Full Mode step 5b) is likewise Full-mode-only. Targeted mode exists for a fast, surgical turnaround on one thread; adding a multi-minute second-model review inverts that purpose. "Steps 5-7" above means step 5, then step 6, then step 7 -- skip 5b.
