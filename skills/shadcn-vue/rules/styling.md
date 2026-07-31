@@ -121,7 +121,7 @@ Use `gap-*` instead. `space-y-4` → `flex flex-col gap-4`. `space-x-2` → `fle
 
 ## Prefer size-* over w-* h-* when equal
 
-`size-10` not `w-10 h-10`. Applies to icons, avatars, skeletons, etc.
+`size-10` not `w-10 h-10`. Applies to standalone icons, avatars, skeletons, etc. Does not apply to icons inside shadcn-vue components — those are sized by the component, see [icons.md](./icons.md).
 
 ---
 
