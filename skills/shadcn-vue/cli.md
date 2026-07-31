@@ -75,6 +75,8 @@ Accepts component names, registry-prefixed names (`@magicui/shimmer-button`), UR
 | `--all`         | `-a`  | Add all available components                                                                                         | `false` |
 | `--path <path>` | `-p`  | Target path for the component                                                                                        | —       |
 | `--silent`      | `-s`  | Mute output                                                                                                          | `false` |
+| `--dry-run`     | —     | Preview which files would be added or changed, without writing them                                                 | `false` |
+| `--diff [file]` | —     | Show upstream vs. local diff (all affected files if `[file]` omitted, one file if given)                            | —       |
 
 #### Smart Merge from Upstream
 
