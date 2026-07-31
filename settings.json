@@ -120,6 +120,12 @@
         "source": "github",
         "repo": "analyticalmonk/explain-this"
       }
+    },
+    "superpowers-dev": {
+      "source": {
+        "source": "git",
+        "url": "git@github.com:obra/superpowers.git"
+      }
     }
   },
   "alwaysThinkingEnabled": true,
