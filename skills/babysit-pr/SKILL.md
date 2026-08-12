@@ -26,7 +26,7 @@ If a review bot leaves feedback you believe is not worth addressing, reply and r
 [actual reply]
 ```
 
-Screenshots and videos help as well. Use the `file-upload` skill when needed.
+Screenshots and videos help as well — attach them when they make the feedback easier to act on.
 
 Do not let the feedback expand the PR beyond the user's original goal. Address real shortcomings, but avoid scope creep.
 
