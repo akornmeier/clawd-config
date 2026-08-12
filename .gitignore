@@ -219,3 +219,6 @@ apps/task-manager/data/
 # Third-party plugin marketplaces (clones, re-fetchable)
 plugins/marketplaces/
 plugins/.last_inuse_sweep
+
+# Doctor tool backups
+*.doctor-bak
