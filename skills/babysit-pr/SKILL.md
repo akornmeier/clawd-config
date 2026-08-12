@@ -1,6 +1,6 @@
 ---
 name: babysit-pr
-description: Monitor a pull request through review and CI. Use when the users asks to monitor, watch, or babysit a PR.
+description: Monitor a pull request through review and CI. Use when the user asks to monitor, watch, or babysit a PR.
 metadata:
   harness: [claude, codex, pi]
   platform: [darwin]
@@ -11,13 +11,13 @@ metadata:
 
 All the repos we work in have various AI review bots. They're helpful, even if they are not always right.
 
-If your harness offers toolsto monitor a PR, use them so you can respons when comments arrive. Otherwise, poll the PR for new comments and checks.
+If your harness offers tools to monitor a PR, use them so you can respond when comments arrive. Otherwise, poll the PR for new comments and checks.
 
 Only act on checks and comments newer than the latest push. Verify every bot finding against the source before changing code. Fix real findings and CI failures, distinguish repository failures from infrastructure flakes, and reply with a written reason when dismissing false positives.
 
 Keep an eye on changes to `main` and rebase when needed. If an overlapping PR makes this one obsolete, stop monitoring, report it to the user, and ask before closing the PR unless closure was explicitly authorized.
 
-If a review bot leaves feedback you believe is not worth addressing, reply and resolve the comment. Format comments left on Tony' behalf as:
+If a review bot leaves feedback you believe is not worth addressing, reply and resolve the comment. Format comments left on Tony's behalf as:
 
 ```md
 [MODEL-SLUG] RESPONDING ON BEHALF OF TONY
